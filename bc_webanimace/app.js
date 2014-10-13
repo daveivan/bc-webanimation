@@ -57,16 +57,11 @@ var Timeline = (function () {
         });
 
         this.deleteLayerEl.on('click', function (event) {
-            //this.deleteLayers(event);
             _this.deleteLayers(event);
         });
 
         this.layersWrapperEl.scroll(function (event) {
             _this.onScroll(event);
-        });
-
-        this.layersEl.on('sortupdate', function (event, ui) {
-            _this.sort(event, ui);
         });
 
         this.layersEl.on('mousedown', function (event, ui) {
@@ -158,16 +153,11 @@ var Timeline = (function () {
         if (this.layers.length == 0) {
             this.renderRow(0, 'disabled');
             this.layersEl.append($('<div>').addClass('layer disabled').html('Vložte novou vrstvu'));
-        } else {
-            //select last layer in list
-            var lastLayer = this.layers[this.layers.length - 1];
-            this.selectLayer(lastLayer.id);
         }
     };
 
     Timeline.prototype.selectLayer = function (id) {
         //select layer by ID
-        //? separate (select .last(), select by id) ?
         this.keyframesTableEl.find('tbody tr').removeClass('selected');
         this.layersEl.find('.layer').removeClass('selected');
         this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
@@ -201,6 +191,7 @@ var Timeline = (function () {
         //render new layer list
         this.renderLayers();
 
+        this.selectLayer(layer.id);
         this.layersWrapperEl.stop(true, true).animate({ scrollTop: this.layersWrapperEl[0].scrollHeight - 50 }, 300);
         this.layersWrapperEl.perfectScrollbar('update');
     };
@@ -218,15 +209,26 @@ var Timeline = (function () {
         this.renderLayers();
 
         //scroll to last layer
+        this.selectLayer(this.layersEl.find('.layer').last().data('id'));
         this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
         this.layersWrapperEl.perfectScrollbar('update');
     };
 
     Timeline.prototype.sort = function (e, ui) {
+        var _this = this;
         var order = $(e.target).sortable('toArray');
+        var firstSelectedEl = $(this.layersEl.find('.selected').get(0));
+
+        var tmpLayers = new Array();
         order.forEach(function (value, index) {
-            //TODO
+            tmpLayers.push(_this.layers[parseInt(value)]);
+            console.log(value);
         });
+        this.layers = tmpLayers;
+
+        //render layers
+        this.renderLayers();
+        this.selectLayer(firstSelectedEl.data('id'));
     };
 
     Timeline.prototype.onClickLayer = function (e, ui) {
@@ -257,7 +259,15 @@ var Timeline = (function () {
     };
 
     Timeline.prototype.onReady = function (e) {
-        this.layersEl.multisortable({ items: 'div.layer:not(.disabled)', axis: 'y', containment: '.layers-wrapper', delay: 150, scroll: true, appendTo: '.layers-wrapper' });
+        var _this = this;
+        this.layersEl.multisortable({
+            items: 'div.layer:not(.disabled)',
+            axis: 'y', delay: 150,
+            scroll: true,
+            stop: function (e) {
+                _this.sort(e, null);
+            }
+        });
         this.layersWrapperEl.perfectScrollbar();
     };
 

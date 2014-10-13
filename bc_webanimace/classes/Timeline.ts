@@ -38,17 +38,12 @@ class Timeline
         });
 
         this.deleteLayerEl.on('click', (event: JQueryEventObject) => {
-            //this.deleteLayers(event);
             this.deleteLayers(event);
         });
 
         this.layersWrapperEl.scroll((event: JQueryEventObject) => {
             this.onScroll(event);
         });
-
-        this.layersEl.on('sortupdate', (event: JQueryEventObject, ui) => {
-            this.sort(event, ui);
-        }); 
 
         this.layersEl.on('mousedown', (event: JQueryEventObject, ui) => {
             this.onClickLayer(event, ui);
@@ -139,16 +134,11 @@ class Timeline
         if (this.layers.length == 0) {
             this.renderRow(0, 'disabled');
             this.layersEl.append($('<div>').addClass('layer disabled').html('Vložte novou vrstvu'));
-        } else {
-            //select last layer in list
-            var lastLayer: Layer = this.layers[this.layers.length - 1];
-            this.selectLayer(lastLayer.id);   
         }
     }
 
     private selectLayer(id: number) {
         //select layer by ID
-        //? separate (select .last(), select by id) ?
         this.keyframesTableEl.find('tbody tr').removeClass('selected');
         this.layersEl.find('.layer').removeClass('selected');
         this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
@@ -185,6 +175,7 @@ class Timeline
         //render new layer list
         this.renderLayers();
 
+        this.selectLayer(layer.id);
         this.layersWrapperEl.stop(true, true).animate({ scrollTop: this.layersWrapperEl[0].scrollHeight - 50 }, 300);
         this.layersWrapperEl.perfectScrollbar('update');
     }
@@ -202,16 +193,26 @@ class Timeline
         this.renderLayers();
 
         //scroll to last layer
+        this.selectLayer(this.layersEl.find('.layer').last().data('id'));
         this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
         this.layersWrapperEl.perfectScrollbar('update');
     }
 
     private sort(e: JQueryEventObject, ui)
     {
-        var order = $(e.target).sortable('toArray');
+        var order: Array<string> = $(e.target).sortable('toArray');
+        var firstSelectedEl: JQuery = $(this.layersEl.find('.selected').get(0));
+
+        var tmpLayers: Array<Layer> = new Array<Layer>();
         order.forEach((value: string, index: number) => {
-            //TODO
+            tmpLayers.push(this.layers[parseInt(value)]);
+            console.log(value);
         });
+        this.layers = tmpLayers;
+
+        //render layers
+        this.renderLayers();
+        this.selectLayer(firstSelectedEl.data('id'));
     }
 
     private onClickLayer(e: JQueryEventObject, ui)
@@ -245,7 +246,14 @@ class Timeline
 
     private onReady(e: JQueryEventObject)
     {
-        this.layersEl.multisortable({ items: 'div.layer:not(.disabled)', axis: 'y', containment: '.layers-wrapper', delay: 150, scroll: true, appendTo: '.layers-wrapper'});
+        this.layersEl.multisortable({
+            items: 'div.layer:not(.disabled)',
+            axis: 'y', delay: 150,
+            scroll: true,
+            stop: (e: JQueryEventObject) => {
+                this.sort(e, null);
+            },
+        });
         this.layersWrapperEl.perfectScrollbar();
     }
 

@@ -72,7 +72,7 @@ var Timeline = (function () {
             _this.onClickRow(event);
         });
 
-        $(document).on('mouseup', '.keyframes > table', function (event) {
+        $(document).on('mousedown', '.keyframes > table', function (event) {
             _this.onClickTable(event);
         });
 
@@ -281,6 +281,16 @@ var Timeline = (function () {
         });
         this.layersEl.sortable("option", "cancel", "span.editable");
         this.layersWrapperEl.perfectScrollbar();
+
+        this.pointerEl.draggable({
+            axis: 'x',
+            containment: 'parent',
+            handle: '.pointer-top',
+            drag: function (event, ui) {
+                _this.pointerPosition = ui.position.left + 1;
+                console.log(_this.pointerPosition);
+            }
+        });
     };
 
     Timeline.prototype.onClickTable = function (e) {

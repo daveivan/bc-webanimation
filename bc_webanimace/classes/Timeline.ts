@@ -53,7 +53,7 @@ class Timeline
             this.onClickRow(event);
         });
 
-        $(document).on('mouseup', '.keyframes > table', (event: JQueryEventObject) => {
+        $(document).on('mousedown', '.keyframes > table', (event: JQueryEventObject) => {
             this.onClickTable(event);
         });
 
@@ -267,6 +267,16 @@ class Timeline
         });
         this.layersEl.sortable("option", "cancel", "span.editable");
         this.layersWrapperEl.perfectScrollbar();
+
+        this.pointerEl.draggable({
+            axis: 'x',
+            containment: 'parent',
+            handle: '.pointer-top',
+            drag: (event: JQueryEventObject, ui) => {
+                this.pointerPosition = ui.position.left + 1;
+                console.log(this.pointerPosition);
+            },
+        });
     }
 
     private onClickTable(e: JQueryEventObject) {

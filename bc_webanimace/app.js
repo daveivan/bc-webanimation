@@ -143,7 +143,7 @@ var Timeline = (function () {
 
         //render new layers list from array
         this.layers.forEach(function (item, index) {
-            _this.layersEl.append($('<div>').addClass('layer').attr('id', index).attr('data-id', item.id).html(item.name));
+            _this.layersEl.append(($('<div>').addClass('layer').attr('id', index).attr('data-id', item.id)).append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name)));
 
             //and render frames fot this layer
             _this.renderRow(item.id);
@@ -154,6 +154,17 @@ var Timeline = (function () {
             this.renderRow(0, 'disabled');
             this.layersEl.append($('<div>').addClass('layer disabled').html('Vložte novou vrstvu'));
         }
+
+        //add jeditable plugin
+        var me = this;
+        $('.editable').editable(function (value, settings) {
+            me.onChangeName($(this).attr('id'), value);
+            return (value);
+        }, {
+            width: 150,
+            onblur: 'submit',
+            event: 'dblclick'
+        });
     };
 
     Timeline.prototype.selectLayer = function (id) {
@@ -233,7 +244,7 @@ var Timeline = (function () {
 
     Timeline.prototype.onClickLayer = function (e, ui) {
         //select row by selected layer
-        var id = parseInt($(e.target).data('id'));
+        var id = parseInt($(e.target).closest('.layer').data('id'));
         if (!isNaN(id)) {
             this.keyframesTableEl.find('tbody tr').removeClass('selected');
             this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
@@ -261,13 +272,14 @@ var Timeline = (function () {
     Timeline.prototype.onReady = function (e) {
         var _this = this;
         this.layersEl.multisortable({
-            items: 'div.layer:not(.disabled)',
+            items: '> div.layer:not(.disabled)',
             axis: 'y', delay: 150,
             scroll: true,
             stop: function (e) {
                 _this.sort(e, null);
             }
         });
+        this.layersEl.sortable("option", "cancel", "span.editable");
         this.layersWrapperEl.perfectScrollbar();
     };
 
@@ -278,6 +290,10 @@ var Timeline = (function () {
             this.pointerPosition = posX - 1;
             this.pointerEl.css('left', this.pointerPosition);
         }
+    };
+
+    Timeline.prototype.onChangeName = function (id, name) {
+        this.layers[id].name = name;
     };
     return Timeline;
 })();

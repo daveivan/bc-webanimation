@@ -125,7 +125,7 @@ class Timeline
 
         //render new layers list from array
         this.layers.forEach((item: Layer, index: number) => {
-            this.layersEl.append($('<div>').addClass('layer').attr('id', index).attr('data-id', item.id).html(item.name));
+            this.layersEl.append(($('<div>').addClass('layer').attr('id', index).attr('data-id', item.id)).append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name)));
             //and render frames fot this layer
             this.renderRow(item.id);
         });
@@ -135,6 +135,17 @@ class Timeline
             this.renderRow(0, 'disabled');
             this.layersEl.append($('<div>').addClass('layer disabled').html('Vložte novou vrstvu'));
         }
+
+        //add jeditable plugin
+        var me: any = this;
+        $('.editable').editable(function(value: string, settings: any) {
+            me.onChangeName($(this).attr('id'), value);
+            return (value);
+        }, {
+            width: 150,
+            onblur: 'submit',
+           event: 'dblclick',
+        });
     }
 
     private selectLayer(id: number) {
@@ -218,7 +229,7 @@ class Timeline
     private onClickLayer(e: JQueryEventObject, ui)
     {
         //select row by selected layer
-        var id: number = parseInt($(e.target).data('id'));
+        var id: number = parseInt($(e.target).closest('.layer').data('id'));
         if (!isNaN(id)) {
             this.keyframesTableEl.find('tbody tr').removeClass('selected');
             this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
@@ -247,13 +258,14 @@ class Timeline
     private onReady(e: JQueryEventObject)
     {
         this.layersEl.multisortable({
-            items: 'div.layer:not(.disabled)',
+            items: '> div.layer:not(.disabled)',
             axis: 'y', delay: 150,
             scroll: true,
             stop: (e: JQueryEventObject) => {
                 this.sort(e, null);
             },
         });
+        this.layersEl.sortable("option", "cancel", "span.editable");
         this.layersWrapperEl.perfectScrollbar();
     }
 
@@ -264,6 +276,10 @@ class Timeline
             this.pointerPosition = posX - 1;
             this.pointerEl.css('left', this.pointerPosition);   
         }
+    }
+
+    private onChangeName(id: number, name: string) {
+        this.layers[id].name = name;
     }
 }
 

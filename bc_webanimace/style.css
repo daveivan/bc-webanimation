@@ -206,3 +206,13 @@ tr.disabled td {
     left: -1px;
     cursor: e-resize;
 }
+
+
+
+.editable input {
+    width: 150px !important;
+}
+
+*:focus {
+    outline: none;
+   }

@@ -5,8 +5,7 @@
     name: string;
     private _order: number = 0;
 
-    constructor(name: string)
-    {
+    constructor(name: string) {
         this.name = name;
         this.id = ++Layer.counter;
     }

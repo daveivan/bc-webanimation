@@ -11,6 +11,11 @@ html, body, table, thead {
 
 body {
     font-family: 'Segoe UI';
+    overflow: hidden;
+}
+
+html, body {
+    height: 100%;
 }
 
 a {
@@ -28,6 +33,8 @@ a {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    clear: both;
+    z-index: 9999;
 }
 
 #layers {
@@ -216,3 +223,40 @@ tr.disabled td {
 *:focus {
     outline: none;
    }
+
+#workspace {
+    width: 100%;
+    background-color: #fbfbfb;
+    display: block;
+-moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    height: 100%;
+}
+
+.wrapper {
+    height: 100%;
+    margin: 0 auto -210px;
+}
+.push {
+    height: 210px;
+}
+
+.square {
+    position:    absolute;
+}
+.help-text {
+    position: absolute;
+    top: 0px;
+    left: 20px;
+        -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    z-index: 9999;
+    font-size: 20px;
+    font-weight: bold;
+    color: #c9cacb;
+}

@@ -14,6 +14,8 @@ class Timeline
     miliSecPerFrame: number = 100;
     groupKeyframes: number = 5;
 
+    private app: Application;
+
     newLayerEl: JQuery = $('<a class="new-layer" href = "#">Nová vrstva <i class="fa fa-file-o"></i></a>');
     deleteLayerEl: JQuery = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
     layersEl: JQuery = $('<div id="layers"></div>');
@@ -26,19 +28,21 @@ class Timeline
     keyframesTableEl: JQuery = $('<table><thead></thead><tbody></tbody>');
     pointerEl: JQuery = $('<div class="pointer"><div class="pointer-top"></div></div>');
 
-    constructor(timelineContainer: JQuery)
-    {
+    constructor(app: Application, timelineContainer: JQuery) {
+        this.app = app;
         this.timelineContainer = timelineContainer;
         this.layers = new Array<Layer>();
 
-        this.drawTimeline();
+        this.renderTimeline();
 
         this.newLayerEl.on('click', (event: JQueryEventObject) => {
             this.addLayer(event);
+            return false;
         });
 
         this.deleteLayerEl.on('click', (event: JQueryEventObject) => {
             this.deleteLayers(event);
+            return false;
         });
 
         this.layersWrapperEl.scroll((event: JQueryEventObject) => {
@@ -53,7 +57,7 @@ class Timeline
             this.onClickRow(event);
         });
 
-        $(document).on('mousedown', '.keyframes > table', (event: JQueryEventObject) => {
+        $(document).on('click', '.keyframes > table', (event: JQueryEventObject) => {
             this.onClickTable(event);
         });
 
@@ -62,19 +66,7 @@ class Timeline
         });
     }
 
-    redrawLayers(): void 
-    {
-        console.log('Refresh layers');
-        this.keyframesEl.empty();
-        this.keyframesEl.append(this.keyframesTableEl);
-        this.fixedWidthEl.width(this.keyframesTableEl.width() + this.layersEl.width() + 15);
-        this.layersEl.empty();
-        this.layers.forEach((item: Layer, index: number) => 
-            this.layersEl.append($('<div class="layer" data-index="' + index + '" id="' + item.id + '">' + item.name + '</div>'))
-            );
-    }
-
-    drawTimeline()
+    renderTimeline()
     {
         $(this.timelineHeadEl).append(this.newLayerEl);
         $(this.timelineContainer).append(this.timelineHeadEl);
@@ -85,7 +77,7 @@ class Timeline
         $(this.fixedWidthEl).append(this.timelineFooterEl);
         $(this.layersWrapperEl).append(this.fixedWidthEl);
         $(this.timelineContainer).append(this.layersWrapperEl);
-        this.drawHeader();
+        this.renderHeader();
         $(this.keyframesTableEl).append(this.pointerEl);
         $(this.keyframesEl).append(this.keyframesTableEl);
         this.fixedWidthEl.width((this.keyframeWidth) * this.keyframeCount + 350 + 15);
@@ -153,10 +145,10 @@ class Timeline
         this.keyframesTableEl.find('tbody tr').removeClass('selected');
         this.layersEl.find('.layer').removeClass('selected');
         this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
-        this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');        
+        this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
     }
 
-    private drawHeader()
+    private renderHeader()
     {
         var head: JQuery = $('<tr class="first"></tr>');
         var numCells: number = this.keyframeCount / this.groupKeyframes;
@@ -171,7 +163,7 @@ class Timeline
         this.keyframesTableEl.find('thead').append(head);
     }
 
-    private addLayer(e: JQueryEventObject)
+    public addLayer(e: JQueryEventObject, shape: Shape = null)
     {
         console.log('Adding new layer...');
 
@@ -182,6 +174,12 @@ class Timeline
         var layer = new Layer('Vrstva ' + (Layer.counter + 1));
         this.layers.push(layer);
         layer.order = this.layers.length;
+
+        //insert shape to layer
+        if (shape != null) {
+            layer.shape = shape;
+            layer.shape.id = layer.id;
+        }
     
         //render new layer list
         this.renderLayers();
@@ -203,6 +201,9 @@ class Timeline
         //render layers
         this.renderLayers();
 
+        //render workspace
+        this.app.workspace.renderShapes();
+
         //scroll to last layer
         this.selectLayer(this.layersEl.find('.layer').last().data('id'));
         this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
@@ -216,13 +217,18 @@ class Timeline
 
         var tmpLayers: Array<Layer> = new Array<Layer>();
         order.forEach((value: string, index: number) => {
-            tmpLayers.push(this.layers[parseInt(value)]);
-            console.log(value);
+            var layer: Layer = this.layers[parseInt(value)];
+            tmpLayers.push(layer);
+            if (layer.shape != null) {
+                layer.shape.setZindex(index);   
+            }
         });
         this.layers = tmpLayers;
 
         //render layers
         this.renderLayers();
+        //render shapes
+        this.app.workspace.renderShapes();
         this.selectLayer(firstSelectedEl.data('id'));
     }
 
@@ -233,6 +239,9 @@ class Timeline
         if (!isNaN(id)) {
             this.keyframesTableEl.find('tbody tr').removeClass('selected');
             this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
+            //highlight selected shapes
+            var selectedLayersID: Array<number> = this.layersEl.find('.selected').map(function () { return $(this).data('id'); }).get();
+            this.app.workspace.highlightShape(selectedLayersID);
         }
     }
 
@@ -241,6 +250,7 @@ class Timeline
         var tr: JQuery = $(e.target).closest('tr');
         if (!tr.hasClass('disabled')) {
             this.selectLayer(tr.data('id'));
+            this.app.workspace.highlightShape([tr.data('id')]);
         }
     }
 
@@ -290,6 +300,18 @@ class Timeline
 
     private onChangeName(id: number, name: string) {
         this.layers[id].name = name;
+    }
+
+    private getLayer(id: number) {
+        var layer: Layer = null;
+
+        this.layers.forEach((item: Layer, index: number) => {
+            if (item.id == id) {
+                layer = item;
+            }
+        });
+
+        return layer;
     }
 }
 

@@ -3,11 +3,13 @@
     static counter: number = 0;
     id: number;
     name: string;
+    shape: Shape;
     private _order: number = 0;
 
-    constructor(name: string) {
+    constructor(name: string, shape: Shape = null) {
         this.name = name;
         this.id = ++Layer.counter;
+        this.shape = shape;
     }
 
     get order(): number {

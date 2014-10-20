@@ -77,7 +77,9 @@
     <TypeScriptCompile Include="assets\jquery\jquery.d.ts" />
     <TypeScriptCompile Include="classes\Layer.ts" />
     <TypeScriptCompile Include="assets\jqueryui\jqueryui.d.ts" />
+    <TypeScriptCompile Include="classes\Shape.ts" />
     <TypeScriptCompile Include="classes\Timeline.ts" />
+    <TypeScriptCompile Include="classes\Workspace.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

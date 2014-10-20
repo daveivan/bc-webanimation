@@ -1,8 +1,10 @@
 ﻿var Layer = (function () {
-    function Layer(name) {
+    function Layer(name, shape) {
+        if (typeof shape === "undefined") { shape = null; }
         this._order = 0;
         this.name = name;
         this.id = ++Layer.counter;
+        this.shape = shape;
     }
     Object.defineProperty(Layer.prototype, "order", {
         get: function () {
@@ -24,7 +26,7 @@
 })();
 ///<reference path="Layer.ts" />
 var Timeline = (function () {
-    function Timeline(timelineContainer) {
+    function Timeline(app, timelineContainer) {
         var _this = this;
         this.pointerPosition = 0;
         //width of one keyframe in px
@@ -47,17 +49,20 @@ var Timeline = (function () {
         this.layersFooterEl = $('<div class="layers-footer"></div>');
         this.keyframesTableEl = $('<table><thead></thead><tbody></tbody>');
         this.pointerEl = $('<div class="pointer"><div class="pointer-top"></div></div>');
+        this.app = app;
         this.timelineContainer = timelineContainer;
         this.layers = new Array();
 
-        this.drawTimeline();
+        this.renderTimeline();
 
         this.newLayerEl.on('click', function (event) {
             _this.addLayer(event);
+            return false;
         });
 
         this.deleteLayerEl.on('click', function (event) {
             _this.deleteLayers(event);
+            return false;
         });
 
         this.layersWrapperEl.scroll(function (event) {
@@ -72,7 +77,7 @@ var Timeline = (function () {
             _this.onClickRow(event);
         });
 
-        $(document).on('mousedown', '.keyframes > table', function (event) {
+        $(document).on('click', '.keyframes > table', function (event) {
             _this.onClickTable(event);
         });
 
@@ -80,19 +85,7 @@ var Timeline = (function () {
             _this.onReady(event);
         });
     }
-    Timeline.prototype.redrawLayers = function () {
-        var _this = this;
-        console.log('Refresh layers');
-        this.keyframesEl.empty();
-        this.keyframesEl.append(this.keyframesTableEl);
-        this.fixedWidthEl.width(this.keyframesTableEl.width() + this.layersEl.width() + 15);
-        this.layersEl.empty();
-        this.layers.forEach(function (item, index) {
-            return _this.layersEl.append($('<div class="layer" data-index="' + index + '" id="' + item.id + '">' + item.name + '</div>'));
-        });
-    };
-
-    Timeline.prototype.drawTimeline = function () {
+    Timeline.prototype.renderTimeline = function () {
         $(this.timelineHeadEl).append(this.newLayerEl);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
@@ -102,7 +95,7 @@ var Timeline = (function () {
         $(this.fixedWidthEl).append(this.timelineFooterEl);
         $(this.layersWrapperEl).append(this.fixedWidthEl);
         $(this.timelineContainer).append(this.layersWrapperEl);
-        this.drawHeader();
+        this.renderHeader();
         $(this.keyframesTableEl).append(this.pointerEl);
         $(this.keyframesEl).append(this.keyframesTableEl);
         this.fixedWidthEl.width((this.keyframeWidth) * this.keyframeCount + 350 + 15);
@@ -175,7 +168,7 @@ var Timeline = (function () {
         this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
     };
 
-    Timeline.prototype.drawHeader = function () {
+    Timeline.prototype.renderHeader = function () {
         var head = $('<tr class="first"></tr>');
         var numCells = this.keyframeCount / this.groupKeyframes;
 
@@ -188,7 +181,8 @@ var Timeline = (function () {
         this.keyframesTableEl.find('thead').append(head);
     };
 
-    Timeline.prototype.addLayer = function (e) {
+    Timeline.prototype.addLayer = function (e, shape) {
+        if (typeof shape === "undefined") { shape = null; }
         console.log('Adding new layer...');
 
         //remove initial example layer
@@ -198,6 +192,12 @@ var Timeline = (function () {
         var layer = new Layer('Vrstva ' + (Layer.counter + 1));
         this.layers.push(layer);
         layer.order = this.layers.length;
+
+        //insert shape to layer
+        if (shape != null) {
+            layer.shape = shape;
+            layer.shape.id = layer.id;
+        }
 
         //render new layer list
         this.renderLayers();
@@ -219,6 +219,9 @@ var Timeline = (function () {
         //render layers
         this.renderLayers();
 
+        //render workspace
+        this.app.workspace.renderShapes();
+
         //scroll to last layer
         this.selectLayer(this.layersEl.find('.layer').last().data('id'));
         this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
@@ -232,13 +235,19 @@ var Timeline = (function () {
 
         var tmpLayers = new Array();
         order.forEach(function (value, index) {
-            tmpLayers.push(_this.layers[parseInt(value)]);
-            console.log(value);
+            var layer = _this.layers[parseInt(value)];
+            tmpLayers.push(layer);
+            if (layer.shape != null) {
+                layer.shape.setZindex(index);
+            }
         });
         this.layers = tmpLayers;
 
         //render layers
         this.renderLayers();
+
+        //render shapes
+        this.app.workspace.renderShapes();
         this.selectLayer(firstSelectedEl.data('id'));
     };
 
@@ -248,6 +257,12 @@ var Timeline = (function () {
         if (!isNaN(id)) {
             this.keyframesTableEl.find('tbody tr').removeClass('selected');
             this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
+
+            //highlight selected shapes
+            var selectedLayersID = this.layersEl.find('.selected').map(function () {
+                return $(this).data('id');
+            }).get();
+            this.app.workspace.highlightShape(selectedLayersID);
         }
     };
 
@@ -256,6 +271,7 @@ var Timeline = (function () {
         var tr = $(e.target).closest('tr');
         if (!tr.hasClass('disabled')) {
             this.selectLayer(tr.data('id'));
+            this.app.workspace.highlightShape([tr.data('id')]);
         }
     };
 
@@ -305,17 +321,196 @@ var Timeline = (function () {
     Timeline.prototype.onChangeName = function (id, name) {
         this.layers[id].name = name;
     };
+
+    Timeline.prototype.getLayer = function (id) {
+        var layer = null;
+
+        this.layers.forEach(function (item, index) {
+            if (item.id == id) {
+                layer = item;
+            }
+        });
+
+        return layer;
+    };
     return Timeline;
+})();
+var Shape = (function () {
+    function Shape(params) {
+        this._parameters = params;
+    }
+    Object.defineProperty(Shape.prototype, "parameters", {
+        get: function () {
+            return this._parameters;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+    Object.defineProperty(Shape.prototype, "id", {
+        get: function () {
+            return this._id;
+        },
+        set: function (id) {
+            this._id = id;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+
+    Shape.prototype.setBorder = function (border) {
+        this._parameters.border = border;
+    };
+
+    Shape.prototype.setZindex = function (zindex) {
+        this._parameters.zindex = zindex;
+    };
+    return Shape;
+})();
+///<reference path="Shape.ts" />
+var Workspace = (function () {
+    function Workspace(app, workspaceContainer) {
+        var _this = this;
+        this.createdLayer = false;
+        this.app = app;
+        this.workspaceContainer = workspaceContainer;
+
+        this.workspaceContainer.on('mousedown', function (event) {
+            _this.onDrawSquare(event);
+        });
+
+        this.workspaceContainer.on('mouseup', function (event) {
+            if (_this.createdLayer) {
+                var shape = new Shape(_this.shapeParams);
+                _this.app.timeline.addLayer(event, shape);
+                _this.renderShapes();
+                _this.createdLayer = false;
+            }
+        });
+
+        this.workspaceContainer.on('mousedown', '.square', function (event) {
+            //Disable creating square in another square
+            _this.createdLayer = false;
+            event.preventDefault();
+            return false;
+        });
+    }
+    Workspace.prototype.onDrawSquare = function (e) {
+        var _this = this;
+        console.log('mousedown');
+        var new_object = $('<div>').addClass('square');
+        var click_y = e.pageY, click_x = e.pageX;
+
+        new_object.css({
+            'top': click_y,
+            'left': click_x,
+            'background': this.getRandomColor(),
+            'z-index': this.app.timeline.layers.length
+        });
+
+        //new_object.appendTo(this.workspaceContainer);
+        this.workspaceContainer.on('mousemove', function (event) {
+            _this.onChangeSizeSquare(event, click_y, click_x, new_object);
+        }).on('mouseup', function (event) {
+            _this.workspaceContainer.off('mousemove');
+        });
+    };
+
+    Workspace.prototype.onChangeSizeSquare = function (e, click_y, click_x, new_object) {
+        var move_x = e.pageX, move_y = e.pageY;
+        var width = Math.abs(move_x - click_x);
+        var height = Math.abs(move_y - click_y);
+        var new_x, new_y;
+
+        new_x = (move_x < click_x) ? (click_x - width) : click_x;
+        new_y = (move_y < click_y) ? (click_y - height) : click_y;
+
+        var params = {
+            top: new_y,
+            left: new_x,
+            width: width,
+            height: height,
+            background: new_object.css('background-color'),
+            zindex: this.app.timeline.layers.length
+        };
+
+        new_object.css({
+            'width': width,
+            'height': height,
+            'top': new_y,
+            'left': new_x,
+            'z-index': this.app.timeline.layers.length
+        });
+        this.shapeParams = params;
+
+        if (width > 5 && height > 5) {
+            new_object.appendTo(this.workspaceContainer);
+            this.createdLayer = true;
+        } else {
+            new_object.remove();
+            this.createdLayer = false;
+        }
+    };
+
+    Workspace.prototype.renderShapes = function () {
+        var _this = this;
+        var layers = this.app.timeline.layers;
+        this.workspaceContainer.empty();
+
+        layers.forEach(function (item, index) {
+            var shape = $('<div>').addClass('square');
+            if (item.shape != null) {
+                var params = item.shape.parameters;
+                shape.css({
+                    'top': params.top,
+                    'left': params.left,
+                    'width': params.width,
+                    'height': params.height,
+                    'background': params.background,
+                    'border': params.border,
+                    'z-index': params.zindex
+                });
+
+                shape.attr('data-id', item.shape.id);
+                shape.appendTo(_this.workspaceContainer);
+            }
+        });
+    };
+
+    Workspace.prototype.highlightShape = function (arrayID) {
+        var _this = this;
+        this.workspaceContainer.find('.square').css('border', 'none');
+        arrayID.forEach(function (id, index) {
+            _this.workspaceContainer.find('.square[data-id="' + id + '"]').css({ border: '3px dotted #fcff00' });
+        });
+    };
+
+    Workspace.prototype.getRandomColor = function () {
+        var letters = '0123456789ABCDEF'.split('');
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    };
+    return Workspace;
 })();
 ///<reference path="../assets/jquery/jquery.d.ts" />
 ///<reference path="../assets/jqueryui/jqueryui.d.ts" />
 ///<reference path="Timeline.ts" />
+///<reference path="Workspace.ts" />
 var Application = (function () {
     function Application() {
         this.timelineEl = $('<div>').attr('id', 'timeline');
+        this.workspaceEl = $('<div>').attr('id', 'workspace');
         console.log('Start Application');
-        new Timeline(this.timelineEl);
+        this.timeline = new Timeline(this, this.timelineEl);
+        this.workspace = new Workspace(this, this.workspaceEl);
+
+        $('body').append(($('<div>').addClass('wrapper')).append(this.workspaceEl).append($('<div>').addClass('push')));
         $('body').append(this.timelineEl);
+        $('body').append('<p class="help-text">Workspace</p>');
     }
     return Application;
 })();

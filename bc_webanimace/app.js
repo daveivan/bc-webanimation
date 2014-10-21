@@ -152,6 +152,7 @@ var Timeline = (function () {
         var me = this;
         $('.editable').editable(function (value, settings) {
             me.onChangeName($(this).attr('id'), value);
+            me.app.workspace.renderShapes();
             return (value);
         }, {
             width: 150,
@@ -166,6 +167,9 @@ var Timeline = (function () {
         this.layersEl.find('.layer').removeClass('selected');
         this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
         this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
+
+        //highlight shape
+        this.app.workspace.highlightShape([id]);
     };
 
     Timeline.prototype.renderHeader = function () {
@@ -205,6 +209,8 @@ var Timeline = (function () {
         this.selectLayer(layer.id);
         this.layersWrapperEl.stop(true, true).animate({ scrollTop: this.layersWrapperEl[0].scrollHeight - 50 }, 300);
         this.layersWrapperEl.perfectScrollbar('update');
+
+        return layer.id;
     };
 
     Timeline.prototype.deleteLayers = function (e) {
@@ -271,7 +277,6 @@ var Timeline = (function () {
         var tr = $(e.target).closest('tr');
         if (!tr.hasClass('disabled')) {
             this.selectLayer(tr.data('id'));
-            this.app.workspace.highlightShape([tr.data('id')]);
         }
     };
 
@@ -322,6 +327,12 @@ var Timeline = (function () {
         this.layers[id].name = name;
     };
 
+    Timeline.prototype.scrollTo = function (id) {
+        var scrollTo = this.layersEl.find('[data-id="' + id + '"]').offset().top - this.layersEl.offset().top;
+        this.layersWrapperEl.stop(true, true).animate({ scrollTop: scrollTo }, 300);
+        this.layersWrapperEl.perfectScrollbar('update');
+    };
+
     Timeline.prototype.getLayer = function (id) {
         var layer = null;
 
@@ -366,6 +377,11 @@ var Shape = (function () {
     Shape.prototype.setZindex = function (zindex) {
         this._parameters.zindex = zindex;
     };
+
+    Shape.prototype.setPosition = function (pos) {
+        this._parameters.top = pos.top;
+        this._parameters.left = pos.left;
+    };
     return Shape;
 })();
 ///<reference path="Shape.ts" />
@@ -377,29 +393,40 @@ var Workspace = (function () {
         this.workspaceContainer = workspaceContainer;
 
         this.workspaceContainer.on('mousedown', function (event) {
-            _this.onDrawSquare(event);
+            if ($(event.target).is('#workspace')) {
+                _this.onDrawSquare(event);
+            }
         });
 
         this.workspaceContainer.on('mouseup', function (event) {
             if (_this.createdLayer) {
                 var shape = new Shape(_this.shapeParams);
-                _this.app.timeline.addLayer(event, shape);
+                var idLayer = _this.app.timeline.addLayer(event, shape);
                 _this.renderShapes();
+                _this.highlightShape([idLayer]);
                 _this.createdLayer = false;
             }
         });
 
-        this.workspaceContainer.on('mousedown', '.square', function (event) {
-            //Disable creating square in another square
+        this.workspaceContainer.on('mousedown', '.shape-helper', function (event) {
             _this.createdLayer = false;
-            event.preventDefault();
-            return false;
+            var id = $(event.target).data('id');
+            _this.app.timeline.selectLayer(id);
+            _this.app.timeline.scrollTo(id);
+        });
+
+        this.workspaceContainer.on('mouseenter', '.shape-helper', function (event) {
+            $(event.target).find('.helpername').show();
+        });
+
+        this.workspaceContainer.on('mouseleave', '.shape-helper', function (event) {
+            $(event.target).find('.helpername').hide();
         });
     }
     Workspace.prototype.onDrawSquare = function (e) {
         var _this = this;
         console.log('mousedown');
-        var new_object = $('<div>').addClass('square');
+        var new_object = $('<div>').addClass('square-creating');
         var click_y = e.pageY, click_x = e.pageX;
 
         new_object.css({
@@ -460,9 +487,11 @@ var Workspace = (function () {
 
         layers.forEach(function (item, index) {
             var shape = $('<div>').addClass('square');
+            var helper = $('<div>').addClass('shape-helper');
+            var helpername = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');
             if (item.shape != null) {
                 var params = item.shape.parameters;
-                shape.css({
+                var css = {
                     'top': params.top,
                     'left': params.left,
                     'width': params.width,
@@ -470,19 +499,52 @@ var Workspace = (function () {
                     'background': params.background,
                     'border': params.border,
                     'z-index': params.zindex
+                };
+                shape.css(css);
+                helper.css({
+                    'top': params.top - 1,
+                    'left': params.left - 1,
+                    'width': params.width + 2,
+                    'height': params.height + 2,
+                    'z-index': params.zindex + 10000
                 });
 
                 shape.attr('data-id', item.shape.id);
+                helper.attr('data-id', item.shape.id);
+                helpername.appendTo(helper);
                 shape.appendTo(_this.workspaceContainer);
+                helper.appendTo(_this.workspaceContainer);
             }
+
+            //hook draging on shapes
+            $('.shape-helper').draggable({
+                containment: 'parent',
+                scroll: false,
+                drag: function (event, ui) {
+                    var id = $(event.target).data('id');
+                    _this.workspaceContainer.find('.square[data-id="' + id + '"]').css({
+                        'top': ui.position.top + 1,
+                        'left': ui.position.left + 1
+                    });
+                },
+                stop: function (event, ui) {
+                    var layer = _this.app.timeline.getLayer($(event.target).data('id'));
+                    layer.shape.setPosition({
+                        top: ui.position.top + 1,
+                        left: ui.position.left + 1
+                    });
+                    _this.renderShapes();
+                    _this.app.timeline.selectLayer(layer.id);
+                }
+            });
         });
     };
 
     Workspace.prototype.highlightShape = function (arrayID) {
         var _this = this;
-        this.workspaceContainer.find('.square').css('border', 'none');
+        this.workspaceContainer.find('.shape-helper').removeClass('highlight');
         arrayID.forEach(function (id, index) {
-            _this.workspaceContainer.find('.square[data-id="' + id + '"]').css({ border: '3px dotted #fcff00' });
+            _this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
         });
     };
 

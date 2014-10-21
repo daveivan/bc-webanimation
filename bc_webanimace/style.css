@@ -182,7 +182,7 @@ tr.disabled {
     border-bottom: 1px solid #f5f5f5;
 }
 
-.highlight {
+td.highlight {
     background-color: #e3f0f2;
     border-bottom: 1px solid #a1a1a1;
 }
@@ -242,8 +242,12 @@ tr.disabled td {
     height: 210px;
 }
 
-.square {
+.square-creating {
     position:    absolute;
+}
+
+.square {
+    position: absolute;
 }
 .help-text {
     position: absolute;
@@ -259,4 +263,32 @@ tr.disabled td {
     font-size: 20px;
     font-weight: bold;
     color: #c9cacb;
+}
+
+.shape-helper {
+    position: absolute;
+    border: 1px dashed #00ff7f;
+    background-color: transparent;
+}
+
+.shape-helper.highlight {
+    border: 1px solid #00ff7f;
+    z-index: 20000 !important;
+}
+
+.helpername {
+    display: none;
+    font-size: 9px;
+    color: #2f4f4f;
+    position: relative;
+    top: -18px;
+}
+
+.helpername p {
+    margin: 0;
+    padding: 0;
+    background: rgba(160,160,160, 0.6);
+    white-space: nowrap;
+    display: inline;
+    padding: 2px 10px 2px 10px;
 }

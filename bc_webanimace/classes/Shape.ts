@@ -8,6 +8,11 @@
     zindex?: number;    
 }
 
+interface Pos {
+    top: number;
+    left: number;
+}
+
 class Shape {
     private _parameters: Parameters;
     private _id;
@@ -34,5 +39,10 @@ class Shape {
 
     setZindex(zindex: number) {
         this._parameters.zindex = zindex;
+    }
+
+    setPosition(pos: Pos) {
+        this._parameters.top = pos.top;
+        this._parameters.left = pos.left;
     }
 }

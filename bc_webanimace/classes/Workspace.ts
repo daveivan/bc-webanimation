@@ -10,30 +10,42 @@ class Workspace {
         this.workspaceContainer = workspaceContainer;
 
         this.workspaceContainer.on('mousedown', (event: JQueryEventObject) => {
-            this.onDrawSquare(event);
+            if ($(event.target).is('#workspace')) {
+                this.onDrawSquare(event);   
+            }   
         });
 
 
         this.workspaceContainer.on('mouseup', (event: JQueryEventObject) => {
             if (this.createdLayer) {
                 var shape: Shape = new Shape(this.shapeParams);
-                this.app.timeline.addLayer(event, shape);
+                var idLayer: number = this.app.timeline.addLayer(event, shape);
                 this.renderShapes();
+                this.highlightShape([idLayer]);
                 this.createdLayer = false;
             }
         });
 
-        this.workspaceContainer.on('mousedown', '.square', (event: JQueryEventObject) => {
-            //Disable creating square in another square
+        this.workspaceContainer.on('mousedown', '.shape-helper', (event: JQueryEventObject) => {
             this.createdLayer = false;
-            event.preventDefault();
-            return false;
+            var id: number = $(event.target).data('id');
+            this.app.timeline.selectLayer(id);
+            this.app.timeline.scrollTo(id);
         });
+
+        this.workspaceContainer.on('mouseenter', '.shape-helper', (event: JQueryEventObject) => {
+            $(event.target).find('.helpername').show();
+        });
+
+        this.workspaceContainer.on('mouseleave', '.shape-helper', (event: JQueryEventObject) => {
+            $(event.target).find('.helpername').hide();
+        });
+
     }
 
     private onDrawSquare(e: JQueryEventObject) {
         console.log('mousedown');
-        var new_object: JQuery = $('<div>').addClass('square');
+        var new_object: JQuery = $('<div>').addClass('square-creating');
         var click_y = e.pageY, click_x = e.pageX;
 
         new_object.css({
@@ -94,9 +106,11 @@ class Workspace {
 
         layers.forEach((item: Layer, index: number) => {
             var shape: JQuery = $('<div>').addClass('square');
+            var helper: JQuery = $('<div>').addClass('shape-helper');
+            var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');
             if (item.shape != null) {
                 var params: Parameters = item.shape.parameters;
-                shape.css({
+                var css = {
                     'top': params.top,
                     'left': params.left,
                     'width': params.width,
@@ -104,18 +118,51 @@ class Workspace {
                     'background': params.background,
                     'border': params.border,
                     'z-index': params.zindex,
+                }
+                shape.css(css);
+                helper.css({
+                    'top': params.top - 1,
+                    'left': params.left - 1,
+                    'width': params.width + 2,
+                    'height': params.height + 2,       
+                    'z-index': params.zindex + 10000,       
                 });
 
-                shape.attr('data-id', item.shape.id);
-                shape.appendTo(this.workspaceContainer);   
+                shape.attr('data-id', item.shape.id); 
+                helper.attr('data-id', item.shape.id);
+                helpername.appendTo(helper);
+                shape.appendTo(this.workspaceContainer);
+                helper.appendTo(this.workspaceContainer);
             }
+
+            //hook draging on shapes
+            $('.shape-helper').draggable({
+                containment: 'parent',
+                scroll: false,
+                drag: (event: JQueryEventObject, ui) => {
+                    var id: number = $(event.target).data('id');
+                    this.workspaceContainer.find('.square[data-id="' + id + '"]').css({
+                        'top': ui.position.top + 1,
+                        'left': ui.position.left + 1,
+                    });
+                },
+                stop: (event, ui) => {
+                    var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
+                    layer.shape.setPosition({
+                        top: ui.position.top + 1,
+                        left: ui.position.left + 1,
+                    });
+                    this.renderShapes();
+                    this.app.timeline.selectLayer(layer.id);
+                },
+        });
         });
     }
 
     highlightShape(arrayID: Array<number>) {
-        this.workspaceContainer.find('.square').css('border', 'none');
+        this.workspaceContainer.find('.shape-helper').removeClass('highlight');
         arrayID.forEach((id: number, index: number) => {
-            this.workspaceContainer.find('.square[data-id="' + id + '"]').css({ border: '3px dotted #fcff00' });
+            this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
         });
     }
 

@@ -132,6 +132,7 @@ class Timeline
         var me: any = this;
         $('.editable').editable(function(value: string, settings: any) {
             me.onChangeName($(this).attr('id'), value);
+            me.app.workspace.renderShapes();
             return (value);
         }, {
             width: 150,
@@ -140,12 +141,15 @@ class Timeline
         });
     }
 
-    private selectLayer(id: number) {
+    selectLayer(id: number) {
         //select layer by ID
         this.keyframesTableEl.find('tbody tr').removeClass('selected');
         this.layersEl.find('.layer').removeClass('selected');
         this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
         this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
+
+        //highlight shape
+        this.app.workspace.highlightShape([id]);
     }
 
     private renderHeader()
@@ -163,7 +167,7 @@ class Timeline
         this.keyframesTableEl.find('thead').append(head);
     }
 
-    public addLayer(e: JQueryEventObject, shape: Shape = null)
+    public addLayer(e: JQueryEventObject, shape: Shape = null): number
     {
         console.log('Adding new layer...');
 
@@ -187,6 +191,8 @@ class Timeline
         this.selectLayer(layer.id);
         this.layersWrapperEl.stop(true, true).animate({ scrollTop: this.layersWrapperEl[0].scrollHeight - 50 }, 300);
         this.layersWrapperEl.perfectScrollbar('update');
+
+        return layer.id;
     }
 
     private deleteLayers(e: JQueryEventObject) {
@@ -250,7 +256,6 @@ class Timeline
         var tr: JQuery = $(e.target).closest('tr');
         if (!tr.hasClass('disabled')) {
             this.selectLayer(tr.data('id'));
-            this.app.workspace.highlightShape([tr.data('id')]);
         }
     }
 
@@ -302,7 +307,13 @@ class Timeline
         this.layers[id].name = name;
     }
 
-    private getLayer(id: number) {
+    scrollTo(id: number) {
+        var scrollTo: number = this.layersEl.find('[data-id="' + id + '"]').offset().top - this.layersEl.offset().top;
+        this.layersWrapperEl.stop(true, true).animate({ scrollTop: scrollTo }, 300);
+        this.layersWrapperEl.perfectScrollbar('update');
+    }
+
+    getLayer(id: number) {
         var layer: Layer = null;
 
         this.layers.forEach((item: Layer, index: number) => {

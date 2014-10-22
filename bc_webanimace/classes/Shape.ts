@@ -13,6 +13,11 @@ interface Pos {
     left: number;
 }
 
+interface Dimensions {
+    width: number;
+    height: number;
+}
+
 class Shape {
     private _parameters: Parameters;
     private _id;
@@ -44,5 +49,10 @@ class Shape {
     setPosition(pos: Pos) {
         this._parameters.top = pos.top;
         this._parameters.left = pos.left;
+    }
+
+    setDimensions(d: Dimensions) {
+        this._parameters.width = d.width;
+        this._parameters.height = d.height;
     }
 }

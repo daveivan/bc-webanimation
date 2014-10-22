@@ -28,16 +28,16 @@ class Workspace {
 
         this.workspaceContainer.on('mousedown', '.shape-helper', (event: JQueryEventObject) => {
             this.createdLayer = false;
-            var id: number = $(event.target).data('id');
+            var id: number = $(event.target).closest('.shape-helper').data('id');
             this.app.timeline.selectLayer(id);
             this.app.timeline.scrollTo(id);
         });
 
-        this.workspaceContainer.on('mouseenter', '.shape-helper', (event: JQueryEventObject) => {
+        this.workspaceContainer.on('mouseover', '.shape-helper', (event: JQueryEventObject) => {
             $(event.target).find('.helpername').show();
         });
 
-        this.workspaceContainer.on('mouseleave', '.shape-helper', (event: JQueryEventObject) => {
+        this.workspaceContainer.on('mouseout', '.shape-helper', (event: JQueryEventObject) => {
             $(event.target).find('.helpername').hide();
         });
 
@@ -151,6 +151,36 @@ class Workspace {
                     layer.shape.setPosition({
                         top: ui.position.top + 1,
                         left: ui.position.left + 1,
+                    });
+                    this.renderShapes();
+                    this.app.timeline.selectLayer(layer.id);
+                },
+            })
+
+            //resizable shape
+            $('.shape-helper').resizable({
+                handles: 'all',
+                autohide: true,
+                containment: 'parent',
+                resize: (event, ui) => {
+                    var id: number = $(event.target).data('id');
+                    var shape: JQuery = this.workspaceContainer.find('.square[data-id="' + id + '"]');
+                    shape.css({
+                        'top': ui.position.top + 1,
+                        'left': ui.position.left + 1,
+                        'width': $(event.target).width(),
+                        'height': $(event.target).height(),
+                    });
+                },
+                stop: (event, ui) => {
+                    var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
+                    layer.shape.setPosition({
+                        top: ui.position.top + 1,
+                        left: ui.position.left + 1,
+                    });
+                    layer.shape.setDimensions({
+                        width: $(event.target).width(),
+                        height: $(event.target).height(),
                     });
                     this.renderShapes();
                     this.app.timeline.selectLayer(layer.id);

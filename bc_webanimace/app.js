@@ -382,6 +382,11 @@ var Shape = (function () {
         this._parameters.top = pos.top;
         this._parameters.left = pos.left;
     };
+
+    Shape.prototype.setDimensions = function (d) {
+        this._parameters.width = d.width;
+        this._parameters.height = d.height;
+    };
     return Shape;
 })();
 ///<reference path="Shape.ts" />
@@ -410,16 +415,16 @@ var Workspace = (function () {
 
         this.workspaceContainer.on('mousedown', '.shape-helper', function (event) {
             _this.createdLayer = false;
-            var id = $(event.target).data('id');
+            var id = $(event.target).closest('.shape-helper').data('id');
             _this.app.timeline.selectLayer(id);
             _this.app.timeline.scrollTo(id);
         });
 
-        this.workspaceContainer.on('mouseenter', '.shape-helper', function (event) {
+        this.workspaceContainer.on('mouseover', '.shape-helper', function (event) {
             $(event.target).find('.helpername').show();
         });
 
-        this.workspaceContainer.on('mouseleave', '.shape-helper', function (event) {
+        this.workspaceContainer.on('mouseout', '.shape-helper', function (event) {
             $(event.target).find('.helpername').hide();
         });
     }
@@ -532,6 +537,36 @@ var Workspace = (function () {
                     layer.shape.setPosition({
                         top: ui.position.top + 1,
                         left: ui.position.left + 1
+                    });
+                    _this.renderShapes();
+                    _this.app.timeline.selectLayer(layer.id);
+                }
+            });
+
+            //resizable shape
+            $('.shape-helper').resizable({
+                handles: 'all',
+                autohide: true,
+                containment: 'parent',
+                resize: function (event, ui) {
+                    var id = $(event.target).data('id');
+                    var shape = _this.workspaceContainer.find('.square[data-id="' + id + '"]');
+                    shape.css({
+                        'top': ui.position.top + 1,
+                        'left': ui.position.left + 1,
+                        'width': $(event.target).width(),
+                        'height': $(event.target).height()
+                    });
+                },
+                stop: function (event, ui) {
+                    var layer = _this.app.timeline.getLayer($(event.target).data('id'));
+                    layer.shape.setPosition({
+                        top: ui.position.top + 1,
+                        left: ui.position.left + 1
+                    });
+                    layer.shape.setDimensions({
+                        width: $(event.target).width(),
+                        height: $(event.target).height()
                     });
                     _this.renderShapes();
                     _this.app.timeline.selectLayer(layer.id);

@@ -4,7 +4,10 @@
         this._order = 0;
         this.name = name;
         this.id = ++Layer.counter;
-        this.shape = shape;
+        this._keyframes = new Array();
+        if (shape != null) {
+            this._keyframes.push(new Keyframe(shape, 0));
+        }
     }
     Object.defineProperty(Layer.prototype, "order", {
         get: function () {
@@ -17,6 +20,47 @@
         configurable: true
     });
 
+
+    Layer.prototype.addKeyframe = function (shape, timestamp, index) {
+        if (typeof index === "undefined") { index = null; }
+        var keyframe = new Keyframe(shape, timestamp);
+        if (index != null) {
+            this._keyframes.splice(index, 0, keyframe);
+        } else {
+            this._keyframes.push(keyframe);
+        }
+    };
+
+    Layer.prototype.deleteKeyframe = function (index) {
+        this._keyframes.splice(index, 1);
+    };
+
+    Layer.prototype.getKeyframe = function (index) {
+        if (typeof this._keyframes[index] == 'undefined') {
+            return null;
+        } else {
+            return this._keyframes[index];
+        }
+    };
+
+    Layer.prototype.getKeyframeByTimestamp = function (timestamp) {
+        var i = null;
+        this._keyframes.forEach(function (item, index) {
+            if (item.timestamp == timestamp) {
+                i = index;
+            }
+        });
+
+        if (i == null) {
+            return null;
+        } else {
+            return this._keyframes[i];
+        }
+    };
+
+    Layer.prototype.getAllKeyframes = function () {
+        return this._keyframes;
+    };
 
     Layer.prototype.toString = function () {
         return "ID: " + this.id + "Jmeno vrstvy: " + this.name + ", poradi: " + this.order;
@@ -40,6 +84,7 @@ var Timeline = (function () {
         this.groupKeyframes = 5;
         this.newLayerEl = $('<a class="new-layer" href = "#">Nová vrstva <i class="fa fa-file-o"></i></a>');
         this.deleteLayerEl = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
+        this.deleteKeyframeEl = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
         this.layersEl = $('<div id="layers"></div>');
         this.timelineHeadEl = $('<div class="layers-head"></div>');
         this.layersWrapperEl = $('<div class="layers-wrapper"></div>');
@@ -65,6 +110,10 @@ var Timeline = (function () {
             return false;
         });
 
+        this.deleteKeyframeEl.on('click', function (event) {
+            _this.onDeleteKeyframe(event);
+        });
+
         this.layersWrapperEl.scroll(function (event) {
             _this.onScroll(event);
         });
@@ -77,8 +126,18 @@ var Timeline = (function () {
             _this.onClickRow(event);
         });
 
-        $(document).on('click', '.keyframes > table', function (event) {
+        $(document).on('dblclick', 'td', function (event) {
+            _this.onCreateKeyframe(event);
+        });
+
+        $(document).on('mouseup', '.keyframes > table', function (event) {
             _this.onClickTable(event);
+        });
+
+        this.keyframesTableEl.on('click', '.keyframe', function (event) {
+            _this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            $(event.target).addClass('selected');
+            _this.app.workspace.renderShapes();
         });
 
         this.timelineContainer.ready(function (event) {
@@ -91,6 +150,7 @@ var Timeline = (function () {
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
         $(this.layersFooterEl).append(this.deleteLayerEl);
+        $(this.layersFooterEl).append(this.deleteKeyframeEl);
         $(this.timelineFooterEl).append(this.layersFooterEl);
         $(this.fixedWidthEl).append(this.timelineFooterEl);
         $(this.layersWrapperEl).append(this.fixedWidthEl);
@@ -126,6 +186,24 @@ var Timeline = (function () {
         this.keyframesTableEl.find('tbody').append(trEl);
     };
 
+    Timeline.prototype.renderKeyframes = function (id) {
+        var _this = this;
+        var rowEl = this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]');
+        rowEl.find('td.keyframes-list').remove();
+        var keyframesTdEl = $('<td>').addClass('keyframes-list');
+
+        var keyframes = this.getLayer(id).getAllKeyframes();
+        if (keyframes.length > 1) {
+            keyframes.forEach(function (keyframe, index) {
+                keyframesTdEl.append($('<div>').addClass('keyframe').attr('data-layer', id).attr('data-index', index).css({
+                    'left': _this.milisecToPx(keyframe.timestamp) - 5
+                }));
+            });
+
+            rowEl.prepend(keyframesTdEl);
+        }
+    };
+
     Timeline.prototype.renderLayers = function () {
         var _this = this;
         console.log('Rendering layers...');
@@ -140,6 +218,9 @@ var Timeline = (function () {
 
             //and render frames fot this layer
             _this.renderRow(item.id);
+
+            //render keyframes
+            _this.renderKeyframes(item.id);
         });
 
         //if array layers is empty, insert default layer
@@ -199,8 +280,9 @@ var Timeline = (function () {
 
         //insert shape to layer
         if (shape != null) {
-            layer.shape = shape;
-            layer.shape.id = layer.id;
+            //init keyframe
+            shape.id = layer.id;
+            layer.addKeyframe(shape, 0);
         }
 
         //render new layer list
@@ -232,6 +314,7 @@ var Timeline = (function () {
         this.selectLayer(this.layersEl.find('.layer').last().data('id'));
         this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
         this.layersWrapperEl.perfectScrollbar('update');
+        //this.scrollTo(this.layersEl.find('.layer').last().data('id'));
     };
 
     Timeline.prototype.sort = function (e, ui) {
@@ -243,8 +326,9 @@ var Timeline = (function () {
         order.forEach(function (value, index) {
             var layer = _this.layers[parseInt(value)];
             tmpLayers.push(layer);
-            if (layer.shape != null) {
-                layer.shape.setZindex(index);
+            var keyframe = layer.getKeyframe(0);
+            if (keyframe) {
+                keyframe.shape.setZindex(index);
             }
         });
         this.layers = tmpLayers;
@@ -307,8 +391,17 @@ var Timeline = (function () {
             axis: 'x',
             containment: 'parent',
             handle: '.pointer-top',
+            start: function (event, ui) {
+                _this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            },
             drag: function (event, ui) {
                 _this.pointerPosition = ui.position.left + 1;
+                console.log(_this.pointerPosition);
+            },
+            stop: function (event, ui) {
+                var posX = Math.round(ui.position.left / _this.keyframeWidth) * _this.keyframeWidth;
+                _this.pointerPosition = posX;
+                _this.pointerEl.css('left', _this.pointerPosition - 1);
                 console.log(_this.pointerPosition);
             }
         });
@@ -316,10 +409,13 @@ var Timeline = (function () {
 
     Timeline.prototype.onClickTable = function (e) {
         if (!$(e.target).hasClass('pointer')) {
+            this.keyframesTableEl.find('.keyframe').removeClass('selected');
             var n = $(e.target).parents('table');
             var posX = e.pageX - $(n).offset().left;
-            this.pointerPosition = posX - 1;
-            this.pointerEl.css('left', this.pointerPosition);
+            posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
+            this.pointerPosition = posX;
+            console.log(this.pointerPosition);
+            this.pointerEl.css('left', this.pointerPosition - 1);
         }
     };
 
@@ -343,6 +439,53 @@ var Timeline = (function () {
         });
 
         return layer;
+    };
+
+    Timeline.prototype.onCreateKeyframe = function (e) {
+        console.log('Creating keyframe...');
+
+        //nejblizsi tr -> vytanout data-id -> najit layer podle id ->vlozit novy keyframe (pouzit  position, nejprve prevest na ms, pouzit shape z workspace)
+        var id = parseInt($(e.target).closest('tr.selected').data('id'));
+        if ($.isNumeric(id)) {
+            var layer = this.getLayer(id);
+            var ms = this.pxToMilisec(this.pointerPosition);
+            if (layer.getKeyframeByTimestamp(ms) === null) {
+                layer.addKeyframe(this.app.workspace.getCurrentShape(id), ms);
+
+                //for check
+                layer.getAllKeyframes().forEach(function (item, index) {
+                    console.log(item);
+                });
+
+                //for check
+                this.renderKeyframes(id);
+            }
+        }
+    };
+
+    Timeline.prototype.pxToMilisec = function (px) {
+        if (typeof px === "undefined") { px = null; }
+        if (px == null) {
+            return ((this.pointerPosition / this.keyframeWidth) * this.miliSecPerFrame);
+        } else {
+            return ((px / this.keyframeWidth) * this.miliSecPerFrame);
+        }
+    };
+
+    Timeline.prototype.milisecToPx = function (ms) {
+        return ((ms / this.miliSecPerFrame) * this.keyframeWidth);
+    };
+
+    Timeline.prototype.onDeleteKeyframe = function (e) {
+        console.log('Deleting keyframe...');
+        var keyframeEl = this.keyframesTableEl.find('tbody .keyframe.selected');
+
+        if (keyframeEl.length) {
+            this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
+
+            this.renderKeyframes(keyframeEl.data('layer'));
+            this.app.workspace.renderShapes();
+        }
     };
     return Timeline;
 })();
@@ -494,8 +637,16 @@ var Workspace = (function () {
             var shape = $('<div>').addClass('square');
             var helper = $('<div>').addClass('shape-helper');
             var helpername = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');
-            if (item.shape != null) {
-                var params = item.shape.parameters;
+
+            //get keyframe by pointer position
+            var keyframe = item.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
+
+            //if no keyframe, take get init keyframe
+            if (keyframe == null) {
+                keyframe = item.getKeyframe(0);
+            }
+            if (keyframe != null) {
+                var params = keyframe.shape.parameters;
                 var css = {
                     'top': params.top,
                     'left': params.left,
@@ -514,8 +665,8 @@ var Workspace = (function () {
                     'z-index': params.zindex + 10000
                 });
 
-                shape.attr('data-id', item.shape.id);
-                helper.attr('data-id', item.shape.id);
+                shape.attr('data-id', keyframe.shape.id);
+                helper.attr('data-id', keyframe.shape.id);
                 helpername.appendTo(helper);
                 shape.appendTo(_this.workspaceContainer);
                 helper.appendTo(_this.workspaceContainer);
@@ -534,7 +685,11 @@ var Workspace = (function () {
                 },
                 stop: function (event, ui) {
                     var layer = _this.app.timeline.getLayer($(event.target).data('id'));
-                    layer.shape.setPosition({
+                    var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
+                    if (keyframe == null) {
+                        keyframe = layer.getKeyframe(0);
+                    }
+                    keyframe.shape.setPosition({
                         top: ui.position.top + 1,
                         left: ui.position.left + 1
                     });
@@ -560,11 +715,15 @@ var Workspace = (function () {
                 },
                 stop: function (event, ui) {
                     var layer = _this.app.timeline.getLayer($(event.target).data('id'));
-                    layer.shape.setPosition({
+                    var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
+                    if (keyframe == null) {
+                        keyframe = layer.getKeyframe(0);
+                    }
+                    keyframe.shape.setPosition({
                         top: ui.position.top + 1,
                         left: ui.position.left + 1
                     });
-                    layer.shape.setDimensions({
+                    keyframe.shape.setDimensions({
                         width: $(event.target).width(),
                         height: $(event.target).height()
                     });
@@ -581,6 +740,27 @@ var Workspace = (function () {
         arrayID.forEach(function (id, index) {
             _this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
         });
+    };
+
+    Workspace.prototype.getCurrentShape = function (id) {
+        var shapeEl = this.workspaceContainer.find('.square[data-id="' + id + '"]');
+        if (shapeEl.length) {
+            var params = {
+                top: shapeEl.position().top,
+                left: shapeEl.position().left,
+                width: shapeEl.width(),
+                height: shapeEl.height(),
+                background: shapeEl.css('background-color'),
+                zindex: parseInt(shapeEl.css('z-index'))
+            };
+
+            var shape = new Shape(params);
+            shape.id = id;
+
+            return shape;
+        } else {
+            return null;
+        }
     };
 
     Workspace.prototype.getRandomColor = function () {
@@ -616,4 +796,33 @@ $(document).ready(function () {
     console.log('DOM Loaded');
     new Application();
 });
+var Keyframe = (function () {
+    function Keyframe(shape, timestamp) {
+        this._shape = shape;
+        this._timestamp = timestamp;
+    }
+    Object.defineProperty(Keyframe.prototype, "shape", {
+        /*get id() {
+        return this._id;
+        }
+        
+        set id(id: number) {
+        this._id = id;
+        }*/
+        get: function () {
+            return this._shape;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+    Object.defineProperty(Keyframe.prototype, "timestamp", {
+        get: function () {
+            return this._timestamp;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return Keyframe;
+})();
 //# sourceMappingURL=app.js.map

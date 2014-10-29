@@ -108,8 +108,16 @@ class Workspace {
             var shape: JQuery = $('<div>').addClass('square');
             var helper: JQuery = $('<div>').addClass('shape-helper');
             var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');
-            if (item.shape != null) {
-                var params: Parameters = item.shape.parameters;
+
+            //get keyframe by pointer position
+            var keyframe: Keyframe = item.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+
+            //if no keyframe, take get init keyframe
+            if (keyframe == null) {
+                keyframe = item.getKeyframe(0);
+            }
+            if (keyframe != null) {
+                var params: Parameters = keyframe.shape.parameters;
                 var css = {
                     'top': params.top,
                     'left': params.left,
@@ -128,8 +136,8 @@ class Workspace {
                     'z-index': params.zindex + 10000,       
                 });
 
-                shape.attr('data-id', item.shape.id); 
-                helper.attr('data-id', item.shape.id);
+                shape.attr('data-id', keyframe.shape.id); 
+                helper.attr('data-id', keyframe.shape.id);
                 helpername.appendTo(helper);
                 shape.appendTo(this.workspaceContainer);
                 helper.appendTo(this.workspaceContainer);
@@ -148,7 +156,11 @@ class Workspace {
                 },
                 stop: (event, ui) => {
                     var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
-                    layer.shape.setPosition({
+                    var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+                    if (keyframe == null) {
+                        keyframe = layer.getKeyframe(0);
+                    }
+                    keyframe.shape.setPosition({
                         top: ui.position.top + 1,
                         left: ui.position.left + 1,
                     });
@@ -174,11 +186,15 @@ class Workspace {
                 },
                 stop: (event, ui) => {
                     var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
-                    layer.shape.setPosition({
+                    var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+                    if (keyframe == null) {
+                        keyframe = layer.getKeyframe(0);
+                    }
+                    keyframe.shape.setPosition({
                         top: ui.position.top + 1,
                         left: ui.position.left + 1,
                     });
-                    layer.shape.setDimensions({
+                    keyframe.shape.setDimensions({
                         width: $(event.target).width(),
                         height: $(event.target).height(),
                     });
@@ -194,6 +210,27 @@ class Workspace {
         arrayID.forEach((id: number, index: number) => {
             this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
         });
+    }
+
+    getCurrentShape(id: number): Shape {
+        var shapeEl: JQuery = this.workspaceContainer.find('.square[data-id="' + id + '"]');
+        if (shapeEl.length) {
+            var params: Parameters = {
+                top: shapeEl.position().top,
+                left: shapeEl.position().left,
+                width: shapeEl.width(),
+                height: shapeEl.height(),
+                background: shapeEl.css('background-color'),
+                zindex: parseInt(shapeEl.css('z-index')),
+            };
+
+            var shape: Shape = new Shape(params);
+            shape.id = id;
+
+            return shape;
+        } else {
+            return null;   
+        }
     }
 
     private getRandomColor() {

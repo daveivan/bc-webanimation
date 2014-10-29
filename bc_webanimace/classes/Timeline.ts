@@ -18,6 +18,7 @@ class Timeline
 
     newLayerEl: JQuery = $('<a class="new-layer" href = "#">Nová vrstva <i class="fa fa-file-o"></i></a>');
     deleteLayerEl: JQuery = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
+    deleteKeyframeEl: JQuery = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
     layersEl: JQuery = $('<div id="layers"></div>');
     timelineHeadEl: JQuery = $('<div class="layers-head"></div>');
     layersWrapperEl: JQuery = $('<div class="layers-wrapper"></div>');
@@ -45,6 +46,10 @@ class Timeline
             return false;
         });
 
+        this.deleteKeyframeEl.on('click', (event: JQueryEventObject) => {
+            this.onDeleteKeyframe(event);
+        });
+
         this.layersWrapperEl.scroll((event: JQueryEventObject) => {
             this.onScroll(event);
         });
@@ -57,8 +62,18 @@ class Timeline
             this.onClickRow(event);
         });
 
-        $(document).on('click', '.keyframes > table', (event: JQueryEventObject) => {
+        $(document).on('dblclick', 'td', (event: JQueryEventObject) => {
+            this.onCreateKeyframe(event);
+        });
+
+        $(document).on('mouseup', '.keyframes > table', (event: JQueryEventObject) => {
             this.onClickTable(event);
+        });
+
+        this.keyframesTableEl.on('click', '.keyframe', (event: JQueryEventObject) => {
+            this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            $(event.target).addClass('selected');
+            this.app.workspace.renderShapes();
         });
 
         this.timelineContainer.ready((event: JQueryEventObject) => {
@@ -73,6 +88,7 @@ class Timeline
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
         $(this.layersFooterEl).append(this.deleteLayerEl);
+        $(this.layersFooterEl).append(this.deleteKeyframeEl);
         $(this.timelineFooterEl).append(this.layersFooterEl);
         $(this.fixedWidthEl).append(this.timelineFooterEl);
         $(this.layersWrapperEl).append(this.fixedWidthEl);
@@ -108,6 +124,24 @@ class Timeline
         this.keyframesTableEl.find('tbody').append(trEl);
     }
 
+    private renderKeyframes(id: number) {
+        var rowEl: JQuery = this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]');
+        rowEl.find('td.keyframes-list').remove();
+        var keyframesTdEl: JQuery = $('<td>').addClass('keyframes-list');
+
+        var keyframes: Array<Keyframe> = this.getLayer(id).getAllKeyframes();
+        if (keyframes.length > 1) {
+            keyframes.forEach((keyframe: Keyframe, index: number) => {
+                keyframesTdEl.append($('<div>').addClass('keyframe').attr('data-layer', id).attr('data-index', index).css({
+                    'left': this.milisecToPx(keyframe.timestamp) - 5,
+                }));
+
+            }); 
+            
+            rowEl.prepend(keyframesTdEl);  
+        }
+    }
+
     private renderLayers() {
         console.log('Rendering layers...');
 
@@ -120,6 +154,8 @@ class Timeline
             this.layersEl.append(($('<div>').addClass('layer').attr('id', index).attr('data-id', item.id)).append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name)));
             //and render frames fot this layer
             this.renderRow(item.id);
+            //render keyframes
+            this.renderKeyframes(item.id);
         });
 
         //if array layers is empty, insert default layer
@@ -181,8 +217,9 @@ class Timeline
 
         //insert shape to layer
         if (shape != null) {
-            layer.shape = shape;
-            layer.shape.id = layer.id;
+            //init keyframe
+            shape.id = layer.id;
+            layer.addKeyframe(shape, 0);
         }
     
         //render new layer list
@@ -214,6 +251,7 @@ class Timeline
         this.selectLayer(this.layersEl.find('.layer').last().data('id'));
         this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
         this.layersWrapperEl.perfectScrollbar('update');
+        //this.scrollTo(this.layersEl.find('.layer').last().data('id'));
     }
 
     private sort(e: JQueryEventObject, ui)
@@ -225,8 +263,9 @@ class Timeline
         order.forEach((value: string, index: number) => {
             var layer: Layer = this.layers[parseInt(value)];
             tmpLayers.push(layer);
-            if (layer.shape != null) {
-                layer.shape.setZindex(index);   
+            var keyframe: Keyframe = layer.getKeyframe(0);
+            if (keyframe) {
+                keyframe.shape.setZindex(index);
             }
         });
         this.layers = tmpLayers;
@@ -287,8 +326,17 @@ class Timeline
             axis: 'x',
             containment: 'parent',
             handle: '.pointer-top',
+            start: (event: JQueryEventObject, ui) => {
+                this.keyframesTableEl.find('.keyframe').removeClass('selected');  
+            },
             drag: (event: JQueryEventObject, ui) => {
                 this.pointerPosition = ui.position.left + 1;
+                console.log(this.pointerPosition);
+            },
+            stop: (event: JQueryEventObject, ui) => {
+                var posX = Math.round(ui.position.left / this.keyframeWidth) * this.keyframeWidth;
+                this.pointerPosition = posX;  
+                this.pointerEl.css('left', this.pointerPosition - 1);   
                 console.log(this.pointerPosition);
             },
         });
@@ -296,10 +344,13 @@ class Timeline
 
     private onClickTable(e: JQueryEventObject) {
         if (!$(e.target).hasClass('pointer')) {
+            this.keyframesTableEl.find('.keyframe').removeClass('selected');
             var n = $(e.target).parents('table');
             var posX = e.pageX - $(n).offset().left;
-            this.pointerPosition = posX - 1;
-            this.pointerEl.css('left', this.pointerPosition);   
+            posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
+            this.pointerPosition = posX;
+            console.log(this.pointerPosition);
+            this.pointerEl.css('left', this.pointerPosition - 1);   
         }
     }
 
@@ -323,6 +374,51 @@ class Timeline
         });
 
         return layer;
+    }
+
+    onCreateKeyframe(e: JQueryEventObject) {
+        console.log('Creating keyframe...');
+        //nejblizsi tr -> vytanout data-id -> najit layer podle id ->vlozit novy keyframe (pouzit  position, nejprve prevest na ms, pouzit shape z workspace)
+        var id: number = parseInt($(e.target).closest('tr.selected').data('id'));
+        if ($.isNumeric(id)) {
+            var layer: Layer = this.getLayer(id);
+            var ms: number = this.pxToMilisec(this.pointerPosition);
+            if (layer.getKeyframeByTimestamp(ms) === null) {
+                layer.addKeyframe(this.app.workspace.getCurrentShape(id), ms);
+
+                //for check
+                layer.getAllKeyframes().forEach((item: Keyframe, index: number) => {
+                    console.log(item);
+                });
+                //for check
+
+                this.renderKeyframes(id);   
+            }
+        }
+    }
+
+    pxToMilisec(px: number = null): number {
+        if (px == null) {
+            return ((this.pointerPosition / this.keyframeWidth) * this.miliSecPerFrame);
+        } else {
+            return ((px / this.keyframeWidth) * this.miliSecPerFrame);   
+        }
+    }
+
+    milisecToPx(ms: number): number {
+        return ((ms / this.miliSecPerFrame) * this.keyframeWidth);
+    }
+
+    onDeleteKeyframe(e: JQueryEventObject) {
+        console.log('Deleting keyframe...');
+        var keyframeEl = this.keyframesTableEl.find('tbody .keyframe.selected');
+
+        if (keyframeEl.length) {
+            this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
+
+            this.renderKeyframes(keyframeEl.data('layer'));
+            this.app.workspace.renderShapes();
+        }
     }
 }
 

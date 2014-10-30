@@ -127,19 +127,57 @@ class Timeline
     private renderKeyframes(id: number) {
         var rowEl: JQuery = this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]');
         rowEl.find('td.keyframes-list').remove();
+        rowEl.find('.range').remove();
         var keyframesTdEl: JQuery = $('<td>').addClass('keyframes-list');
 
         var keyframes: Array<Keyframe> = this.getLayer(id).getAllKeyframes();
         if (keyframes.length > 1) {
+
+            var minValue: number = keyframes[0].timestamp, maxValue: number = keyframes[0].timestamp;
+
             keyframes.forEach((keyframe: Keyframe, index: number) => {
                 keyframesTdEl.append($('<div>').addClass('keyframe').attr('data-layer', id).attr('data-index', index).css({
                     'left': this.milisecToPx(keyframe.timestamp) - 5,
                 }));
-
+                if (keyframe.timestamp < minValue)
+                    minValue = keyframe.timestamp;
+                if (keyframe.timestamp > maxValue)
+                    maxValue = keyframe.timestamp;
             }); 
+
+            keyframesTdEl.append($('<div>').addClass('range').css({
+                'left': this.milisecToPx(minValue),
+                'width': this.milisecToPx(maxValue - minValue),
+            }));
             
             rowEl.prepend(keyframesTdEl);  
         }
+
+        $('.keyframe').draggable({
+            axis: "x",
+            grid: [this.keyframeWidth, this.keyframeWidth],
+            containment: 'tr',
+            stop: (event, ui) => {
+                //update positon of keyframe
+                var ms = this.pxToMilisec((Math.round(ui.position.left / this.keyframeWidth) * this.keyframeWidth));
+                var layerID = $(event.target).data('layer');
+                var keyframe = this.getLayer(layerID).getKeyframe($(event.target).data('index'));
+
+                //if position in time is free
+                if (this.getLayer(layerID).getKeyframeByTimestamp(ms) == null) {
+                    keyframe.timestamp = ms;
+                }
+
+                this.renderKeyframes(layerID);
+            },
+            drag: (event, ui) => {
+                if (ui.position.left < 11) {
+                    console.log($('.keyframe').draggable("option", "grid", [10, 10]));
+                } else {
+                    $('.keyframe').draggable("option", "grid", [this.keyframeWidth, this.keyframeWidth]);
+                }
+            },
+        });
     }
 
     private renderLayers() {

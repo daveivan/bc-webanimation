@@ -190,18 +190,56 @@ var Timeline = (function () {
         var _this = this;
         var rowEl = this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]');
         rowEl.find('td.keyframes-list').remove();
+        rowEl.find('.range').remove();
         var keyframesTdEl = $('<td>').addClass('keyframes-list');
 
         var keyframes = this.getLayer(id).getAllKeyframes();
         if (keyframes.length > 1) {
+            var minValue = keyframes[0].timestamp, maxValue = keyframes[0].timestamp;
+
             keyframes.forEach(function (keyframe, index) {
                 keyframesTdEl.append($('<div>').addClass('keyframe').attr('data-layer', id).attr('data-index', index).css({
                     'left': _this.milisecToPx(keyframe.timestamp) - 5
                 }));
+                if (keyframe.timestamp < minValue)
+                    minValue = keyframe.timestamp;
+                if (keyframe.timestamp > maxValue)
+                    maxValue = keyframe.timestamp;
             });
+
+            keyframesTdEl.append($('<div>').addClass('range').css({
+                'left': this.milisecToPx(minValue),
+                'width': this.milisecToPx(maxValue - minValue)
+            }));
 
             rowEl.prepend(keyframesTdEl);
         }
+
+        $('.keyframe').draggable({
+            axis: "x",
+            grid: [this.keyframeWidth, this.keyframeWidth],
+            containment: 'tr',
+            stop: function (event, ui) {
+                //update positon of keyframe
+                var ms = _this.pxToMilisec((Math.round(ui.position.left / _this.keyframeWidth) * _this.keyframeWidth));
+                var layerID = $(event.target).data('layer');
+                var keyframe = _this.getLayer(layerID).getKeyframe($(event.target).data('index'));
+
+                //if position in time is free
+                if (_this.getLayer(layerID).getKeyframeByTimestamp(ms) == null) {
+                    keyframe.timestamp = ms;
+                }
+
+                _this.renderKeyframes(layerID);
+            },
+            drag: function (event, ui) {
+                if (ui.position.left < 11) {
+                    console.log($('.keyframe').draggable("option", "grid", [10, 10]));
+                } else {
+                    $('.keyframe').draggable("option", "grid", [_this.keyframeWidth, _this.keyframeWidth]);
+                }
+            }
+        });
     };
 
     Timeline.prototype.renderLayers = function () {
@@ -820,9 +858,13 @@ var Keyframe = (function () {
         get: function () {
             return this._timestamp;
         },
+        set: function (ms) {
+            this._timestamp = ms;
+        },
         enumerable: true,
         configurable: true
     });
+
     return Keyframe;
 })();
 //# sourceMappingURL=app.js.map

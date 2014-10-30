@@ -23,4 +23,8 @@
     get timestamp() {
         return this._timestamp;
     }
+
+    set timestamp(ms: number) {
+        this._timestamp = ms;
+    }
 } 

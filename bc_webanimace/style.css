@@ -321,3 +321,11 @@ td.keyframes-list {
 .delete-keyframe {
     margin-left: 10px;
 }
+
+.range {
+    height: 17px;
+    top: 3px;
+    position: absolute;
+    background-color: #b4cde4;
+    opacity: 0.8;
+}

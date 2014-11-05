@@ -1,5 +1,6 @@
 ﻿///<reference path="../assets/jquery/jquery.d.ts" />
 ///<reference path="../assets/jqueryui/jqueryui.d.ts" />
+///<reference path="../assets/bezier-easing/index.d.ts" />
 ///<reference path="Timeline.ts" />
 ///<reference path="Workspace.ts" />
 

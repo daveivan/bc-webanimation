@@ -5,6 +5,7 @@
         this.name = name;
         this.id = ++Layer.counter;
         this._keyframes = new Array();
+        this._timestamps = new Array();
         if (shape != null) {
             this._keyframes.push(new Keyframe(shape, 0));
         }
@@ -29,9 +30,16 @@
         } else {
             this._keyframes.push(keyframe);
         }
+
+        this._timestamps.push(keyframe.timestamp);
+        this.sortTimestamps();
     };
 
     Layer.prototype.deleteKeyframe = function (index) {
+        var keyframe = this.getKeyframe(index);
+
+        //IE9<
+        this._timestamps.splice(this._timestamps.indexOf(keyframe.timestamp), 1);
         this._keyframes.splice(index, 1);
     };
 
@@ -40,6 +48,19 @@
             return null;
         } else {
             return this._keyframes[index];
+        }
+    };
+
+    Layer.prototype.updatePosition = function (index, ms) {
+        var _this = this;
+        //if position is free
+        if (this.getKeyframeByTimestamp(ms) == null) {
+            this.getKeyframe(index).timestamp = ms;
+            this._timestamps = [];
+            this._keyframes.forEach(function (item, index) {
+                _this._timestamps.push(item.timestamp);
+            });
+            this.sortTimestamps();
         }
     };
 
@@ -61,6 +82,21 @@
     Layer.prototype.getAllKeyframes = function () {
         return this._keyframes;
     };
+
+    Layer.prototype.sortTimestamps = function () {
+        var tmp = this._timestamps.sort(function (n1, n2) {
+            return n1 - n2;
+        });
+        this._timestamps = tmp;
+    };
+
+    Object.defineProperty(Layer.prototype, "timestamps", {
+        get: function () {
+            return this._timestamps;
+        },
+        enumerable: true,
+        configurable: true
+    });
 
     Layer.prototype.toString = function () {
         return "ID: " + this.id + "Jmeno vrstvy: " + this.name + ", poradi: " + this.order;
@@ -137,6 +173,8 @@ var Timeline = (function () {
         this.keyframesTableEl.on('click', '.keyframe', function (event) {
             _this.keyframesTableEl.find('.keyframe').removeClass('selected');
             $(event.target).addClass('selected');
+
+            //this.app.workspace.renderShapes(); <-- misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             _this.app.workspace.renderShapes();
         });
 
@@ -223,13 +261,11 @@ var Timeline = (function () {
                 //update positon of keyframe
                 var ms = _this.pxToMilisec((Math.round(ui.position.left / _this.keyframeWidth) * _this.keyframeWidth));
                 var layerID = $(event.target).data('layer');
-                var keyframe = _this.getLayer(layerID).getKeyframe($(event.target).data('index'));
+                var keyframeID = $(event.target).data('index');
 
-                //if position in time is free
-                if (_this.getLayer(layerID).getKeyframeByTimestamp(ms) == null) {
-                    keyframe.timestamp = ms;
-                }
+                _this.getLayer(layerID).updatePosition(keyframeID, ms);
 
+                console.log(_this.getLayer(layerID).timestamps);
                 _this.renderKeyframes(layerID);
             },
             drag: function (event, ui) {
@@ -376,6 +412,7 @@ var Timeline = (function () {
 
         //render shapes
         this.app.workspace.renderShapes();
+        this.app.workspace.transformShapes();
         this.selectLayer(firstSelectedEl.data('id'));
     };
 
@@ -434,13 +471,14 @@ var Timeline = (function () {
             },
             drag: function (event, ui) {
                 _this.pointerPosition = ui.position.left + 1;
-                console.log(_this.pointerPosition);
+
+                //this.app.workspace.renderShapes();
+                _this.app.workspace.transformShapes();
             },
             stop: function (event, ui) {
                 var posX = Math.round(ui.position.left / _this.keyframeWidth) * _this.keyframeWidth;
                 _this.pointerPosition = posX;
                 _this.pointerEl.css('left', _this.pointerPosition - 1);
-                console.log(_this.pointerPosition);
             }
         });
     };
@@ -452,8 +490,10 @@ var Timeline = (function () {
             var posX = e.pageX - $(n).offset().left;
             posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
             this.pointerPosition = posX;
-            console.log(this.pointerPosition);
             this.pointerEl.css('left', this.pointerPosition - 1);
+
+            //this.app.workspace.renderShapes();
+            this.app.workspace.transformShapes();
         }
     };
 
@@ -644,7 +684,11 @@ var Workspace = (function () {
             left: new_x,
             width: width,
             height: height,
-            background: new_object.css('background-color'),
+            //background: new_object.css('background-color'),
+            backgroundR: this.convertRBGtoColor(new_object.css('background-color'), 'r'),
+            backgroundG: this.convertRBGtoColor(new_object.css('background-color'), 'g'),
+            backgroundB: this.convertRBGtoColor(new_object.css('background-color'), 'b'),
+            backgroundA: 1,
             zindex: this.app.timeline.layers.length
         };
 
@@ -666,8 +710,106 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.transformShapes = function () {
+        var _this = this;
+        console.log('transform...');
+        var currentTimestamp = this.app.timeline.pxToMilisec();
+        var layers = this.app.timeline.layers;
+
+        layers.forEach(function (item, index) {
+            var keyframe = item.getKeyframeByTimestamp(currentTimestamp);
+
+            //if no keyframe, take get init keyframe
+            if (keyframe == null) {
+                keyframe = item.getKeyframe(0);
+            }
+
+            //nove
+            var timestamps = item.timestamps;
+
+            //find closest left and right
+            var left = null;
+            var right = null;
+            var i = 0;
+            timestamps.forEach(function (value, index) {
+                if (currentTimestamp > value) {
+                    left = value;
+                    i = index;
+                }
+            });
+
+            if (i < (timestamps.length - 1)) {
+                right = timestamps[i + 1];
+            }
+
+            var interval = new Array();
+            if (left != null) {
+                interval['left'] = item.getKeyframeByTimestamp(left);
+            }
+            if (right != null) {
+                interval['right'] = item.getKeyframeByTimestamp(right);
+            }
+
+            //working in mozilla?
+            if (Object.keys(interval).length == 2) {
+                var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+                var p = (currentTimestamp - left) / (right - left);
+
+                var params = {
+                    top: _this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
+                    left: _this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
+                    width: _this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
+                    height: _this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
+                    backgroundR: _this.computeParameter(interval['left'].shape.parameters.backgroundR, interval['right'].shape.parameters.backgroundR, bezier(p)),
+                    backgroundG: _this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
+                    backgroundB: _this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
+                    backgroundA: _this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p))
+                };
+
+                _this.transformShape(item.id, params);
+            }
+            //this.transformShape(item.id, keyframe.shape._parameters);
+        });
+    };
+
+    Workspace.prototype.transformShape = function (id, params) {
+        var shape = this.workspaceContainer.find('.square[data-id="' + id + '"]');
+        var helper = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]');
+
+        shape.css({
+            'top': params.top,
+            'left': params.left,
+            'width': params.width,
+            'height': params.height,
+            //'background': params.background,
+            'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
+            'border': params.border,
+            'z-index': shape.css('z-index')
+        });
+
+        helper.css({
+            'top': params.top - 1,
+            'left': params.left - 1,
+            'width': params.width + 2,
+            'height': params.height + 2,
+            'z-index': helper.css('z-index')
+        });
+    };
+
+    Workspace.prototype.computeParameter = function (leftParam, rightParam, b) {
+        var value = null;
+        var absValue = Math.round((Math.abs(rightParam - leftParam)) * b);
+        if (leftParam > rightParam) {
+            value = leftParam - absValue;
+        } else {
+            value = leftParam + absValue;
+        }
+        return value;
+    };
+
     Workspace.prototype.renderShapes = function () {
         var _this = this;
+        console.log('Rendering workspace..');
         var layers = this.app.timeline.layers;
         this.workspaceContainer.empty();
 
@@ -690,7 +832,7 @@ var Workspace = (function () {
                     'left': params.left,
                     'width': params.width,
                     'height': params.height,
-                    'background': params.background,
+                    'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
                     'border': params.border,
                     'z-index': params.zindex
                 };
@@ -788,7 +930,11 @@ var Workspace = (function () {
                 left: shapeEl.position().left,
                 width: shapeEl.width(),
                 height: shapeEl.height(),
-                background: shapeEl.css('background-color'),
+                //background: shapeEl.css('background-color'),
+                backgroundR: this.convertRBGtoColor(shapeEl.css('background-color'), 'r'),
+                backgroundG: this.convertRBGtoColor(shapeEl.css('background-color'), 'g'),
+                backgroundB: this.convertRBGtoColor(shapeEl.css('background-color'), 'b'),
+                backgroundA: 1,
                 zindex: parseInt(shapeEl.css('z-index'))
             };
 
@@ -809,10 +955,44 @@ var Workspace = (function () {
         }
         return color;
     };
+
+    Workspace.prototype.convertHex = function (hex, opacity) {
+        hex = hex.replace('#', '');
+        var r = parseInt(hex.substring(0, 2), 16);
+        var g = parseInt(hex.substring(2, 4), 16);
+        var b = parseInt(hex.substring(4, 6), 16);
+        var result = 'rgba(' + r + ',' + g + ',' + b + ',' + opacity / 100 + ')';
+        return result;
+    };
+
+    Workspace.prototype.convertPartColor = function (hex, part) {
+        hex = hex.replace('#', '');
+        if (part == 'r') {
+            var value = parseInt(hex.substring(0, 2), 16);
+        } else if (part == 'g') {
+            var value = parseInt(hex.substring(2, 4), 16);
+        } else if (part == 'b') {
+            var value = parseInt(hex.substring(4, 6), 16);
+        }
+
+        return value;
+    };
+
+    Workspace.prototype.convertRBGtoColor = function (rgb, part) {
+        var parts = rgb.match(/\d+/g);
+        if (part == 'r') {
+            return parseInt(parts[0]);
+        } else if (part == 'g') {
+            return parseInt(parts[1]);
+        } else if (part == 'b') {
+            return parseInt(parts[2]);
+        }
+    };
     return Workspace;
 })();
 ///<reference path="../assets/jquery/jquery.d.ts" />
 ///<reference path="../assets/jqueryui/jqueryui.d.ts" />
+///<reference path="../assets/bezier-easing/index.d.ts" />
 ///<reference path="Timeline.ts" />
 ///<reference path="Workspace.ts" />
 var Application = (function () {

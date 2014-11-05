@@ -73,6 +73,7 @@ class Timeline
         this.keyframesTableEl.on('click', '.keyframe', (event: JQueryEventObject) => {
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
             $(event.target).addClass('selected');
+            //this.app.workspace.renderShapes(); <-- misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             this.app.workspace.renderShapes();
         });
 
@@ -161,13 +162,11 @@ class Timeline
                 //update positon of keyframe
                 var ms = this.pxToMilisec((Math.round(ui.position.left / this.keyframeWidth) * this.keyframeWidth));
                 var layerID = $(event.target).data('layer');
-                var keyframe = this.getLayer(layerID).getKeyframe($(event.target).data('index'));
+                var keyframeID = $(event.target).data('index');
 
-                //if position in time is free
-                if (this.getLayer(layerID).getKeyframeByTimestamp(ms) == null) {
-                    keyframe.timestamp = ms;
-                }
+                this.getLayer(layerID).updatePosition(keyframeID, ms);
 
+                console.log(this.getLayer(layerID).timestamps);
                 this.renderKeyframes(layerID);
             },
             drag: (event, ui) => {
@@ -312,6 +311,7 @@ class Timeline
         this.renderLayers();
         //render shapes
         this.app.workspace.renderShapes();
+        this.app.workspace.transformShapes();
         this.selectLayer(firstSelectedEl.data('id'));
     }
 
@@ -369,13 +369,13 @@ class Timeline
             },
             drag: (event: JQueryEventObject, ui) => {
                 this.pointerPosition = ui.position.left + 1;
-                console.log(this.pointerPosition);
+                //this.app.workspace.renderShapes();
+                this.app.workspace.transformShapes();
             },
             stop: (event: JQueryEventObject, ui) => {
                 var posX = Math.round(ui.position.left / this.keyframeWidth) * this.keyframeWidth;
                 this.pointerPosition = posX;  
                 this.pointerEl.css('left', this.pointerPosition - 1);   
-                console.log(this.pointerPosition);
             },
         });
     }
@@ -387,8 +387,9 @@ class Timeline
             var posX = e.pageX - $(n).offset().left;
             posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
             this.pointerPosition = posX;
-            console.log(this.pointerPosition);
             this.pointerEl.css('left', this.pointerPosition - 1);   
+            //this.app.workspace.renderShapes();
+            this.app.workspace.transformShapes();
         }
     }
 

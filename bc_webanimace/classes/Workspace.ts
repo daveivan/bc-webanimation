@@ -78,7 +78,11 @@ class Workspace {
             left: new_x,
             width: width,
             height: height,
-            background: new_object.css('background-color'),
+            //background: new_object.css('background-color'),
+            backgroundR: this.convertRBGtoColor(new_object.css('background-color'), 'r'),
+            backgroundG: this.convertRBGtoColor(new_object.css('background-color'), 'g'),
+            backgroundB: this.convertRBGtoColor(new_object.css('background-color'), 'b'),
+            backgroundA: 1,
             zindex: this.app.timeline.layers.length,
         };
 
@@ -100,7 +104,105 @@ class Workspace {
         }
     }
 
+    public transformShapes() {
+        console.log('transform...');
+        var currentTimestamp: number = this.app.timeline.pxToMilisec();
+        var layers: Array<Layer> = this.app.timeline.layers;
+
+        layers.forEach((item: Layer, index: number) => {
+            var keyframe: Keyframe = item.getKeyframeByTimestamp(currentTimestamp);
+
+            //if no keyframe, take get init keyframe
+            if (keyframe == null) {
+                keyframe = item.getKeyframe(0);
+            }
+
+            //nove
+            var timestamps: Array<number> = item.timestamps;
+
+            //find closest left and right
+            var left: number = null;
+            var right: number = null;
+            var i = 0;
+            timestamps.forEach((value: number, index: number) => {
+                if (currentTimestamp > value) {
+                    left = value;
+                    i = index;
+                }
+            });
+
+            if (i < (timestamps.length-1)) {
+                right = timestamps[i+1];
+            }
+
+            var interval: Array<Keyframe> = new Array<Keyframe>();
+            if (left != null) {
+                interval['left'] = item.getKeyframeByTimestamp(left);
+            }
+            if (right != null) {
+                interval['right'] = item.getKeyframeByTimestamp(right);
+            }
+
+            //working in mozilla?
+            if (Object.keys(interval).length == 2) {
+                var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+                var p: number = (currentTimestamp - left) / (right - left);
+
+                var params: Parameters = {
+                    top: this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
+                    left: this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
+                    width: this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
+                    height: this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
+                    backgroundR: this.computeParameter(interval['left'].shape.parameters.backgroundR, interval['right'].shape.parameters.backgroundR, bezier(p)),
+                    backgroundG: this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
+                    backgroundB: this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
+                    backgroundA: this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
+                }
+
+                this.transformShape(item.id, params);
+            }
+
+            //this.transformShape(item.id, keyframe.shape._parameters);
+        });
+    }
+
+    public transformShape(id: number, params: Parameters) {
+        var shape = this.workspaceContainer.find('.square[data-id="' + id + '"]');
+        var helper = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]');
+
+        shape.css({
+            'top': params.top,
+            'left': params.left,
+            'width': params.width,
+            'height': params.height,
+            //'background': params.background,
+            'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
+            'border': params.border,
+            'z-index': shape.css('z-index'),
+        });
+        
+        helper.css({
+            'top': params.top - 1,
+            'left': params.left - 1,
+            'width': params.width + 2,
+            'height': params.height + 2,
+            'z-index': helper.css('z-index'),
+        });
+    }
+
+    computeParameter(leftParam: number, rightParam: number, b: number): number {
+        var value: number = null;
+        var absValue: number = Math.round((Math.abs(rightParam - leftParam)) * b);
+        if (leftParam > rightParam) {
+            value = leftParam - absValue;
+        } else {
+            value = leftParam + absValue;
+        }
+        return value;
+    }
+
     public renderShapes() {
+        console.log('Rendering workspace..');
         var layers: Array<Layer> = this.app.timeline.layers;
         this.workspaceContainer.empty();
 
@@ -123,7 +225,7 @@ class Workspace {
                     'left': params.left,
                     'width': params.width,
                     'height': params.height,
-                    'background': params.background,
+                    'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
                     'border': params.border,
                     'z-index': params.zindex,
                 }
@@ -220,7 +322,11 @@ class Workspace {
                 left: shapeEl.position().left,
                 width: shapeEl.width(),
                 height: shapeEl.height(),
-                background: shapeEl.css('background-color'),
+                //background: shapeEl.css('background-color'),
+                backgroundR: this.convertRBGtoColor(shapeEl.css('background-color'), 'r'),
+                backgroundG: this.convertRBGtoColor(shapeEl.css('background-color'), 'g'),
+                backgroundB: this.convertRBGtoColor(shapeEl.css('background-color'), 'b'),
+                backgroundA: 1,
                 zindex: parseInt(shapeEl.css('z-index')),
             };
 
@@ -240,5 +346,38 @@ class Workspace {
             color += letters[Math.floor(Math.random() * 16)];
         }
         return color;
+    }
+
+    convertHex(hex, opacity){
+        hex = hex.replace('#', '');
+        var r = parseInt(hex.substring(0, 2), 16);
+        var g = parseInt(hex.substring(2, 4), 16);
+        var b = parseInt(hex.substring(4, 6), 16);
+        var result = 'rgba(' + r + ',' + g + ',' + b + ',' + opacity / 100 + ')';
+        return result;
+    }
+
+    convertPartColor(hex: string, part: string): number {
+        hex = hex.replace('#', '');
+        if (part == 'r') {
+            var value: number = parseInt(hex.substring(0, 2), 16);
+        } else if(part == 'g') {
+            var value: number = parseInt(hex.substring(2, 4), 16);
+        } else if(part == 'b') {
+            var value: number = parseInt(hex.substring(4, 6), 16);
+        }
+
+        return value;
+    }
+
+    convertRBGtoColor(rgb: string, part: string): number {
+        var parts = rgb.match(/\d+/g);
+        if (part == 'r') {
+            return parseInt(parts[0]);
+        } else if (part == 'g') {
+            return parseInt(parts[1]);
+        } else if (part == 'b') {
+            return parseInt(parts[2]);
+        }
     }
 } 

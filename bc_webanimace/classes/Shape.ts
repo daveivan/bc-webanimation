@@ -3,7 +3,11 @@
     left: number;
     width: number;
     height: number;
-    background: string;
+    //background: string;
+    backgroundR: number;
+    backgroundG: number;
+    backgroundB: number;
+    backgroundA: number;
     border?: string;
     zindex?: number;    
 }

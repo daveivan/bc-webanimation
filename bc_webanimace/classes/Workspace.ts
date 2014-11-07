@@ -1,9 +1,16 @@
 ﻿///<reference path="Shape.ts" />
+interface rgb {
+    r: number;
+    g: number;
+    b: number;
+}
+
 class Workspace {
     private workspaceContainer: JQuery;
     private createdLayer: boolean = false;
     private app: Application;
     private shapeParams: Parameters;
+    private color: rgb;
 
     constructor(app: Application, workspaceContainer: JQuery) {
         this.app = app;
@@ -46,12 +53,14 @@ class Workspace {
     private onDrawSquare(e: JQueryEventObject) {
         console.log('mousedown');
         var new_object: JQuery = $('<div>').addClass('square-creating');
-        var click_y = e.pageY, click_x = e.pageX;
+        var click_y = e.pageY - this.workspaceContainer.offset().top;
+        var click_x = e.pageX - this.workspaceContainer.offset().left;
 
         new_object.css({
             'top': click_y,
             'left': click_x,
-            'background': this.getRandomColor(),
+            //'background': this.getRandomColor(),
+            'background': 'rgb(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ')',
             'z-index': this.app.timeline.layers.length,
     });
 
@@ -65,7 +74,8 @@ class Workspace {
     }
 
     private onChangeSizeSquare(e: JQueryEventObject, click_y, click_x, new_object) {
-        var move_x = e.pageX, move_y = e.pageY;
+        var move_x = e.pageX - this.workspaceContainer.offset().left;
+        var move_y = e.pageY - this.workspaceContainer.offset().top;
         var width = Math.abs(move_x - click_x);
         var height = Math.abs(move_y - click_y);
         var new_x, new_y;
@@ -378,6 +388,21 @@ class Workspace {
             return parseInt(parts[1]);
         } else if (part == 'b') {
             return parseInt(parts[2]);
+        }
+    }
+
+    setColor(c: rgb) {
+        this.color = c;
+        var layer: Layer = this.app.timeline.getLayer(this.workspaceContainer.find('.shape-helper.highlight').data('id'));
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.getKeyframe(0);
+            }
+            keyframe.shape.setBackground(this.color);
+
+            this.renderShapes();
+            this.app.timeline.selectLayer(layer.id);   
         }
     }
 } 

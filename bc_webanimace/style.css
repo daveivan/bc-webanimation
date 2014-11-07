@@ -11,11 +11,11 @@ html, body, table, thead {
 
 body {
     font-family: 'Segoe UI';
-    overflow: hidden;
 }
 
 html, body {
     height: 100%;
+    overflow: hidden;
 }
 
 a {
@@ -226,7 +226,7 @@ tr.disabled td {
     outline: none;
    }
 
-#workspace {
+/*#workspace {
     width: 100%;
     background-color: #fbfbfb;
     display: block;
@@ -234,6 +234,30 @@ tr.disabled td {
     -webkit-user-select: none;
     user-select: none;
     height: 100%;
+}*/
+
+.workspace-wrapper {
+        background-color: #fbfbfb;
+    display: block;
+-moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    height: 100%;
+    margin-left: 250px;
+    overflow: auto;
+}
+
+#workspace {
+    background-color: #fff;
+    width: 800px;  /* bude se dynamicky menit podle zvoleneho formatu dokumentu*/
+    height: 380px;  /* bude se dynamicky menit podle zvoleneho formatu dokumentu*/
+    position: relative;
+    /*top: 50%;
+    margin-top: -200px;*/
+    left: 50%;
+    margin-left: -400px;
+    top: 20px;
+    margin-bottom: 20px;
 }
 
 .wrapper {
@@ -328,4 +352,40 @@ td.keyframes-list {
     position: absolute;
     background-color: #b4cde4;
     opacity: 0.8;
+}
+
+.top-container {
+    width: 100%;
+    overflow: auto;
+}
+
+.control-panel {
+    background-color: #e6e6e6;
+    width: 250px;
+    height: 100%;
+    overflow: auto;
+    float: left;
+    border-right: 5px solid #a0a1a1;
+}
+
+.control-item {
+    border-bottom: 1px solid #c9cacb;
+    min-height: 100px;
+    width: auto;
+    margin: 10px;
+    padding-bottom: 10px;
+}
+
+.tool-panel {
+    background-color: #bfc0c0;
+    width: 50px;
+    height: 100%;
+    overflow: hidden;
+    float: left;
+    border-right: 5px solid #a0a1a1;
+}
+
+.picker {
+    position: relative;
+    left: 10px;
 }

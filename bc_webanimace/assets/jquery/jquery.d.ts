@@ -1281,6 +1281,7 @@ interface JQuery {
     multisortable(o?: any, ...other: any[]): JQuery;
     perfectScrollbar(o?: any): JQuery;
     editable(o?: any, ...other: any[]): JQuery;
+    colpick(o?: any, ...other: any[]): JQuery;
     /**
      * Register a handler to be called when Ajax requests complete. This is an AjaxEvent.
      *

@@ -608,9 +608,16 @@ var Shape = (function () {
         this._parameters.width = d.width;
         this._parameters.height = d.height;
     };
+
+    Shape.prototype.setBackground = function (c) {
+        this.parameters.backgroundR = c.r;
+        this.parameters.backgroundG = c.g;
+        this.parameters.backgroundB = c.b;
+    };
     return Shape;
 })();
 ///<reference path="Shape.ts" />
+
 var Workspace = (function () {
     function Workspace(app, workspaceContainer) {
         var _this = this;
@@ -653,12 +660,14 @@ var Workspace = (function () {
         var _this = this;
         console.log('mousedown');
         var new_object = $('<div>').addClass('square-creating');
-        var click_y = e.pageY, click_x = e.pageX;
+        var click_y = e.pageY - this.workspaceContainer.offset().top;
+        var click_x = e.pageX - this.workspaceContainer.offset().left;
 
         new_object.css({
             'top': click_y,
             'left': click_x,
-            'background': this.getRandomColor(),
+            //'background': this.getRandomColor(),
+            'background': 'rgb(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ')',
             'z-index': this.app.timeline.layers.length
         });
 
@@ -671,7 +680,8 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.onChangeSizeSquare = function (e, click_y, click_x, new_object) {
-        var move_x = e.pageX, move_y = e.pageY;
+        var move_x = e.pageX - this.workspaceContainer.offset().left;
+        var move_y = e.pageY - this.workspaceContainer.offset().top;
         var width = Math.abs(move_x - click_x);
         var height = Math.abs(move_y - click_y);
         var new_x, new_y;
@@ -988,6 +998,21 @@ var Workspace = (function () {
             return parseInt(parts[2]);
         }
     };
+
+    Workspace.prototype.setColor = function (c) {
+        this.color = c;
+        var layer = this.app.timeline.getLayer(this.workspaceContainer.find('.shape-helper.highlight').data('id'));
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.getKeyframe(0);
+            }
+            keyframe.shape.setBackground(this.color);
+
+            this.renderShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
     return Workspace;
 })();
 ///<reference path="../assets/jquery/jquery.d.ts" />
@@ -997,15 +1022,41 @@ var Workspace = (function () {
 ///<reference path="Workspace.ts" />
 var Application = (function () {
     function Application() {
+        var _this = this;
         this.timelineEl = $('<div>').attr('id', 'timeline');
         this.workspaceEl = $('<div>').attr('id', 'workspace');
         console.log('Start Application');
         this.timeline = new Timeline(this, this.timelineEl);
         this.workspace = new Workspace(this, this.workspaceEl);
 
-        $('body').append(($('<div>').addClass('wrapper')).append(this.workspaceEl).append($('<div>').addClass('push')));
+        //$('body').append(($('<div>').addClass('wrapper')).append(this.workspaceEl).append($('<div>').addClass('push')));
+        $('body').append($('<div>').addClass('top-container'));
         $('body').append(this.timelineEl);
-        $('body').append('<p class="help-text">Workspace</p>');
+
+        //$('body').append('<p class="help-text">Workspace</p>');
+        //set height
+        $('.top-container').css('height', ($(window).height() - this.timelineEl.height()) + 'px');
+
+        $('.top-container').append(($('<div>').addClass('tool-panel')));
+        $('.top-container').append(($('<div>').addClass('control-panel')).append(($('<div>').addClass('control-item')).append($('<div>').addClass('picker'))));
+        $('.top-container').append(($('<div>').addClass('workspace-wrapper')).append(this.workspaceEl));
+
+        $(window).resize(function () {
+            console.log('onResize window');
+
+            $('.top-container').css('height', ($(window).height() - _this.timelineEl.height()) + 'px');
+        });
+
+        $('.picker').colpick({
+            flat: true,
+            layout: 'hex',
+            submit: 0,
+            color: { r: 255, g: 255, b: 255 },
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                _this.workspace.setColor(rgb);
+            }
+        });
+        this.workspace.setColor({ r: 255, g: 255, b: 255 });
     }
     return Application;
 })();

@@ -59,4 +59,10 @@ class Shape {
         this._parameters.width = d.width;
         this._parameters.height = d.height;
     }
+
+    setBackground(c: rgb) {
+        this.parameters.backgroundR = c.r;
+        this.parameters.backgroundG = c.g;
+        this.parameters.backgroundB = c.b;
+    }
 }

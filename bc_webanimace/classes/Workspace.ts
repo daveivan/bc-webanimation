@@ -11,6 +11,7 @@ class Workspace {
     private app: Application;
     private shapeParams: Parameters;
     private color: rgb;
+    private opacity: number;
 
     constructor(app: Application, workspaceContainer: JQuery) {
         this.app = app;
@@ -28,6 +29,7 @@ class Workspace {
                 var shape: Shape = new Shape(this.shapeParams);
                 var idLayer: number = this.app.timeline.addLayer(event, shape);
                 this.renderShapes();
+                this.transformShapes();
                 this.highlightShape([idLayer]);
                 this.createdLayer = false;
             }
@@ -62,6 +64,7 @@ class Workspace {
             //'background': this.getRandomColor(),
             'background': 'rgb(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ')',
             'z-index': this.app.timeline.layers.length,
+            'opacity': this.opacity,
     });
 
         //new_object.appendTo(this.workspaceContainer);
@@ -93,8 +96,10 @@ class Workspace {
             backgroundG: this.convertRBGtoColor(new_object.css('background-color'), 'g'),
             backgroundB: this.convertRBGtoColor(new_object.css('background-color'), 'b'),
             backgroundA: 1,
+            opacity: new_object.css('opacity'),
             zindex: this.app.timeline.layers.length,
-        };
+            borderRadius: [0, 0, 0, 0],
+    };
 
         new_object.css({
             'width': width,
@@ -107,6 +112,7 @@ class Workspace {
 
         if (width > 5 && height > 5) {
             new_object.appendTo(this.workspaceContainer);
+            this.app.controlPanel.updateDimensions({ width: width, height: height });
             this.createdLayer = true;
         } else {
             new_object.remove();
@@ -127,11 +133,10 @@ class Workspace {
                 keyframe = item.getKeyframe(0);
             }
 
-            //nove
             var timestamps: Array<number> = item.timestamps;
 
             //find closest left and right
-            var left: number = null;
+            /*var left: number = null;
             var right: number = null;
             var i = 0;
             timestamps.forEach((value: number, index: number) => {
@@ -139,26 +144,49 @@ class Workspace {
                     left = value;
                     i = index;
                 }
-            });
+            });*/
 
-            if (i < (timestamps.length-1)) {
-                right = timestamps[i+1];
+            var left = null;
+            var right = null;
+            var index = 0;
+            for (var i = timestamps.length; i--;) {
+                if (timestamps[i] < currentTimestamp && (left === null || left < timestamps[i])) {
+                    left = timestamps[i];
+                } 
+                if (timestamps[i] >= currentTimestamp && (right === null || right > timestamps[i])) {
+                    right = timestamps[i];
+                    index = i;
+                }
+            };
+
+            if (left === null && right === currentTimestamp && timestamps.length >= 2) {
+                left = right;
+                right = timestamps[index + 1];
             }
 
+            /*if (i < (timestamps.length-1)) {
+                right = timestamps[i+1];
+            }*/
+
+            var params: Parameters = null;
             var interval: Array<Keyframe> = new Array<Keyframe>();
             if (left != null) {
                 interval['left'] = item.getKeyframeByTimestamp(left);
+                params = interval['left'].shape.parameters;
             }
             if (right != null) {
                 interval['right'] = item.getKeyframeByTimestamp(right);
+                params = interval['right'].shape.parameters;
             }
+            /*console.log(interval['left']);
+            console.log(interval['right']);*/
 
             //working in mozilla?
             if (Object.keys(interval).length == 2) {
                 var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
                 var p: number = (currentTimestamp - left) / (right - left);
 
-                var params: Parameters = {
+                params = {
                     top: this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
                     left: this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
                     width: this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
@@ -167,14 +195,22 @@ class Workspace {
                     backgroundG: this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
                     backgroundB: this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
                     backgroundA: this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
+                    opacity: this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
+                    borderRadius: [
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
+                    ],
                 }
-
-                this.transformShape(item.id, params);
+                
             }
+            this.transformShape(item.id, params);
 
             //this.transformShape(item.id, keyframe.shape._parameters);
         });
     }
+
 
     public transformShape(id: number, params: Parameters) {
         var shape = this.workspaceContainer.find('.square[data-id="' + id + '"]');
@@ -189,6 +225,11 @@ class Workspace {
             'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
             'border': params.border,
             'z-index': shape.css('z-index'),
+            'opacity': params.opacity,
+            'border-top-left-radius': params.borderRadius[0],
+            'border-top-right-radius': params.borderRadius[1],
+            'border-bottom-right-radius': params.borderRadius[2],
+            'border-bottom-left-radius': params.borderRadius[3],
         });
         
         helper.css({
@@ -198,6 +239,15 @@ class Workspace {
             'height': params.height + 2,
             'z-index': helper.css('z-index'),
         });
+
+        //if current layer, set dimensions in control panel
+        var highlightLayerID: number = this.workspaceContainer.find('.shape-helper.highlight').first().data('id');
+        if (highlightLayerID == id) {
+            this.app.controlPanel.updateDimensions({ width: params.width, height: params.height });
+            this.app.controlPanel.updateOpacity(params.opacity);
+            this.app.controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB });
+            this.app.controlPanel.updateBorderRadius(params.borderRadius);
+        }
     }
 
     computeParameter(leftParam: number, rightParam: number, b: number): number {
@@ -209,6 +259,17 @@ class Workspace {
             value = leftParam + absValue;
         }
         return value;
+    }
+
+    computeOpacity(leftParam: number, rightParam: number, b: number): number {
+        var value: number = null;
+        var absValue: number = (Math.abs(rightParam - leftParam)) * b;
+        if (leftParam > rightParam) {
+            value = Number(leftParam) - Number(absValue);
+        } else {
+            value = Number(leftParam) + Number(absValue);
+        }
+        return (Number(value));
     }
 
     public renderShapes() {
@@ -238,6 +299,11 @@ class Workspace {
                     'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
                     'border': params.border,
                     'z-index': params.zindex,
+                    'opacity': params.opacity,
+                    'border-top-left-radius': params.borderRadius[0],
+                    'border-top-right-radius': params.borderRadius[1],
+                    'border-bottom-right-radius': params.borderRadius[2],
+                    'border-bottom-left-radius': params.borderRadius[3],
                 }
                 shape.css(css);
                 helper.css({
@@ -270,14 +336,19 @@ class Workspace {
                     var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
                     var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
                     if (keyframe == null) {
-                        keyframe = layer.getKeyframe(0);
+                        //keyframe = layer.getKeyframe(0);
+                        layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                        this.app.timeline.renderKeyframes(layer.id);
+                    } else {
+                        keyframe.shape.setPosition({
+                            top: ui.position.top + 1,
+                            left: ui.position.left + 1,
+                        });   
                     }
-                    keyframe.shape.setPosition({
-                        top: ui.position.top + 1,
-                        left: ui.position.left + 1,
-                    });
+               
                     this.renderShapes();
-                    this.app.timeline.selectLayer(layer.id);
+                    this.transformShapes();
+;                   this.app.timeline.selectLayer(layer.id);
                 },
             })
 
@@ -295,22 +366,26 @@ class Workspace {
                         'width': $(event.target).width(),
                         'height': $(event.target).height(),
                     });
+                    this.app.controlPanel.updateDimensions({ width: $(event.target).width(), height: $(event.target).height() });
                 },
                 stop: (event, ui) => {
                     var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
                     var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
                     if (keyframe == null) {
-                        keyframe = layer.getKeyframe(0);
+                        layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                        this.app.timeline.renderKeyframes(layer.id);
+                    } else {
+                        keyframe.shape.setPosition({
+                            top: ui.position.top + 1,
+                            left: ui.position.left + 1,
+                        });
+                        keyframe.shape.setDimensions({
+                            width: $(event.target).width(),
+                            height: $(event.target).height(),
+                        });   
                     }
-                    keyframe.shape.setPosition({
-                        top: ui.position.top + 1,
-                        left: ui.position.left + 1,
-                    });
-                    keyframe.shape.setDimensions({
-                        width: $(event.target).width(),
-                        height: $(event.target).height(),
-                    });
-                    this.renderShapes();
+                    //this.renderShapes();
+                    this.transformShapes();
                     this.app.timeline.selectLayer(layer.id);
                 },
         });
@@ -321,6 +396,16 @@ class Workspace {
         this.workspaceContainer.find('.shape-helper').removeClass('highlight');
         arrayID.forEach((id: number, index: number) => {
             this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
+            //last selected shape(if selected more then one)
+            if (index == (arrayID.length - 1)) {
+                var shape: Shape = this.getCurrentShape(id);
+                if (shape) {
+                    this.app.controlPanel.updateDimensions({ width: shape.parameters.width, height: shape.parameters.height });
+                    this.app.controlPanel.updateOpacity(shape.parameters.opacity);
+                    this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB });
+                    this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
+                }
+            }
         });
     }
 
@@ -337,7 +422,14 @@ class Workspace {
                 backgroundG: this.convertRBGtoColor(shapeEl.css('background-color'), 'g'),
                 backgroundB: this.convertRBGtoColor(shapeEl.css('background-color'), 'b'),
                 backgroundA: 1,
+                opacity: parseFloat(shapeEl.css('opacity')),
                 zindex: parseInt(shapeEl.css('z-index')),
+                borderRadius: [
+                    parseInt(shapeEl.css('border-top-left-radius')),
+                    parseInt(shapeEl.css('border-top-right-radius')),
+                    parseInt(shapeEl.css('border-bottom-right-radius')),
+                    parseInt(shapeEl.css('border-bottom-left-radius'))
+                ],
             };
 
             var shape: Shape = new Shape(params);
@@ -393,16 +485,86 @@ class Workspace {
 
     setColor(c: rgb) {
         this.color = c;
-        var layer: Layer = this.app.timeline.getLayer(this.workspaceContainer.find('.shape-helper.highlight').data('id'));
+        var layer: Layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.getKeyframe(0);
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                this.app.timeline.renderKeyframes(layer.id);
             }
-            keyframe.shape.setBackground(this.color);
+            keyframe.shape.setBackground(this.color);   
+
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);   
+        }
+    }
+
+    setOpacity(opacity: number) {
+        this.opacity = opacity;
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            keyframe.shape.setOpacity(opacity);
 
             this.renderShapes();
-            this.app.timeline.selectLayer(layer.id);   
+            this.app.timeline.selectLayer(layer.id);
+        }        
+    }
+
+    setDimension(axis: string, dimension: number) {
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (axis === 'x') {
+                keyframe.shape.setX(dimension);
+            } else if(axis === 'y')
+            {
+                keyframe.shape.setY(dimension);
+            }
+
+            this.renderShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }           
+    }
+
+    setBorderRadius(type: string, value: number) {
+        console.log('Setting border radius');
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (type === 'tl') {
+                keyframe.shape.setBorderRadiusTopLeft(value);
+            } else if (type === 'tr') {
+                keyframe.shape.setBorderRadiusTopRight(value);
+            } else if (type === 'bl') {
+                keyframe.shape.setBorderRadiusBottomLeft(value);
+            } else if (type === 'br') {
+                keyframe.shape.setBorderRadiusBottomRight(value);
+            }
+
+            this.renderShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }           
+    }
+
+    getHighlightedLayer(): Layer {
+        var layer: Layer = this.app.timeline.getLayer(this.workspaceContainer.find('.shape-helper.highlight').first().data('id'));
+        if (layer) {
+            return layer;
+        } else {
+            return null;
         }
     }
 } 

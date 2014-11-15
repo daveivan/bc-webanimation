@@ -8,8 +8,10 @@
     backgroundG: number;
     backgroundB: number;
     backgroundA: number;
+    opacity: number;
     border?: string;
-    zindex?: number;    
+    zindex?: number;   
+    borderRadius: Array<number>; 
 }
 
 interface Pos {
@@ -64,5 +66,33 @@ class Shape {
         this.parameters.backgroundR = c.r;
         this.parameters.backgroundG = c.g;
         this.parameters.backgroundB = c.b;
+    }
+
+    setOpacity(o: number) {
+        this.parameters.opacity = o;
+    }
+
+    setX(x: number) {
+        this._parameters.width = x;
+    }
+
+    setY(y: number) {
+        this._parameters.height = y;
+    }
+
+    setBorderRadiusTopLeft(val: number) {
+        this._parameters.borderRadius[0] = val;
+    }
+
+    setBorderRadiusTopRight(val: number) {
+        this._parameters.borderRadius[1] = val;
+    }
+
+    setBorderRadiusBottomRight(val: number) {
+        this._parameters.borderRadius[2] = val;
+    }
+
+    setBorderRadiusBottomLeft(val: number) {
+        this._parameters.borderRadius[3] = val;
     }
 }

@@ -24,7 +24,7 @@
         this._order = order;
     }
 
-    addKeyframe(shape: Shape, timestamp: number, index: number = null) {
+    addKeyframe(shape: Shape, timestamp: number, index: number = null): Keyframe {
         var keyframe: Keyframe = new Keyframe(shape, timestamp);
         if (index != null) {
             this._keyframes.splice(index, 0, keyframe);
@@ -34,6 +34,7 @@
 
         this._timestamps.push(keyframe.timestamp);
         this.sortTimestamps();
+        return keyframe;
     }
 
     deleteKeyframe(index: number) {

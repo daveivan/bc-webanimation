@@ -33,6 +33,7 @@
 
         this._timestamps.push(keyframe.timestamp);
         this.sortTimestamps();
+        return keyframe;
     };
 
     Layer.prototype.deleteKeyframe = function (index) {
@@ -174,7 +175,7 @@ var Timeline = (function () {
             _this.keyframesTableEl.find('.keyframe').removeClass('selected');
             $(event.target).addClass('selected');
 
-            //this.app.workspace.renderShapes(); <-- misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
+            //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             _this.app.workspace.renderShapes();
         });
 
@@ -562,7 +563,9 @@ var Timeline = (function () {
             this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
 
             this.renderKeyframes(keyframeEl.data('layer'));
-            this.app.workspace.renderShapes();
+
+            //this.app.workspace.renderShapes();
+            this.app.workspace.transformShapes();
         }
     };
     return Timeline;
@@ -614,6 +617,34 @@ var Shape = (function () {
         this.parameters.backgroundG = c.g;
         this.parameters.backgroundB = c.b;
     };
+
+    Shape.prototype.setOpacity = function (o) {
+        this.parameters.opacity = o;
+    };
+
+    Shape.prototype.setX = function (x) {
+        this._parameters.width = x;
+    };
+
+    Shape.prototype.setY = function (y) {
+        this._parameters.height = y;
+    };
+
+    Shape.prototype.setBorderRadiusTopLeft = function (val) {
+        this._parameters.borderRadius[0] = val;
+    };
+
+    Shape.prototype.setBorderRadiusTopRight = function (val) {
+        this._parameters.borderRadius[1] = val;
+    };
+
+    Shape.prototype.setBorderRadiusBottomRight = function (val) {
+        this._parameters.borderRadius[2] = val;
+    };
+
+    Shape.prototype.setBorderRadiusBottomLeft = function (val) {
+        this._parameters.borderRadius[3] = val;
+    };
     return Shape;
 })();
 ///<reference path="Shape.ts" />
@@ -636,6 +667,7 @@ var Workspace = (function () {
                 var shape = new Shape(_this.shapeParams);
                 var idLayer = _this.app.timeline.addLayer(event, shape);
                 _this.renderShapes();
+                _this.transformShapes();
                 _this.highlightShape([idLayer]);
                 _this.createdLayer = false;
             }
@@ -668,7 +700,8 @@ var Workspace = (function () {
             'left': click_x,
             //'background': this.getRandomColor(),
             'background': 'rgb(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ')',
-            'z-index': this.app.timeline.layers.length
+            'z-index': this.app.timeline.layers.length,
+            'opacity': this.opacity
         });
 
         //new_object.appendTo(this.workspaceContainer);
@@ -699,7 +732,9 @@ var Workspace = (function () {
             backgroundG: this.convertRBGtoColor(new_object.css('background-color'), 'g'),
             backgroundB: this.convertRBGtoColor(new_object.css('background-color'), 'b'),
             backgroundA: 1,
-            zindex: this.app.timeline.layers.length
+            opacity: new_object.css('opacity'),
+            zindex: this.app.timeline.layers.length,
+            borderRadius: [0, 0, 0, 0]
         };
 
         new_object.css({
@@ -713,6 +748,7 @@ var Workspace = (function () {
 
         if (width > 5 && height > 5) {
             new_object.appendTo(this.workspaceContainer);
+            this.app.controlPanel.updateDimensions({ width: width, height: height });
             this.createdLayer = true;
         } else {
             new_object.remove();
@@ -734,38 +770,59 @@ var Workspace = (function () {
                 keyframe = item.getKeyframe(0);
             }
 
-            //nove
             var timestamps = item.timestamps;
 
             //find closest left and right
+            /*var left: number = null;
+            var right: number = null;
+            var i = 0;
+            timestamps.forEach((value: number, index: number) => {
+            if (currentTimestamp > value) {
+            left = value;
+            i = index;
+            }
+            });*/
             var left = null;
             var right = null;
-            var i = 0;
-            timestamps.forEach(function (value, index) {
-                if (currentTimestamp > value) {
-                    left = value;
-                    i = index;
+            var index = 0;
+            for (var i = timestamps.length; i--;) {
+                if (timestamps[i] < currentTimestamp && (left === null || left < timestamps[i])) {
+                    left = timestamps[i];
                 }
-            });
+                if (timestamps[i] >= currentTimestamp && (right === null || right > timestamps[i])) {
+                    right = timestamps[i];
+                    index = i;
+                }
+            }
+            ;
 
-            if (i < (timestamps.length - 1)) {
-                right = timestamps[i + 1];
+            if (left === null && right === currentTimestamp && timestamps.length >= 2) {
+                left = right;
+                right = timestamps[index + 1];
             }
 
+            /*if (i < (timestamps.length-1)) {
+            right = timestamps[i+1];
+            }*/
+            var params = null;
             var interval = new Array();
             if (left != null) {
                 interval['left'] = item.getKeyframeByTimestamp(left);
+                params = interval['left'].shape.parameters;
             }
             if (right != null) {
                 interval['right'] = item.getKeyframeByTimestamp(right);
+                params = interval['right'].shape.parameters;
             }
 
+            /*console.log(interval['left']);
+            console.log(interval['right']);*/
             //working in mozilla?
             if (Object.keys(interval).length == 2) {
                 var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
                 var p = (currentTimestamp - left) / (right - left);
 
-                var params = {
+                params = {
                     top: _this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
                     left: _this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
                     width: _this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
@@ -773,11 +830,17 @@ var Workspace = (function () {
                     backgroundR: _this.computeParameter(interval['left'].shape.parameters.backgroundR, interval['right'].shape.parameters.backgroundR, bezier(p)),
                     backgroundG: _this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
                     backgroundB: _this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
-                    backgroundA: _this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p))
+                    backgroundA: _this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
+                    opacity: _this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
+                    borderRadius: [
+                        _this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
+                        _this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
+                        _this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
+                        _this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
+                    ]
                 };
-
-                _this.transformShape(item.id, params);
             }
+            _this.transformShape(item.id, params);
             //this.transformShape(item.id, keyframe.shape._parameters);
         });
     };
@@ -794,7 +857,12 @@ var Workspace = (function () {
             //'background': params.background,
             'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
             'border': params.border,
-            'z-index': shape.css('z-index')
+            'z-index': shape.css('z-index'),
+            'opacity': params.opacity,
+            'border-top-left-radius': params.borderRadius[0],
+            'border-top-right-radius': params.borderRadius[1],
+            'border-bottom-right-radius': params.borderRadius[2],
+            'border-bottom-left-radius': params.borderRadius[3]
         });
 
         helper.css({
@@ -804,6 +872,15 @@ var Workspace = (function () {
             'height': params.height + 2,
             'z-index': helper.css('z-index')
         });
+
+        //if current layer, set dimensions in control panel
+        var highlightLayerID = this.workspaceContainer.find('.shape-helper.highlight').first().data('id');
+        if (highlightLayerID == id) {
+            this.app.controlPanel.updateDimensions({ width: params.width, height: params.height });
+            this.app.controlPanel.updateOpacity(params.opacity);
+            this.app.controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB });
+            this.app.controlPanel.updateBorderRadius(params.borderRadius);
+        }
     };
 
     Workspace.prototype.computeParameter = function (leftParam, rightParam, b) {
@@ -815,6 +892,17 @@ var Workspace = (function () {
             value = leftParam + absValue;
         }
         return value;
+    };
+
+    Workspace.prototype.computeOpacity = function (leftParam, rightParam, b) {
+        var value = null;
+        var absValue = (Math.abs(rightParam - leftParam)) * b;
+        if (leftParam > rightParam) {
+            value = Number(leftParam) - Number(absValue);
+        } else {
+            value = Number(leftParam) + Number(absValue);
+        }
+        return (Number(value));
     };
 
     Workspace.prototype.renderShapes = function () {
@@ -844,7 +932,12 @@ var Workspace = (function () {
                     'height': params.height,
                     'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
                     'border': params.border,
-                    'z-index': params.zindex
+                    'z-index': params.zindex,
+                    'opacity': params.opacity,
+                    'border-top-left-radius': params.borderRadius[0],
+                    'border-top-right-radius': params.borderRadius[1],
+                    'border-bottom-right-radius': params.borderRadius[2],
+                    'border-bottom-left-radius': params.borderRadius[3]
                 };
                 shape.css(css);
                 helper.css({
@@ -877,13 +970,19 @@ var Workspace = (function () {
                     var layer = _this.app.timeline.getLayer($(event.target).data('id'));
                     var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
                     if (keyframe == null) {
-                        keyframe = layer.getKeyframe(0);
+                        //keyframe = layer.getKeyframe(0);
+                        layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec());
+                        _this.app.timeline.renderKeyframes(layer.id);
+                    } else {
+                        keyframe.shape.setPosition({
+                            top: ui.position.top + 1,
+                            left: ui.position.left + 1
+                        });
                     }
-                    keyframe.shape.setPosition({
-                        top: ui.position.top + 1,
-                        left: ui.position.left + 1
-                    });
+
                     _this.renderShapes();
+                    _this.transformShapes();
+                    ;
                     _this.app.timeline.selectLayer(layer.id);
                 }
             });
@@ -902,22 +1001,27 @@ var Workspace = (function () {
                         'width': $(event.target).width(),
                         'height': $(event.target).height()
                     });
+                    _this.app.controlPanel.updateDimensions({ width: $(event.target).width(), height: $(event.target).height() });
                 },
                 stop: function (event, ui) {
                     var layer = _this.app.timeline.getLayer($(event.target).data('id'));
                     var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
                     if (keyframe == null) {
-                        keyframe = layer.getKeyframe(0);
+                        layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec());
+                        _this.app.timeline.renderKeyframes(layer.id);
+                    } else {
+                        keyframe.shape.setPosition({
+                            top: ui.position.top + 1,
+                            left: ui.position.left + 1
+                        });
+                        keyframe.shape.setDimensions({
+                            width: $(event.target).width(),
+                            height: $(event.target).height()
+                        });
                     }
-                    keyframe.shape.setPosition({
-                        top: ui.position.top + 1,
-                        left: ui.position.left + 1
-                    });
-                    keyframe.shape.setDimensions({
-                        width: $(event.target).width(),
-                        height: $(event.target).height()
-                    });
-                    _this.renderShapes();
+
+                    //this.renderShapes();
+                    _this.transformShapes();
                     _this.app.timeline.selectLayer(layer.id);
                 }
             });
@@ -929,6 +1033,17 @@ var Workspace = (function () {
         this.workspaceContainer.find('.shape-helper').removeClass('highlight');
         arrayID.forEach(function (id, index) {
             _this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
+
+            //last selected shape(if selected more then one)
+            if (index == (arrayID.length - 1)) {
+                var shape = _this.getCurrentShape(id);
+                if (shape) {
+                    _this.app.controlPanel.updateDimensions({ width: shape.parameters.width, height: shape.parameters.height });
+                    _this.app.controlPanel.updateOpacity(shape.parameters.opacity);
+                    _this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB });
+                    _this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
+                }
+            }
         });
     };
 
@@ -945,7 +1060,14 @@ var Workspace = (function () {
                 backgroundG: this.convertRBGtoColor(shapeEl.css('background-color'), 'g'),
                 backgroundB: this.convertRBGtoColor(shapeEl.css('background-color'), 'b'),
                 backgroundA: 1,
-                zindex: parseInt(shapeEl.css('z-index'))
+                opacity: parseFloat(shapeEl.css('opacity')),
+                zindex: parseInt(shapeEl.css('z-index')),
+                borderRadius: [
+                    parseInt(shapeEl.css('border-top-left-radius')),
+                    parseInt(shapeEl.css('border-top-right-radius')),
+                    parseInt(shapeEl.css('border-bottom-right-radius')),
+                    parseInt(shapeEl.css('border-bottom-left-radius'))
+                ]
             };
 
             var shape = new Shape(params);
@@ -1001,62 +1123,241 @@ var Workspace = (function () {
 
     Workspace.prototype.setColor = function (c) {
         this.color = c;
-        var layer = this.app.timeline.getLayer(this.workspaceContainer.find('.shape-helper.highlight').data('id'));
+        var layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.getKeyframe(0);
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                this.app.timeline.renderKeyframes(layer.id);
             }
             keyframe.shape.setBackground(this.color);
+
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.setOpacity = function (opacity) {
+        this.opacity = opacity;
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            keyframe.shape.setOpacity(opacity);
 
             this.renderShapes();
             this.app.timeline.selectLayer(layer.id);
         }
     };
+
+    Workspace.prototype.setDimension = function (axis, dimension) {
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (axis === 'x') {
+                keyframe.shape.setX(dimension);
+            } else if (axis === 'y') {
+                keyframe.shape.setY(dimension);
+            }
+
+            this.renderShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.setBorderRadius = function (type, value) {
+        console.log('Setting border radius');
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (type === 'tl') {
+                keyframe.shape.setBorderRadiusTopLeft(value);
+            } else if (type === 'tr') {
+                keyframe.shape.setBorderRadiusTopRight(value);
+            } else if (type === 'bl') {
+                keyframe.shape.setBorderRadiusBottomLeft(value);
+            } else if (type === 'br') {
+                keyframe.shape.setBorderRadiusBottomRight(value);
+            }
+
+            this.renderShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.getHighlightedLayer = function () {
+        var layer = this.app.timeline.getLayer(this.workspaceContainer.find('.shape-helper.highlight').first().data('id'));
+        if (layer) {
+            return layer;
+        } else {
+            return null;
+        }
+    };
     return Workspace;
+})();
+///<reference path="Workspace.ts" />
+var ControlPanel = (function () {
+    function ControlPanel(app, container) {
+        var _this = this;
+        this.initColor = { r: 255, g: 255, b: 255 };
+        this.toolPanelEl = $('<div>').addClass('tool-panel');
+        this.controlPanelEl = $('<div>').addClass('control-panel');
+        this.bgPickerEl = $('<div>').addClass('picker');
+        this.itemControlEl = $('<div>').addClass('control-item');
+        this.opacityEl = $('<input type="text"></input>').attr('id', 'opacity-input');
+        this.opacitySliderEl = $('<div>').addClass('opacity-slider');
+        this.dimensionXEl = $('<input type="text"></input').attr('id', 'dimension-x');
+        this.dimensionYEl = $('<input type="text"></input').attr('id', 'dimension-y');
+        this.borderRadiusTLEl = $('<input type="text"></input').attr('id', 'radius-tl').addClass('border-radius-input').attr('data-type', 'tl');
+        this.borderRadiusTREl = $('<input type="text"></input').attr('id', 'radius-tr').addClass('border-radius-input').attr('data-type', 'tr');
+        this.borderRadiusBLEl = $('<input type="text"></input').attr('id', 'radius-bl').addClass('border-radius-input').attr('data-type', 'bl');
+        this.borderRadiusBREl = $('<input type="text"></input').attr('id', 'radius-br').addClass('border-radius-input').attr('data-type', 'br');
+        this.borderRadiusHelperEl = $('<div>').addClass('border-radius-helper');
+        this.app = app;
+        this.containerEl = container;
+
+        this.containerEl.append(this.toolPanelEl);
+
+        //background
+        var newItem = this.itemControlEl.clone();
+        newItem.append(this.bgPickerEl);
+        this.controlPanelEl.append(newItem);
+
+        //opacity
+        var opacity = this.itemControlEl.clone();
+        this.opacityEl.val('1');
+        opacity.append(this.opacitySliderEl);
+        opacity.append(this.opacityEl);
+        this.controlPanelEl.append(opacity);
+
+        //dimensions
+        var dim = this.itemControlEl.clone();
+        dim.append($('<span>').html('X:'));
+        dim.append(this.dimensionXEl);
+        dim.append($('<span>').html('Y:'));
+        dim.append(this.dimensionYEl);
+        this.controlPanelEl.append(dim);
+
+        //border-radius
+        var radius = this.itemControlEl.clone();
+        this.borderRadiusHelperEl.append(this.borderRadiusTLEl.val('0'));
+        this.borderRadiusHelperEl.append(this.borderRadiusTREl.val('0'));
+        this.borderRadiusHelperEl.append(this.borderRadiusBLEl.val('0'));
+        this.borderRadiusHelperEl.append(this.borderRadiusBREl.val('0'));
+        radius.append(this.borderRadiusHelperEl);
+        this.controlPanelEl.append(radius);
+
+        this.containerEl.append(this.controlPanelEl);
+
+        $(window).resize(function () {
+            _this.setHeight();
+        });
+
+        this.colorPicker = this.bgPickerEl.colpick({
+            flat: true,
+            layout: 'hex',
+            submit: 0,
+            color: this.initColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                if (!bySetColor) {
+                    _this.app.workspace.setColor(rgb);
+                }
+            }
+        });
+        this.app.workspace.setColor(this.initColor);
+
+        this.opacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 1,
+            slide: function (event, ui) {
+                _this.opacityEl.val(ui.value).change();
+            }
+        });
+
+        this.opacityEl.on('change', function (e) {
+            _this.opacitySliderEl.slider('value', $(e.target).val());
+            _this.app.workspace.setOpacity($(e.target).val());
+        });
+
+        this.dimensionXEl.on('change', function (event) {
+            _this.app.workspace.setDimension('x', parseInt($(event.target).val()));
+        });
+
+        this.dimensionYEl.on('change', function (event) {
+            _this.app.workspace.setDimension('y', parseInt($(event.target).val()));
+        });
+
+        $(document).on('change', '.border-radius-input', function (e) {
+            _this.app.workspace.setBorderRadius($(e.target).data('type'), parseInt($(e.target).val()));
+        });
+
+        $(document).on('keyup', '.border-radius-input', function (e) {
+            if (e.which == 13) {
+                $(e.target).trigger('change');
+            }
+        });
+    }
+    ControlPanel.prototype.updateDimensions = function (d) {
+        this.dimensionXEl.val(d.width.toString());
+        this.dimensionYEl.val(d.height.toString());
+    };
+
+    ControlPanel.prototype.updateOpacity = function (opacity) {
+        this.opacitySliderEl.slider('option', 'value', Number(opacity));
+        this.opacityEl.val(opacity.toString());
+    };
+
+    ControlPanel.prototype.updateColor = function (color) {
+        this.colorPicker.colpickSetColor(color, false);
+    };
+
+    ControlPanel.prototype.updateBorderRadius = function (bradius) {
+        this.borderRadiusTLEl.val(bradius[0].toString());
+        this.borderRadiusTREl.val(bradius[1].toString());
+        this.borderRadiusBLEl.val(bradius[3].toString());
+        this.borderRadiusBREl.val(bradius[2].toString());
+    };
+
+    ControlPanel.prototype.setHeight = function () {
+        this.containerEl.css('height', ($(window).height() - this.app.timelineEl.height()) + 'px');
+    };
+    return ControlPanel;
 })();
 ///<reference path="../assets/jquery/jquery.d.ts" />
 ///<reference path="../assets/jqueryui/jqueryui.d.ts" />
 ///<reference path="../assets/bezier-easing/index.d.ts" />
 ///<reference path="Timeline.ts" />
 ///<reference path="Workspace.ts" />
+///<reference path="ControlPanel.ts" />
 var Application = (function () {
     function Application() {
-        var _this = this;
         this.timelineEl = $('<div>').attr('id', 'timeline');
         this.workspaceEl = $('<div>').attr('id', 'workspace');
+        this.topContainerEl = $('<div>').attr('id', 'top-container');
         console.log('Start Application');
         this.timeline = new Timeline(this, this.timelineEl);
         this.workspace = new Workspace(this, this.workspaceEl);
+        this.controlPanel = new ControlPanel(this, this.topContainerEl);
 
-        //$('body').append(($('<div>').addClass('wrapper')).append(this.workspaceEl).append($('<div>').addClass('push')));
-        $('body').append($('<div>').addClass('top-container'));
+        $('body').append(this.topContainerEl);
         $('body').append(this.timelineEl);
 
-        //$('body').append('<p class="help-text">Workspace</p>');
-        //set height
-        $('.top-container').css('height', ($(window).height() - this.timelineEl.height()) + 'px');
+        this.controlPanel.setHeight();
 
-        $('.top-container').append(($('<div>').addClass('tool-panel')));
-        $('.top-container').append(($('<div>').addClass('control-panel')).append(($('<div>').addClass('control-item')).append($('<div>').addClass('picker'))));
-        $('.top-container').append(($('<div>').addClass('workspace-wrapper')).append(this.workspaceEl));
-
-        $(window).resize(function () {
-            console.log('onResize window');
-
-            $('.top-container').css('height', ($(window).height() - _this.timelineEl.height()) + 'px');
-        });
-
-        $('.picker').colpick({
-            flat: true,
-            layout: 'hex',
-            submit: 0,
-            color: { r: 255, g: 255, b: 255 },
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
-                _this.workspace.setColor(rgb);
-            }
-        });
-        this.workspace.setColor({ r: 255, g: 255, b: 255 });
+        this.topContainerEl.append(($('<div>').addClass('workspace-wrapper')).append(this.workspaceEl));
     }
     return Application;
 })();

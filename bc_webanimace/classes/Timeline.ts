@@ -73,7 +73,7 @@ class Timeline
         this.keyframesTableEl.on('click', '.keyframe', (event: JQueryEventObject) => {
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
             $(event.target).addClass('selected');
-            //this.app.workspace.renderShapes(); <-- misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
+            //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             this.app.workspace.renderShapes();
         });
 
@@ -125,7 +125,7 @@ class Timeline
         this.keyframesTableEl.find('tbody').append(trEl);
     }
 
-    private renderKeyframes(id: number) {
+    renderKeyframes(id: number) {
         var rowEl: JQuery = this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]');
         rowEl.find('td.keyframes-list').remove();
         rowEl.find('.range').remove();
@@ -456,7 +456,8 @@ class Timeline
             this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
 
             this.renderKeyframes(keyframeEl.data('layer'));
-            this.app.workspace.renderShapes();
+            //this.app.workspace.renderShapes();
+            this.app.workspace.transformShapes();
         }
     }
 }

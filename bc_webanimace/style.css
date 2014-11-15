@@ -216,7 +216,9 @@ tr.disabled td {
     z-index: 2;
 }
 
-
+.ui-resizable .ui-icon {
+    background: none;
+}
 
 .editable input {
     width: 150px !important;
@@ -354,7 +356,7 @@ td.keyframes-list {
     opacity: 0.8;
 }
 
-.top-container {
+#top-container {
     width: 100%;
     overflow: auto;
 }
@@ -370,10 +372,9 @@ td.keyframes-list {
 
 .control-item {
     border-bottom: 1px solid #c9cacb;
-    min-height: 100px;
     width: auto;
     margin: 10px;
-    padding-bottom: 10px;
+    padding-bottom: 15px;
 }
 
 .tool-panel {
@@ -388,4 +389,49 @@ td.keyframes-list {
 .picker {
     position: relative;
     left: 10px;
+}
+
+#opacity-input, #dimension-x, #dimension-y {
+    width: 30px;
+}
+
+.border-radius-input {
+    width: 30px;
+    display: block;
+    position: absolute;
+}
+
+#radius-tl {
+    top: 5px;
+    left: 5px;
+}
+
+#radius-tr {
+    top: 5px;
+    right: 5px;
+}
+
+#radius-br {
+    bottom: 5px;
+    right: 5px;
+}
+
+#radius-bl {
+    bottom: 5px;
+    left: 5px;
+}
+
+.opacity-slider {
+    width: 80%;
+    float: left;
+}
+
+.border-radius-helper {
+    width: 150px;
+    height: 60px;
+    border: 1px solid #909090;
+    border-radius: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
 }

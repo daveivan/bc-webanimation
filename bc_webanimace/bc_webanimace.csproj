@@ -79,6 +79,7 @@
     <TypeScriptCompile Include="assets\bezier-easing\index.d.ts" />
     <TypeScriptCompile Include="classes\Application.ts" />
     <TypeScriptCompile Include="assets\jquery\jquery.d.ts" />
+    <TypeScriptCompile Include="classes\ControlPanel.ts" />
     <TypeScriptCompile Include="classes\Keyframe.ts" />
     <TypeScriptCompile Include="classes\Layer.ts" />
     <TypeScriptCompile Include="assets\jqueryui\jqueryui.d.ts" />

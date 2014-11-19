@@ -12,6 +12,7 @@ class Workspace {
     private shapeParams: Parameters;
     private color: rgb;
     private opacity: number;
+    private bezier: Bezier_points;
 
     constructor(app: Application, workspaceContainer: JQuery) {
         this.app = app;
@@ -183,7 +184,9 @@ class Workspace {
 
             //working in mozilla?
             if (Object.keys(interval).length == 2) {
-                var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+                //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+                var fn: Bezier_points = interval['right'].timing_function;
+                var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
                 var p: number = (currentTimestamp - left) / (right - left);
 
                 params = {
@@ -337,7 +340,7 @@ class Workspace {
                     var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
                     if (keyframe == null) {
                         //keyframe = layer.getKeyframe(0);
-                        layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                        layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                         this.app.timeline.renderKeyframes(layer.id);
                     } else {
                         keyframe.shape.setPosition({
@@ -372,7 +375,7 @@ class Workspace {
                     var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
                     var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
                     if (keyframe == null) {
-                        layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                        layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                         this.app.timeline.renderKeyframes(layer.id);
                     } else {
                         keyframe.shape.setPosition({
@@ -489,7 +492,7 @@ class Workspace {
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             keyframe.shape.setBackground(this.color);   
@@ -505,7 +508,7 @@ class Workspace {
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             keyframe.shape.setOpacity(opacity);
@@ -520,7 +523,7 @@ class Workspace {
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             if (axis === 'x') {
@@ -541,7 +544,7 @@ class Workspace {
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             if (type === 'tl') {
@@ -557,6 +560,35 @@ class Workspace {
             this.renderShapes();
             this.app.timeline.selectLayer(layer.id);
         }           
+    }
+
+    setBezier(fn: Bezier_points) {
+        this.bezier = fn;
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            keyframe.timing_function = this.bezier;
+
+            //this.renderShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }  
+    }
+
+    updateBezierCurve(layer: Layer) {
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe) {
+                this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
+            } 
+        }
+    }
+
+    getBezier() {
+        return this.bezier;
     }
 
     getHighlightedLayer(): Layer {

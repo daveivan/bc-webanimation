@@ -74,6 +74,7 @@ class Timeline
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
             $(event.target).addClass('selected');
             //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
+            this.app.workspace.updateBezierCurve(this.getLayer($(event.target).data('layer')));
             this.app.workspace.renderShapes();
         });
 
@@ -248,7 +249,7 @@ class Timeline
         this.keyframesTableEl.find('tbody tr.disabled').remove();
 
         //create layer & push to array & set order(depend on index of array)
-        var layer = new Layer('Vrstva ' + (Layer.counter + 1));
+        var layer = new Layer('Vrstva ' + (Layer.counter + 1), this.app.workspace.getBezier());
         this.layers.push(layer);
         layer.order = this.layers.length;
 
@@ -256,7 +257,7 @@ class Timeline
         if (shape != null) {
             //init keyframe
             shape.id = layer.id;
-            layer.addKeyframe(shape, 0);
+            layer.addKeyframe(shape, 0, this.app.workspace.getBezier());
         }
     
         //render new layer list
@@ -423,7 +424,7 @@ class Timeline
             var layer: Layer = this.getLayer(id);
             var ms: number = this.pxToMilisec(this.pointerPosition);
             if (layer.getKeyframeByTimestamp(ms) === null) {
-                layer.addKeyframe(this.app.workspace.getCurrentShape(id), ms);
+                layer.addKeyframe(this.app.workspace.getCurrentShape(id), ms, this.app.workspace.getBezier());
 
                 //for check
                 layer.getAllKeyframes().forEach((item: Keyframe, index: number) => {

@@ -1,5 +1,5 @@
 ﻿var Layer = (function () {
-    function Layer(name, shape) {
+    function Layer(name, fn, shape) {
         if (typeof shape === "undefined") { shape = null; }
         this._order = 0;
         this.name = name;
@@ -7,7 +7,7 @@
         this._keyframes = new Array();
         this._timestamps = new Array();
         if (shape != null) {
-            this._keyframes.push(new Keyframe(shape, 0));
+            this._keyframes.push(new Keyframe(shape, 0, fn));
         }
     }
     Object.defineProperty(Layer.prototype, "order", {
@@ -22,9 +22,9 @@
     });
 
 
-    Layer.prototype.addKeyframe = function (shape, timestamp, index) {
+    Layer.prototype.addKeyframe = function (shape, timestamp, timing_function, index) {
         if (typeof index === "undefined") { index = null; }
-        var keyframe = new Keyframe(shape, timestamp);
+        var keyframe = new Keyframe(shape, timestamp, timing_function);
         if (index != null) {
             this._keyframes.splice(index, 0, keyframe);
         } else {
@@ -176,6 +176,7 @@ var Timeline = (function () {
             $(event.target).addClass('selected');
 
             //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
+            _this.app.workspace.updateBezierCurve(_this.getLayer($(event.target).data('layer')));
             _this.app.workspace.renderShapes();
         });
 
@@ -349,7 +350,7 @@ var Timeline = (function () {
         this.keyframesTableEl.find('tbody tr.disabled').remove();
 
         //create layer & push to array & set order(depend on index of array)
-        var layer = new Layer('Vrstva ' + (Layer.counter + 1));
+        var layer = new Layer('Vrstva ' + (Layer.counter + 1), this.app.workspace.getBezier());
         this.layers.push(layer);
         layer.order = this.layers.length;
 
@@ -357,7 +358,7 @@ var Timeline = (function () {
         if (shape != null) {
             //init keyframe
             shape.id = layer.id;
-            layer.addKeyframe(shape, 0);
+            layer.addKeyframe(shape, 0, this.app.workspace.getBezier());
         }
 
         //render new layer list
@@ -529,7 +530,7 @@ var Timeline = (function () {
             var layer = this.getLayer(id);
             var ms = this.pxToMilisec(this.pointerPosition);
             if (layer.getKeyframeByTimestamp(ms) === null) {
-                layer.addKeyframe(this.app.workspace.getCurrentShape(id), ms);
+                layer.addKeyframe(this.app.workspace.getCurrentShape(id), ms, this.app.workspace.getBezier());
 
                 //for check
                 layer.getAllKeyframes().forEach(function (item, index) {
@@ -819,7 +820,9 @@ var Workspace = (function () {
             console.log(interval['right']);*/
             //working in mozilla?
             if (Object.keys(interval).length == 2) {
-                var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+                //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+                var fn = interval['right'].timing_function;
+                var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
                 var p = (currentTimestamp - left) / (right - left);
 
                 params = {
@@ -971,7 +974,7 @@ var Workspace = (function () {
                     var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
                     if (keyframe == null) {
                         //keyframe = layer.getKeyframe(0);
-                        layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec());
+                        layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
                         _this.app.timeline.renderKeyframes(layer.id);
                     } else {
                         keyframe.shape.setPosition({
@@ -1007,7 +1010,7 @@ var Workspace = (function () {
                     var layer = _this.app.timeline.getLayer($(event.target).data('id'));
                     var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
                     if (keyframe == null) {
-                        layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec());
+                        layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
                         _this.app.timeline.renderKeyframes(layer.id);
                     } else {
                         keyframe.shape.setPosition({
@@ -1127,7 +1130,7 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             keyframe.shape.setBackground(this.color);
@@ -1143,7 +1146,7 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             keyframe.shape.setOpacity(opacity);
@@ -1158,7 +1161,7 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             if (axis === 'x') {
@@ -1178,7 +1181,7 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec());
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             if (type === 'tl') {
@@ -1194,6 +1197,35 @@ var Workspace = (function () {
             this.renderShapes();
             this.app.timeline.selectLayer(layer.id);
         }
+    };
+
+    Workspace.prototype.setBezier = function (fn) {
+        this.bezier = fn;
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            keyframe.timing_function = this.bezier;
+
+            //this.renderShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.updateBezierCurve = function (layer) {
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe) {
+                this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
+            }
+        }
+    };
+
+    Workspace.prototype.getBezier = function () {
+        return this.bezier;
     };
 
     Workspace.prototype.getHighlightedLayer = function () {
@@ -1224,10 +1256,26 @@ var ControlPanel = (function () {
         this.borderRadiusBLEl = $('<input type="text"></input').attr('id', 'radius-bl').addClass('border-radius-input').attr('data-type', 'bl');
         this.borderRadiusBREl = $('<input type="text"></input').attr('id', 'radius-br').addClass('border-radius-input').attr('data-type', 'br');
         this.borderRadiusHelperEl = $('<div>').addClass('border-radius-helper');
+        this.graph = $('<div>').addClass('graph');
+        this.point0 = $('<a>').addClass('point p0').attr('href', '#');
+        this.point1 = $('<a>').addClass('point p1').attr('href', '#');
+        this.point2 = $('<a>').addClass('point p2').attr('href', '#');
+        this.point3 = $('<a>').addClass('point p3').attr('href', '#');
+        this.canvas = $('<canvas id="bezierCurve" width="200" height="200"></canvas>');
         this.app = app;
         this.containerEl = container;
 
         this.containerEl.append(this.toolPanelEl);
+
+        //Bezier curve
+        var curve = this.itemControlEl.clone();
+        this.graph.append(this.point0);
+        this.graph.append(this.point1);
+        this.graph.append(this.point2);
+        this.graph.append(this.point3);
+        this.graph.append(this.canvas);
+        curve.append(this.graph);
+        this.controlPanelEl.append(curve);
 
         //background
         var newItem = this.itemControlEl.clone();
@@ -1287,6 +1335,26 @@ var ControlPanel = (function () {
             }
         });
 
+        this.ctx = this.canvas.get(0).getContext('2d');
+
+        //init coordinates
+        this.point1.css({ top: '100px', left: '100px' });
+        this.point2.css({ top: '50px', left: '50px' });
+
+        var options = {
+            containment: 'parent',
+            drag: function (event, ui) {
+                _this.renderWrap(_this.ctx);
+            },
+            stop: function (event, ui) {
+                _this.renderWrap(_this.ctx);
+            }
+        };
+
+        this.point1.draggable(options);
+
+        this.point2.draggable(options);
+
         this.opacityEl.on('change', function (e) {
             _this.opacitySliderEl.slider('value', $(e.target).val());
             _this.app.workspace.setOpacity($(e.target).val());
@@ -1308,6 +1376,11 @@ var ControlPanel = (function () {
             if (e.which == 13) {
                 $(e.target).trigger('change');
             }
+        });
+
+        $(document).ready(function () {
+            _this.ctx = _this.canvas.get(0).getContext('2d');
+            _this.renderWrap(_this.ctx);
         });
     }
     ControlPanel.prototype.updateDimensions = function (d) {
@@ -1333,6 +1406,67 @@ var ControlPanel = (function () {
 
     ControlPanel.prototype.setHeight = function () {
         this.containerEl.css('height', ($(window).height() - this.app.timelineEl.height()) + 'px');
+    };
+
+    ControlPanel.prototype.renderWrap = function (ctx) {
+        var p1 = this.point1.position(), p2 = this.point2.position();
+        console.log(p1);
+        console.log(p2);
+        this.renderLines(ctx, {
+            x: p1.left,
+            y: p1.top
+        }, {
+            x: p2.left,
+            y: p2.top
+        });
+    };
+
+    ControlPanel.prototype.renderLines = function (ctx, p1, p2) {
+        ctx.clearRect(0, 0, 200, 200);
+
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#333";
+        ctx.moveTo(0, 200);
+        ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, 200, 0);
+        ctx.stroke();
+        ctx.closePath();
+
+        ctx.beginPath();
+        ctx.strokeStyle = "#999";
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, 200);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+
+        ctx.moveTo(200, 0);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.closePath();
+
+        //compute
+        var fn = {
+            p0: Number(((p1.x) / 200).toFixed(2)),
+            p1: Number((1 - (p1.y) / 200).toFixed(2)),
+            p2: Number(((p2.x) / 200).toFixed(2)),
+            p3: Number((1 - (p2.x) / 200).toFixed(2))
+        };
+        console.log(fn);
+        this.app.workspace.setBezier(fn);
+    };
+
+    ControlPanel.prototype.updateBezierCurve = function (fn) {
+        this.point1.css({
+            'left': fn.p0 * 200,
+            'top': (1 - fn.p1) * 200
+        });
+
+        this.point2.css({
+            'left': fn.p2 * 200,
+            'top': (1 - fn.p3) * 200
+        });
+
+        this.renderWrap(this.ctx);
     };
     return ControlPanel;
 })();
@@ -1367,9 +1501,10 @@ $(document).ready(function () {
     new Application();
 });
 var Keyframe = (function () {
-    function Keyframe(shape, timestamp) {
+    function Keyframe(shape, timestamp, timing_function) {
         this._shape = shape;
         this._timestamp = timestamp;
+        this._timing_function = timing_function;
     }
     Object.defineProperty(Keyframe.prototype, "shape", {
         /*get id() {
@@ -1392,6 +1527,18 @@ var Keyframe = (function () {
         },
         set: function (ms) {
             this._timestamp = ms;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+
+    Object.defineProperty(Keyframe.prototype, "timing_function", {
+        get: function () {
+            return this._timing_function;
+        },
+        set: function (val) {
+            this._timing_function = val;
         },
         enumerable: true,
         configurable: true

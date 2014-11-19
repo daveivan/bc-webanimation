@@ -20,11 +20,29 @@ class ControlPanel {
     private borderRadiusBREl: JQuery = $('<input type="text"></input').attr('id', 'radius-br').addClass('border-radius-input').attr('data-type', 'br');
     private borderRadiusHelperEl: JQuery = $('<div>').addClass('border-radius-helper');
 
+    private graph: JQuery = $('<div>').addClass('graph');
+    private point0: JQuery = $('<a>').addClass('point p0').attr('href', '#');
+    private point1: JQuery = $('<a>').addClass('point p1').attr('href', '#');
+    private point2: JQuery = $('<a>').addClass('point p2').attr('href', '#');
+    private point3: JQuery = $('<a>').addClass('point p3').attr('href', '#');
+    private canvas: JQuery = $('<canvas id="bezierCurve" width="200" height="200"></canvas>');
+    private ctx: any;
+
     constructor(app: Application, container: JQuery) {
         this.app = app;
         this.containerEl = container;
 
         this.containerEl.append(this.toolPanelEl);
+
+        //Bezier curve
+        var curve: JQuery = this.itemControlEl.clone();
+        this.graph.append(this.point0);
+        this.graph.append(this.point1);
+        this.graph.append(this.point2);
+        this.graph.append(this.point3);
+        this.graph.append(this.canvas);
+        curve.append(this.graph);
+        this.controlPanelEl.append(curve);
 
         //background
         var newItem: JQuery = this.itemControlEl.clone();
@@ -84,6 +102,27 @@ class ControlPanel {
             },
         });
 
+        this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
+
+        //init coordinates
+        this.point1.css({ top: '100px', left: '100px' });
+        this.point2.css({ top: '50px', left: '50px' });
+
+        var options: any = {
+            containment: 'parent',
+            drag: (event, ui) => {
+                this.renderWrap(this.ctx);
+            },
+
+            stop: (event, ui) => {
+                this.renderWrap(this.ctx);
+            },            
+        }
+
+        this.point1.draggable(options);
+
+        this.point2.draggable(options);
+
         this.opacityEl.on('change', (e: JQueryEventObject) => {
             this.opacitySliderEl.slider('value', $(e.target).val());
             this.app.workspace.setOpacity($(e.target).val());
@@ -105,6 +144,11 @@ class ControlPanel {
             if (e.which == 13) {
                 $(e.target).trigger('change');
             }
+        });
+
+        $(document).ready(() => {
+            this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
+            this.renderWrap(this.ctx);
         });
     }
 
@@ -131,5 +175,67 @@ class ControlPanel {
 
     setHeight() {
        this.containerEl.css('height', ($(window).height() - this.app.timelineEl.height()) + 'px');
+    }
+
+    renderWrap(ctx) {
+        var p1 = this.point1.position(),
+            p2 = this.point2.position();
+        console.log(p1);
+        console.log(p2);
+        this.renderLines(ctx, {
+            x: p1.left,
+            y: p1.top
+        }, {
+                x: p2.left,
+                y: p2.top
+            });
+    }
+
+    renderLines(ctx: any, p1, p2) {
+        ctx.clearRect(0, 0, 200, 200);
+
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#333";
+        ctx.moveTo(0, 200);
+        ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, 200, 0);
+        ctx.stroke();
+        ctx.closePath();
+
+        ctx.beginPath();
+        ctx.strokeStyle = "#999";
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, 200);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+
+        ctx.moveTo(200, 0);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.closePath();
+
+        //compute 
+        var fn: Bezier_points = {
+            p0: Number(((p1.x) / 200).toFixed(2)),
+            p1: Number((1 - (p1.y) / 200).toFixed(2)),
+            p2: Number(((p2.x) / 200).toFixed(2)),
+            p3: Number((1 - (p2.x) / 200).toFixed(2)),
+        };
+        console.log(fn);
+        this.app.workspace.setBezier(fn);
+    }
+
+    updateBezierCurve(fn: Bezier_points) {
+        this.point1.css({
+            'left': fn.p0 * 200,
+            'top': (1 - fn.p1) * 200,
+        });
+
+        this.point2.css({
+            'left': fn.p2 * 200,
+            'top': (1 - fn.p3) * 200,
+        });
+
+        this.renderWrap(this.ctx);
     }
 }  

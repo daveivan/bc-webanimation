@@ -6,13 +6,13 @@
     private _keyframes: Array<Keyframe>;
     private _timestamps: Array<number>;
 
-    constructor(name: string, shape: Shape = null) {
+    constructor(name: string, fn: Bezier_points, shape: Shape = null) {
         this.name = name;
         this.id = ++Layer.counter;
         this._keyframes = new Array<Keyframe>();
         this._timestamps = new Array<number>();
         if (shape != null) {
-            this._keyframes.push(new Keyframe(shape, 0));
+            this._keyframes.push(new Keyframe(shape, 0, fn));
         }
     }
 
@@ -24,8 +24,8 @@
         this._order = order;
     }
 
-    addKeyframe(shape: Shape, timestamp: number, index: number = null): Keyframe {
-        var keyframe: Keyframe = new Keyframe(shape, timestamp);
+    addKeyframe(shape: Shape, timestamp: number, timing_function: Bezier_points, index: number = null): Keyframe {
+        var keyframe: Keyframe = new Keyframe(shape, timestamp, timing_function);
         if (index != null) {
             this._keyframes.splice(index, 0, keyframe);
         } else {

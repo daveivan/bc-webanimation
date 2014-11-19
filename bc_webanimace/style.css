@@ -194,10 +194,6 @@ tr.disabled td {
     border-bottom: 0 !important;
 }
 
-.point {
-    border-right: 2px solid red !important;
-}
-
 .pointer {
     position: absolute;
     top: 0;
@@ -434,4 +430,46 @@ td.keyframes-list {
     margin-left: auto;
     margin-right: auto;
     position: relative;
+}
+
+.graph {
+    width: 210px;
+    height: 210px;
+    position: relative;
+}
+
+.point {
+    display: inline-block;
+    position: absolute !important;
+    -webkit-border-radius: 50px;
+    -moz-border-radius: 50px;
+    border-radius: 50px;
+    width: 10px;
+    height: 10px;
+    background: #00bfff;
+    border: 1px solid #333333;
+
+    z-index: 10;
+}
+
+.point.p0 {
+    left: 0;
+    top: 200px;
+    z-index: 9;
+    background: #fff;
+}
+
+.point.p3 {
+    left: 200px;
+    top: 0;
+    z-index: 9;
+    background: #fff;
+}
+
+#bezierCurve {
+    background-color: #fff;
+    position: relative;
+    top: 5px;
+    left: 5px;
+    border: 1px dashed #333;
 }

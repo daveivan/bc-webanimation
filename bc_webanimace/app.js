@@ -661,9 +661,11 @@ var Workspace = (function () {
         this.workspaceContainer.css(this._workspaceSize);
 
         this.workspaceContainer.on('mousedown', function (event) {
-            if ($(event.target).is('#workspace')) {
+            //if ($(event.target).is('#workspace')) {
+            if (_this.app.controlPanel.Mode == 1 /* CREATE_DIV */) {
                 _this.onDrawSquare(event);
             }
+            //}
         });
 
         this.workspaceContainer.on('mouseup', function (event) {
@@ -695,7 +697,7 @@ var Workspace = (function () {
     Workspace.prototype.onDrawSquare = function (e) {
         var _this = this;
         console.log('mousedown');
-        var new_object = $('<div>').addClass('square-creating');
+        var new_object = $('<div>').addClass('shape-helper');
         var click_y = e.pageY - this.workspaceContainer.offset().top;
         var click_x = e.pageX - this.workspaceContainer.offset().left;
 
@@ -1032,6 +1034,11 @@ var Workspace = (function () {
                 }
             });
         });
+
+        if (this.app.controlPanel.Mode == 1 /* CREATE_DIV */) {
+            $('.shape-helper').draggable('disable');
+            $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
+        }
     };
 
     Workspace.prototype.highlightShape = function (arrayID) {
@@ -1270,11 +1277,19 @@ var Workspace = (function () {
     return Workspace;
 })();
 ///<reference path="Workspace.ts" />
+var Mode;
+(function (Mode) {
+    Mode[Mode["SELECT"] = 0] = "SELECT";
+    Mode[Mode["CREATE_DIV"] = 1] = "CREATE_DIV";
+})(Mode || (Mode = {}));
+
 var ControlPanel = (function () {
     function ControlPanel(app, container) {
         var _this = this;
         this.initColor = { r: 255, g: 255, b: 255 };
         this.toolPanelEl = $('<div>').addClass('tool-panel');
+        this.selectToolEl = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
+        this.createDivToolEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('create-div').html('<i class="fa fa-stop"></i>').attr('title', 'Nástroj Nový DIV');
         this.controlPanelEl = $('<div>').addClass('control-panel');
         this.bgPickerEl = $('<div>').addClass('picker');
         this.itemControlEl = $('<div>').addClass('control-item');
@@ -1298,6 +1313,8 @@ var ControlPanel = (function () {
         this.app = app;
         this.containerEl = container;
 
+        this.toolPanelEl.append(this.selectToolEl);
+        this.toolPanelEl.append(this.createDivToolEl);
         this.containerEl.append(this.toolPanelEl);
 
         //Workspace dimensions
@@ -1427,6 +1444,20 @@ var ControlPanel = (function () {
             }
         });
 
+        this.selectToolEl.on('click', function (event) {
+            $('.tool-btn').removeClass('active');
+            $(event.target).closest('a').addClass('active');
+            $('.shape-helper').draggable('enable');
+            $('.shape-helper').resizable('enable');
+        });
+
+        this.createDivToolEl.on('click', function (event) {
+            $('.tool-btn').removeClass('active');
+            $(event.target).closest('a').addClass('active');
+            $('.shape-helper').draggable('disable');
+            $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
+        });
+
         $(document).ready(function () {
             _this.ctx = _this.canvas.get(0).getContext('2d');
             _this.renderWrap(_this.ctx);
@@ -1517,11 +1548,26 @@ var ControlPanel = (function () {
 
         this.renderWrap(this.ctx);
     };
+
+    Object.defineProperty(ControlPanel.prototype, "Mode", {
+        get: function () {
+            if (this.selectToolEl.hasClass('active')) {
+                return 0 /* SELECT */;
+            } else if (this.createDivToolEl.hasClass('active')) {
+                return 1 /* CREATE_DIV */;
+            } else {
+                return null;
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
     return ControlPanel;
 })();
 ///<reference path="../assets/jquery/jquery.d.ts" />
 ///<reference path="../assets/jqueryui/jqueryui.d.ts" />
 ///<reference path="../assets/bezier-easing/index.d.ts" />
+///<reference path="../assets/tooltipster/jquery.tooltipster.d.ts" />
 ///<reference path="Timeline.ts" />
 ///<reference path="Workspace.ts" />
 ///<reference path="ControlPanel.ts" />
@@ -1548,6 +1594,7 @@ var Application = (function () {
 $(document).ready(function () {
     console.log('DOM Loaded');
     new Application();
+    $('.tooltip').tooltipster({ position: 'right' });
 });
 var Keyframe = (function () {
     function Keyframe(shape, timestamp, timing_function) {

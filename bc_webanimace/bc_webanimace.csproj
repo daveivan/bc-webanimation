@@ -57,6 +57,9 @@
     <Content Include="assets\jqueryui\themes\base\theme.css" />
     <Content Include="assets\jqueryui\themes\base\tooltip.css" />
     <Content Include="assets\fonts\fontawesome-webfont.svg" />
+    <Content Include="assets\tooltipster\jquery.tooltipster.min.js" />
+    <Content Include="assets\tooltipster\tooltipster-noir.css" />
+    <Content Include="assets\tooltipster\tooltipster.css" />
     <Content Include="index.html" />
     <Content Include="assets\fonts\fontawesome-webfont.woff" />
     <Content Include="assets\fonts\fontawesome-webfont.ttf" />
@@ -86,6 +89,7 @@
     <TypeScriptCompile Include="classes\Shape.ts" />
     <TypeScriptCompile Include="classes\Timeline.ts" />
     <TypeScriptCompile Include="classes\Workspace.ts" />
+    <TypeScriptCompile Include="assets\tooltipster\jquery.tooltipster.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

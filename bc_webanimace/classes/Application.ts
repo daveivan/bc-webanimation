@@ -1,6 +1,7 @@
 ﻿///<reference path="../assets/jquery/jquery.d.ts" />
 ///<reference path="../assets/jqueryui/jqueryui.d.ts" />
 ///<reference path="../assets/bezier-easing/index.d.ts" />
+///<reference path="../assets/tooltipster/jquery.tooltipster.d.ts" />
 ///<reference path="Timeline.ts" />
 ///<reference path="Workspace.ts" />
 ///<reference path="ControlPanel.ts" />
@@ -28,10 +29,12 @@ class Application {
         this.controlPanel.setHeight();
 
         this.topContainerEl.append(($('<div>').addClass('workspace-wrapper')).append(this.workspaceEl));
+
     }
 }
 
 $(document).ready(() => {
     console.log('DOM Loaded');
     new Application();
+    $('.tooltip').tooltipster({position: 'right'});
 });

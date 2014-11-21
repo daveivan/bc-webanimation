@@ -22,9 +22,11 @@ class Workspace {
         this.workspaceContainer.css(this._workspaceSize);
 
         this.workspaceContainer.on('mousedown', (event: JQueryEventObject) => {
-            if ($(event.target).is('#workspace')) {
-                this.onDrawSquare(event);   
-            }   
+            //if ($(event.target).is('#workspace')) {
+                if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
+                    this.onDrawSquare(event);     
+                }
+            //}   
         });
 
 
@@ -40,10 +42,10 @@ class Workspace {
         });
 
         this.workspaceContainer.on('mousedown', '.shape-helper', (event: JQueryEventObject) => {
-            this.createdLayer = false;
-            var id: number = $(event.target).closest('.shape-helper').data('id');
-            this.app.timeline.selectLayer(id);
-            this.app.timeline.scrollTo(id);
+                this.createdLayer = false;
+                var id: number = $(event.target).closest('.shape-helper').data('id');
+                this.app.timeline.selectLayer(id);
+                this.app.timeline.scrollTo(id);   
         });
 
         this.workspaceContainer.on('mouseover', '.shape-helper', (event: JQueryEventObject) => {
@@ -58,7 +60,7 @@ class Workspace {
 
     private onDrawSquare(e: JQueryEventObject) {
         console.log('mousedown');
-        var new_object: JQuery = $('<div>').addClass('square-creating');
+        var new_object: JQuery = $('<div>').addClass('shape-helper');
         var click_y = e.pageY - this.workspaceContainer.offset().top;
         var click_x = e.pageX - this.workspaceContainer.offset().left;
 
@@ -349,14 +351,14 @@ class Workspace {
                         keyframe.shape.setPosition({
                             top: ui.position.top + 1,
                             left: ui.position.left + 1,
-                        });   
+                        });
                     }
-               
+
                     this.renderShapes();
-                    this.transformShapes();
-;                   this.app.timeline.selectLayer(layer.id);
+                    this.transformShapes();;
+                    this.app.timeline.selectLayer(layer.id);
                 },
-            })
+            }); 
 
             //resizable shape
             $('.shape-helper').resizable({
@@ -394,8 +396,13 @@ class Workspace {
                     this.transformShapes();
                     this.app.timeline.selectLayer(layer.id);
                 },
+            });
         });
-        });
+
+        if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
+            $('.shape-helper').draggable('disable');
+            $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
+        }
     }
 
     highlightShape(arrayID: Array<number>) {

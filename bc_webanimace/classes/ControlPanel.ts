@@ -1,4 +1,9 @@
 ﻿///<reference path="Workspace.ts" />
+enum Mode {
+    SELECT,
+    CREATE_DIV,
+}
+
 class ControlPanel {
     private app: Application;
     private containerEl: JQuery;
@@ -6,6 +11,10 @@ class ControlPanel {
     private initColor: rgb = { r: 255, g: 255, b: 255 };
 
     private toolPanelEl: JQuery = $('<div>').addClass('tool-panel');
+
+    private selectToolEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
+    private createDivToolEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('create-div').html('<i class="fa fa-stop"></i>').attr('title', 'Nástroj Nový DIV');
+
     private controlPanelEl: JQuery = $('<div>').addClass('control-panel');
     private bgPickerEl: JQuery = $('<div>').addClass('picker');
     private colorPicker: any;
@@ -35,6 +44,8 @@ class ControlPanel {
         this.app = app;
         this.containerEl = container;
 
+        this.toolPanelEl.append(this.selectToolEl);
+        this.toolPanelEl.append(this.createDivToolEl);
         this.containerEl.append(this.toolPanelEl);
 
         //Workspace dimensions
@@ -165,6 +176,20 @@ class ControlPanel {
             }
         });
 
+        this.selectToolEl.on('click', (event: JQueryEventObject) => {
+            $('.tool-btn').removeClass('active');
+            $(event.target).closest('a').addClass('active');
+            $('.shape-helper').draggable('enable');
+            $('.shape-helper').resizable('enable');
+        });
+
+        this.createDivToolEl.on('click', (event: JQueryEventObject) => {
+            $('.tool-btn').removeClass('active');
+            $(event.target).closest('a').addClass('active');
+            $('.shape-helper').draggable('disable');
+            $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
+        });
+
         $(document).ready(() => {
             this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
             this.renderWrap(this.ctx);
@@ -256,5 +281,15 @@ class ControlPanel {
         });
 
         this.renderWrap(this.ctx);
+    }
+
+    get Mode (){
+        if (this.selectToolEl.hasClass('active')) {
+            return Mode.SELECT;
+        } else if (this.createDivToolEl.hasClass('active')) {
+            return Mode.CREATE_DIV;
+        } else {
+            return null;
+        }
     }
 }  

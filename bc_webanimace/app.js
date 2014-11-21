@@ -654,8 +654,11 @@ var Workspace = (function () {
     function Workspace(app, workspaceContainer) {
         var _this = this;
         this.createdLayer = false;
+        this._workspaceSize = { width: 800, height: 360 };
         this.app = app;
         this.workspaceContainer = workspaceContainer;
+
+        this.workspaceContainer.css(this._workspaceSize);
 
         this.workspaceContainer.on('mousedown', function (event) {
             if ($(event.target).is('#workspace')) {
@@ -1224,6 +1227,34 @@ var Workspace = (function () {
         }
     };
 
+    Object.defineProperty(Workspace.prototype, "workspaceSize", {
+        get: function () {
+            return this._workspaceSize;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+    Workspace.prototype.setWorkspaceDimension = function (x, y) {
+        var newDimension;
+        if (x != null) {
+            newDimension = {
+                width: x,
+                height: this._workspaceSize.height
+            };
+        }
+
+        if (y != null) {
+            newDimension = {
+                width: this._workspaceSize.width,
+                height: y
+            };
+        }
+
+        this._workspaceSize = newDimension;
+        this.workspaceContainer.css(this._workspaceSize);
+    };
+
     Workspace.prototype.getBezier = function () {
         return this.bezier;
     };
@@ -1262,10 +1293,20 @@ var ControlPanel = (function () {
         this.point2 = $('<a>').addClass('point p2').attr('href', '#');
         this.point3 = $('<a>').addClass('point p3').attr('href', '#');
         this.canvas = $('<canvas id="bezierCurve" width="200" height="200"></canvas>');
+        this.workspaceWidthEl = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
+        this.workspaceHeightEl = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
         this.app = app;
         this.containerEl = container;
 
         this.containerEl.append(this.toolPanelEl);
+
+        //Workspace dimensions
+        var workspaceXY = this.itemControlEl.clone();
+        workspaceXY.append($('<span>').html('Platno sirka:'));
+        workspaceXY.append(this.workspaceWidthEl.val(this.app.workspace.workspaceSize.width.toString()));
+        workspaceXY.append($('<span>').html('<br>Platno vyska:'));
+        workspaceXY.append(this.workspaceHeightEl.val(this.app.workspace.workspaceSize.height.toString()));
+        this.controlPanelEl.append(workspaceXY);
 
         //Bezier curve
         var curve = this.itemControlEl.clone();
@@ -1366,6 +1407,14 @@ var ControlPanel = (function () {
 
         this.dimensionYEl.on('change', function (event) {
             _this.app.workspace.setDimension('y', parseInt($(event.target).val()));
+        });
+
+        this.workspaceHeightEl.on('change', function (event) {
+            _this.app.workspace.setWorkspaceDimension(null, parseInt($(event.target).val()));
+        });
+
+        this.workspaceWidthEl.on('change', function (event) {
+            _this.app.workspace.setWorkspaceDimension(parseInt($(event.target).val()), null);
         });
 
         $(document).on('change', '.border-radius-input', function (e) {

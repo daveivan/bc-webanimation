@@ -13,10 +13,13 @@ class Workspace {
     private color: rgb;
     private opacity: number;
     private bezier: Bezier_points;
+    private _workspaceSize: Dimensions = {width: 800, height: 360};
 
     constructor(app: Application, workspaceContainer: JQuery) {
         this.app = app;
         this.workspaceContainer = workspaceContainer;
+
+        this.workspaceContainer.css(this._workspaceSize);
 
         this.workspaceContainer.on('mousedown', (event: JQueryEventObject) => {
             if ($(event.target).is('#workspace')) {
@@ -585,6 +588,30 @@ class Workspace {
                 this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
             } 
         }
+    }
+
+    get workspaceSize() {
+        return this._workspaceSize;
+    }
+
+    setWorkspaceDimension(x: number, y: number) {
+        var newDimension: Dimensions;
+        if (x != null) {
+            newDimension = {
+                width: x,
+                height: this._workspaceSize.height,
+            };
+        } 
+
+        if (y != null) {
+            newDimension = {
+                width: this._workspaceSize.width,
+                height: y,
+            };
+        }
+
+        this._workspaceSize = newDimension;
+        this.workspaceContainer.css(this._workspaceSize)
     }
 
     getBezier() {

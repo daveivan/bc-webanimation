@@ -363,7 +363,8 @@ td.keyframes-list {
     background-color: #e6e6e6;
     width: 250px;
     height: 100%;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     float: left;
     border-right: 5px solid #a0a1a1;
 }
@@ -372,7 +373,8 @@ td.keyframes-list {
     border-bottom: 1px solid #c9cacb;
     width: auto;
     margin: 10px;
-    padding-bottom: 15px;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 .tool-panel {
@@ -388,9 +390,39 @@ td.keyframes-list {
     position: relative;
     left: 10px;
 }
+#picker {
+	margin:0;
+	padding:0;
+	border:0;
+	width:70px;
+	height:20px;
+	border-right:20px solid #2cd0db;
+	line-height:20px;
+    z-index: 9999;
+    text-align: center;
+    background-color: #fdfdfd;
+    color: #4e4e4e;
+    margin-left: 3px;
+}
+
+.colpick {
+    z-index: 2;
+}
+
+.bg-input {
+    margin-left: 60px;
+}
 
 #opacity-input, #dimension-x, #dimension-y {
     width: 30px;
+}
+
+#opacity-input {
+    text-align: center;
+    border: 1px solid #c9cacb;
+    background-color: #fdfdfd;
+    color: #4e4e4e;
+    margin-left: 5px;
 }
 
 input.number {
@@ -401,6 +433,10 @@ input.number {
     width: 30px;
     display: block;
     position: absolute;
+text-align: center;
+    border: 1px solid #c9cacb;
+    background-color: #fdfdfd;
+    color: #4e4e4e;
 }
 
 #radius-tl {
@@ -426,6 +462,7 @@ input.number {
 .opacity-slider {
     width: 80%;
     float: left;
+    z-index: 1;
 }
 
 .border-radius-helper {
@@ -477,7 +514,7 @@ input.number {
     position: relative;
     top: 5px;
     left: 5px;
-    border: 1px dashed #333;
+    border: 1px dashed #c9cacb;
 }
 
 .tool-btn {
@@ -489,6 +526,7 @@ input.number {
     font-size: 17px;
     padding-top: 9px;
     color: #f9f9f9;
+    text-shadow: 0px 1px 1px rgba(0, 0, 0, 1);
 }
 
 
@@ -503,4 +541,50 @@ input.number {
 .tooltipster-content {
     font-size: 12px !important;
     padding: 4px 3px 4px 3px !important;
+}
+
+.control-item h2 {
+    font-size: 10px;
+    color: #a6a6a6;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 1);
+    letter-spacing: 1px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.control-item {
+    font-size: 12px;
+    font-weight: bold;
+    color: #323232;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 1);
+}
+
+.group-form {
+    margin-right: 20px;
+}
+
+.group-form input {
+    width: 35px;
+    text-align: center;
+    border: 1px solid #c9cacb;
+    background-color: #fdfdfd;
+    color: #4e4e4e;
+}
+
+.cubic-bezier {
+    margin-left: 10px;
+}
+
+.ui-slider-handle {
+    border-radius: 50px !important;
+    width: 10px !important;
+    height: 10px !important;
+    background: none repeat scroll 0% 0% #00BFFF !important;
+    border: 1px solid #333 !important;
+}
+
+.ui-slider-horizontal {
+    height: 5px;
+    top: 8px;
 }

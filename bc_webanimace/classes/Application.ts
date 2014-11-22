@@ -36,5 +36,5 @@ class Application {
 $(document).ready(() => {
     console.log('DOM Loaded');
     new Application();
-    $('.tooltip').tooltipster({position: 'right'});
+    $('.tooltip').tooltipster({ position: 'right' });
 });

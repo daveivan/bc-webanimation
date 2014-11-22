@@ -1286,14 +1286,15 @@ var Mode;
 var ControlPanel = (function () {
     function ControlPanel(app, container) {
         var _this = this;
-        this.initColor = { r: 255, g: 255, b: 255 };
+        this.initColor = { r: 44, g: 208, b: 219 };
         this.toolPanelEl = $('<div>').addClass('tool-panel');
         this.selectToolEl = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
         this.createDivToolEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('create-div').html('<i class="fa fa-stop"></i>').attr('title', 'Nástroj Nový DIV');
         this.controlPanelEl = $('<div>').addClass('control-panel');
-        this.bgPickerEl = $('<div>').addClass('picker');
+        //private bgPickerEl: JQuery = $('<div>').addClass('picker');
+        this.bgPickerEl = $('<input type="text" id="picker"></input>');
         this.itemControlEl = $('<div>').addClass('control-item');
-        this.opacityEl = $('<input type="text"></input>').attr('id', 'opacity-input');
+        this.opacityEl = $('<input>').attr('id', 'opacity-input');
         this.opacitySliderEl = $('<div>').addClass('opacity-slider');
         this.dimensionXEl = $('<input type="text"></input').attr('id', 'dimension-x');
         this.dimensionYEl = $('<input type="text"></input').attr('id', 'dimension-y');
@@ -1319,29 +1320,40 @@ var ControlPanel = (function () {
 
         //Workspace dimensions
         var workspaceXY = this.itemControlEl.clone();
-        workspaceXY.append($('<span>').html('Platno sirka:'));
-        workspaceXY.append(this.workspaceWidthEl.val(this.app.workspace.workspaceSize.width.toString()));
-        workspaceXY.append($('<span>').html('<br>Platno vyska:'));
-        workspaceXY.append(this.workspaceHeightEl.val(this.app.workspace.workspaceSize.height.toString()));
+        workspaceXY.html('<h2>Rozměry plátna</h2>');
+        var w = $('<span>').html('width: ').addClass('group-form');
+        w.append(this.workspaceWidthEl.val(this.app.workspace.workspaceSize.width.toString()));
+        w.append(' px');
+        workspaceXY.append(w);
+        var h = $('<span>').html('height: ').addClass('group-form');
+        h.append(this.workspaceHeightEl.val(this.app.workspace.workspaceSize.height.toString()));
+        h.append((' px'));
+        workspaceXY.append(h);
         this.controlPanelEl.append(workspaceXY);
 
         //Bezier curve
         var curve = this.itemControlEl.clone();
+        curve.html('<h2>Časový průběh animace</h2>');
         this.graph.append(this.point0);
         this.graph.append(this.point1);
         this.graph.append(this.point2);
         this.graph.append(this.point3);
         this.graph.append(this.canvas);
         curve.append(this.graph);
+        curve.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
         this.controlPanelEl.append(curve);
 
         //background
         var newItem = this.itemControlEl.clone();
-        newItem.append(this.bgPickerEl);
+        newItem.html('<h2>Barva pozadí elementu</h2>');
+        var s = $('<span>').html('#').addClass('bg-input');
+        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
+        newItem.append(s);
         this.controlPanelEl.append(newItem);
 
         //opacity
         var opacity = this.itemControlEl.clone();
+        opacity.html('<h2>Průhlednost elementu</h2>');
         this.opacityEl.val('1');
         opacity.append(this.opacitySliderEl);
         opacity.append(this.opacityEl);
@@ -1349,14 +1361,20 @@ var ControlPanel = (function () {
 
         //dimensions
         var dim = this.itemControlEl.clone();
-        dim.append($('<span>').html('X:'));
-        dim.append(this.dimensionXEl);
-        dim.append($('<span>').html('Y:'));
-        dim.append(this.dimensionYEl);
+        dim.html('<h2>Rozměry elementu</h2>');
+        var w = $('<span>').html('width: ').addClass('group-form');
+        w.append(this.dimensionXEl);
+        w.append(' px');
+        dim.append(w);
+        var h = $('<span>').html('height: ').addClass('group-form');
+        h.append(this.dimensionYEl);
+        h.append(' px');
+        dim.append(h);
         this.controlPanelEl.append(dim);
 
         //border-radius
         var radius = this.itemControlEl.clone();
+        radius.html('<h2>Border-radius</h2>');
         this.borderRadiusHelperEl.append(this.borderRadiusTLEl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusTREl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusBLEl.val('0'));
@@ -1371,15 +1389,20 @@ var ControlPanel = (function () {
         });
 
         this.colorPicker = this.bgPickerEl.colpick({
-            flat: true,
             layout: 'hex',
             submit: 0,
             color: this.initColor,
             onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
                 if (!bySetColor) {
                     _this.app.workspace.setColor(rgb);
                 }
             }
+        }).on('change', function (e) {
+            _this.colorPicker.colpickSetColor($(e.target).val());
+            _this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()));
         });
         this.app.workspace.setColor(this.initColor);
 
@@ -1475,6 +1498,7 @@ var ControlPanel = (function () {
 
     ControlPanel.prototype.updateColor = function (color) {
         this.colorPicker.colpickSetColor(color, false);
+        this.bgPickerEl.val($.colpick.rgbToHex(color));
     };
 
     ControlPanel.prototype.updateBorderRadius = function (bradius) {
@@ -1531,7 +1555,11 @@ var ControlPanel = (function () {
             p2: Number(((p2.x) / 200).toFixed(2)),
             p3: Number((1 - (p2.x) / 200).toFixed(2))
         };
-        console.log(fn);
+
+        $('#p0').html(fn.p0.toString());
+        $('#p1').html(fn.p1.toString());
+        $('#p2').html(fn.p2.toString());
+        $('#p3').html(fn.p3.toString());
         this.app.workspace.setBezier(fn);
     };
 

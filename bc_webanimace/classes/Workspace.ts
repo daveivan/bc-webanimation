@@ -618,7 +618,7 @@ class Workspace {
         }
 
         this._workspaceSize = newDimension;
-        this.workspaceContainer.css(this._workspaceSize)
+        this.workspaceContainer.css(this._workspaceSize);
     }
 
     getBezier() {

@@ -5,6 +5,7 @@
     private _order: number = 0;
     private _keyframes: Array<Keyframe>;
     private _timestamps: Array<number>;
+    private _idEl: string;
 
     constructor(name: string, fn: Bezier_points, shape: Shape = null) {
         this.name = name;
@@ -14,6 +15,8 @@
         if (shape != null) {
             this._keyframes.push(new Keyframe(shape, 0, fn));
         }
+
+        this.idEl = null;
     }
 
     get order(): number {
@@ -22,6 +25,14 @@
 
     set order(order: number) {
         this._order = order;
+    }
+
+    get idEl() {
+        return this._idEl;
+    }
+
+    set idEl(id: string) {
+        this._idEl = id;
     }
 
     addKeyframe(shape: Shape, timestamp: number, timing_function: Bezier_points, index: number = null): Keyframe {

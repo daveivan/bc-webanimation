@@ -9,6 +9,8 @@
         if (shape != null) {
             this._keyframes.push(new Keyframe(shape, 0, fn));
         }
+
+        this.idEl = null;
     }
     Object.defineProperty(Layer.prototype, "order", {
         get: function () {
@@ -16,6 +18,18 @@
         },
         set: function (order) {
             this._order = order;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+
+    Object.defineProperty(Layer.prototype, "idEl", {
+        get: function () {
+            return this._idEl;
+        },
+        set: function (id) {
+            this._idEl = id;
         },
         enumerable: true,
         configurable: true
@@ -290,7 +304,12 @@ var Timeline = (function () {
 
         //render new layers list from array
         this.layers.forEach(function (item, index) {
-            _this.layersEl.append(($('<div>').addClass('layer').attr('id', index).attr('data-id', item.id)).append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name)));
+            var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
+            layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
+            if (item.idEl) {
+                layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
+            }
+            _this.layersEl.append(layerItem);
 
             //and render frames fot this layer
             _this.renderRow(item.id);
@@ -310,6 +329,7 @@ var Timeline = (function () {
         $('.editable').editable(function (value, settings) {
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
+            me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
             return (value);
         }, {
             width: 150,
@@ -848,12 +868,14 @@ var Workspace = (function () {
                     ]
                 };
             }
-            _this.transformShape(item.id, params);
+
+            _this.transformShape(item.id, params, item.idEl);
             //this.transformShape(item.id, keyframe.shape._parameters);
         });
     };
 
-    Workspace.prototype.transformShape = function (id, params) {
+    Workspace.prototype.transformShape = function (id, params, idEl) {
+        if (typeof idEl === "undefined") { idEl = null; }
         var shape = this.workspaceContainer.find('.square[data-id="' + id + '"]');
         var helper = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]');
 
@@ -880,6 +902,12 @@ var Workspace = (function () {
             'height': params.height + 2,
             'z-index': helper.css('z-index')
         });
+
+        if (idEl != null) {
+            shape.attr('id', idEl);
+        } else {
+            shape.removeAttr('id');
+        }
 
         //if current layer, set dimensions in control panel
         var highlightLayerID = this.workspaceContainer.find('.shape-helper.highlight').first().data('id');
@@ -922,7 +950,11 @@ var Workspace = (function () {
         layers.forEach(function (item, index) {
             var shape = $('<div>').addClass('square');
             var helper = $('<div>').addClass('shape-helper');
-            var helpername = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');
+            if (item.idEl) {
+                var helpername = $('<div>').addClass('helpername').html('<p>' + item.name + '<span class="div-id">#' + item.idEl + '</span></p>');
+            } else {
+                var helpername = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');
+            }
 
             //get keyframe by pointer position
             var keyframe = item.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
@@ -948,6 +980,9 @@ var Workspace = (function () {
                     'border-bottom-left-radius': params.borderRadius[3]
                 };
                 shape.css(css);
+                if (item.idEl) {
+                    shape.attr('id', item.idEl);
+                }
                 helper.css({
                     'top': params.top - 1,
                     'left': params.left - 1,
@@ -1055,6 +1090,7 @@ var Workspace = (function () {
                     _this.app.controlPanel.updateOpacity(shape.parameters.opacity);
                     _this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB });
                     _this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
+                    _this.app.controlPanel.updateIdEl(_this.app.timeline.getLayer(id).idEl);
                 }
             }
         });
@@ -1234,6 +1270,46 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.setIdEl = function (id) {
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var webalizeID = this.webalize(id);
+
+            if (!this.isEmpty(webalizeID)) {
+                var unique = true;
+                this.app.timeline.layers.forEach(function (item, index) {
+                    if (item.idEl === webalizeID) {
+                        unique = false;
+                    }
+                });
+                if (unique) {
+                    layer.idEl = this.webalize(id);
+                }
+            } else {
+                layer.idEl = null;
+            }
+            this.renderShapes();
+            this.transformShapes();
+            this.app.timeline.renderLayers();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.isEmpty = function (str) {
+        return (!str || 0 === str.length);
+    };
+
+    Workspace.prototype.webalize = function (s) {
+        var nodiac = { 'á': 'a', 'č': 'c', 'ď': 'd', 'é': 'e', 'ě': 'e', 'í': 'i', 'ň': 'n', 'ó': 'o', 'ř': 'r', 'š': 's', 'ť': 't', 'ú': 'u', 'ů': 'u', 'ý': 'y', 'ž': 'z' };
+        s = s.toLowerCase();
+        var s2 = "";
+        for (var i = 0; i < s.length; i++) {
+            s2 += (typeof nodiac[s.charAt(i)] != 'undefined' ? nodiac[s.charAt(i)] : s.charAt(i));
+        }
+
+        return s2.replace(/[^a-z0-9_]+/g, '-').replace(/^-|-$/g, '');
+    };
+
     Object.defineProperty(Workspace.prototype, "workspaceSize", {
         get: function () {
             return this._workspaceSize;
@@ -1311,6 +1387,7 @@ var ControlPanel = (function () {
         this.canvas = $('<canvas id="bezierCurve" width="200" height="200"></canvas>');
         this.workspaceWidthEl = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
         this.workspaceHeightEl = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
+        this.idEl = $('<input type="text"></input>').attr('id', 'id-el').addClass('number');
         this.app = app;
         this.containerEl = container;
 
@@ -1330,6 +1407,13 @@ var ControlPanel = (function () {
         h.append((' px'));
         workspaceXY.append(h);
         this.controlPanelEl.append(workspaceXY);
+
+        var idElement = this.itemControlEl.clone();
+        idElement.html('<h2>ID elementu</h2>');
+        var g = $('<span>').html('#').addClass('group-form fullwidth');
+        g.append(this.idEl);
+        idElement.append(g);
+        this.controlPanelEl.append(idElement);
 
         //Bezier curve
         var curve = this.itemControlEl.clone();
@@ -1457,6 +1541,17 @@ var ControlPanel = (function () {
             _this.app.workspace.setWorkspaceDimension(parseInt($(event.target).val()), null);
         });
 
+        this.idEl.on('change', function (event) {
+            console.log('chnage event');
+            _this.app.workspace.setIdEl($(event.target).val().toString());
+        });
+
+        this.idEl.on('keyup', function (event) {
+            if (event.which == 13) {
+                $(event.target).trigger('change');
+            }
+        });
+
         $(document).on('change', '.border-radius-input', function (e) {
             _this.app.workspace.setBorderRadius($(e.target).data('type'), parseInt($(e.target).val()));
         });
@@ -1575,6 +1670,10 @@ var ControlPanel = (function () {
         });
 
         this.renderWrap(this.ctx);
+    };
+
+    ControlPanel.prototype.updateIdEl = function (id) {
+        this.idEl.val(id);
     };
 
     Object.defineProperty(ControlPanel.prototype, "Mode", {

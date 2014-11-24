@@ -213,14 +213,15 @@ class Workspace {
                 }
                 
             }
-            this.transformShape(item.id, params);
+
+            this.transformShape(item.id, params, item.idEl);
 
             //this.transformShape(item.id, keyframe.shape._parameters);
         });
     }
 
 
-    public transformShape(id: number, params: Parameters) {
+    public transformShape(id: number, params: Parameters, idEl = null) {
         var shape = this.workspaceContainer.find('.square[data-id="' + id + '"]');
         var helper = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]');
 
@@ -247,6 +248,12 @@ class Workspace {
             'height': params.height + 2,
             'z-index': helper.css('z-index'),
         });
+
+        if (idEl != null) {
+            shape.attr('id', idEl);
+        } else {
+            shape.removeAttr('id');
+        }
 
         //if current layer, set dimensions in control panel
         var highlightLayerID: number = this.workspaceContainer.find('.shape-helper.highlight').first().data('id');
@@ -288,7 +295,11 @@ class Workspace {
         layers.forEach((item: Layer, index: number) => {
             var shape: JQuery = $('<div>').addClass('square');
             var helper: JQuery = $('<div>').addClass('shape-helper');
-            var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');
+            if (item.idEl) {
+                var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + item.name + '<span class="div-id">#' + item.idEl + '</span></p>');
+            } else {
+                var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');   
+            }
 
             //get keyframe by pointer position
             var keyframe: Keyframe = item.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
@@ -314,6 +325,9 @@ class Workspace {
                     'border-bottom-left-radius': params.borderRadius[3],
                 }
                 shape.css(css);
+                if (item.idEl) {
+                    shape.attr('id', item.idEl);
+                }
                 helper.css({
                     'top': params.top - 1,
                     'left': params.left - 1,
@@ -417,6 +431,7 @@ class Workspace {
                     this.app.controlPanel.updateOpacity(shape.parameters.opacity);
                     this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB });
                     this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
+                    this.app.controlPanel.updateIdEl(this.app.timeline.getLayer(id).idEl);
                 }
             }
         });
@@ -595,6 +610,46 @@ class Workspace {
                 this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
             } 
         }
+    }
+
+    setIdEl(id: string) {
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var webalizeID = this.webalize(id);
+
+            if (!this.isEmpty(webalizeID)) {
+                var unique: boolean = true;
+                this.app.timeline.layers.forEach((item: Layer, index: number) => {
+                    if (item.idEl === webalizeID) {
+                        unique = false;
+                    }
+                });
+                if (unique) {
+                    layer.idEl = this.webalize(id);   
+                }
+            } else {
+                layer.idEl = null;
+            }
+            this.renderShapes();
+            this.transformShapes();
+            this.app.timeline.renderLayers();
+            this.app.timeline.selectLayer(layer.id);
+        } 
+    }
+
+    isEmpty(str) {
+        return (!str || 0 === str.length);
+    }
+
+    webalize(s: string) {
+        var nodiac = { 'á': 'a', 'č': 'c', 'ď': 'd', 'é': 'e', 'ě': 'e', 'í': 'i', 'ň': 'n', 'ó': 'o', 'ř': 'r', 'š': 's', 'ť': 't', 'ú': 'u', 'ů': 'u', 'ý': 'y', 'ž': 'z' };
+        s = s.toLowerCase();
+        var s2: string = "";
+        for (var i: number = 0; i < s.length; i++) {
+            s2 += (typeof nodiac[s.charAt(i)] != 'undefined' ? nodiac[s.charAt(i)] : s.charAt(i));
+        }
+
+        return s2.replace(/[^a-z0-9_]+/g, '-').replace(/^-|-$/g, '');
     }
 
     get workspaceSize() {

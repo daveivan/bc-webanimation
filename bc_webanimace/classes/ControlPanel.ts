@@ -41,6 +41,8 @@ class ControlPanel {
     private workspaceWidthEl: JQuery = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
     private workspaceHeightEl: JQuery = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
 
+    private idEl: JQuery = $('<input type="text"></input>').attr('id', 'id-el').addClass('number');
+
     constructor(app: Application, container: JQuery) {
         this.app = app;
         this.containerEl = container;
@@ -61,6 +63,13 @@ class ControlPanel {
         h.append((' px'));
         workspaceXY.append(h);
         this.controlPanelEl.append(workspaceXY);
+
+        var idElement: JQuery = this.itemControlEl.clone();
+        idElement.html('<h2>ID elementu</h2>');
+        var g: JQuery = $('<span>').html('#').addClass('group-form fullwidth');
+        g.append(this.idEl);
+        idElement.append(g);
+        this.controlPanelEl.append(idElement);
 
         //Bezier curve
         var curve: JQuery = this.itemControlEl.clone();
@@ -189,6 +198,17 @@ class ControlPanel {
             this.app.workspace.setWorkspaceDimension(parseInt($(event.target).val()), null);
         });
 
+        this.idEl.on('change', (event: JQueryEventObject) => {
+            console.log('chnage event');
+            this.app.workspace.setIdEl($(event.target).val().toString());
+        });
+
+        this.idEl.on('keyup', (event: JQueryEventObject) => {
+            if (event.which == 13) {
+                $(event.target).trigger('change');
+            }
+        });
+
         $(document).on('change', '.border-radius-input', (e: JQueryEventObject) => {
             this.app.workspace.setBorderRadius($(e.target).data('type'), parseInt($(e.target).val()));
         });
@@ -310,6 +330,10 @@ class ControlPanel {
         });
 
         this.renderWrap(this.ctx);
+    }
+
+    updateIdEl(id: string) {
+        this.idEl.val(id);
     }
 
     get Mode (){

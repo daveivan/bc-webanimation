@@ -218,6 +218,7 @@ tr.disabled td {
 
 .editable input {
     width: 150px !important;
+    float: left;
 }
 
 *:focus {
@@ -317,6 +318,14 @@ tr.disabled td {
     white-space: nowrap;
     display: inline;
     padding: 2px 10px 2px 10px;
+}
+
+.helpername .div-id {
+    color: #909090;
+}
+
+.layer .div-id {
+    color: #909090;
 }
 
 td.keyframes-list {
@@ -571,6 +580,13 @@ text-align: center;
     background-color: #fdfdfd;
     color: #4e4e4e;
 }
+
+.fullwidth input {
+    width: 90%;
+    float: right;
+    text-align: left;
+}
+
 
 .cubic-bezier {
     margin-left: 10px;

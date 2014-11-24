@@ -180,7 +180,7 @@ class Timeline
         });
     }
 
-    private renderLayers() {
+    renderLayers() {
         console.log('Rendering layers...');
 
         //remove layers list
@@ -189,7 +189,12 @@ class Timeline
 
         //render new layers list from array
         this.layers.forEach((item: Layer, index: number) => {
-            this.layersEl.append(($('<div>').addClass('layer').attr('id', index).attr('data-id', item.id)).append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name)));
+            var layerItem: JQuery = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
+            layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
+            if (item.idEl) {
+                layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));   
+            }
+            this.layersEl.append(layerItem);
             //and render frames fot this layer
             this.renderRow(item.id);
             //render keyframes
@@ -207,6 +212,7 @@ class Timeline
         $('.editable').editable(function(value: string, settings: any) {
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
+            me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
             return (value);
         }, {
             width: 150,

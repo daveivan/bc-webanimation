@@ -9,6 +9,7 @@
 class Application {
 
     timelineEl: JQuery = $('<div>').attr('id', 'timeline');
+    workspaceWrapperEl: JQuery = $('<div>').addClass('workspace-wrapper');
     workspaceEl: JQuery = $('<div>').attr('id', 'workspace');
     topContainerEl: JQuery = $('<div>').attr('id', 'top-container');
 
@@ -20,7 +21,7 @@ class Application {
     {
         console.log('Start Application');
         this.timeline = new Timeline(this, this.timelineEl);
-        this.workspace = new Workspace(this, this.workspaceEl);
+        this.workspace = new Workspace(this, this.workspaceEl, this.workspaceWrapperEl);
         this.controlPanel = new ControlPanel(this, this.topContainerEl);
 
         $('body').append(this.topContainerEl);
@@ -28,7 +29,7 @@ class Application {
 
         this.controlPanel.setHeight();
 
-        this.topContainerEl.append(($('<div>').addClass('workspace-wrapper')).append(this.workspaceEl));
+        this.topContainerEl.append(this.workspaceWrapperEl.append(this.workspaceEl));
 
     }
 }
@@ -37,4 +38,6 @@ $(document).ready(() => {
     console.log('DOM Loaded');
     new Application();
     $('.tooltip').tooltipster({ position: 'right' });
+    $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });
+
 });

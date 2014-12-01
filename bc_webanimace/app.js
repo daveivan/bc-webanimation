@@ -173,7 +173,7 @@ var Timeline = (function () {
             _this.onClickLayer(event, ui);
         });
 
-        $(document).on('click', 'td', function (event) {
+        $(document).on('mousedown', 'td', function (event) {
             _this.onClickRow(event);
         });
 
@@ -181,7 +181,7 @@ var Timeline = (function () {
             _this.onCreateKeyframe(event);
         });
 
-        $(document).on('mouseup', '.keyframes > table', function (event) {
+        $(document).on('mousedown', '.keyframes > table', function (event) {
             _this.onClickTable(event);
         });
 
@@ -191,7 +191,7 @@ var Timeline = (function () {
 
             //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             _this.app.workspace.updateBezierCurve(_this.getLayer($(event.target).data('layer')));
-            _this.app.workspace.renderShapes();
+            //this.app.workspace.renderShapes();
         });
 
         this.timelineContainer.ready(function (event) {
@@ -330,6 +330,7 @@ var Timeline = (function () {
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
             me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
+            me.app.workspace.transformShapes();
             return (value);
         }, {
             width: 150,
@@ -501,6 +502,7 @@ var Timeline = (function () {
                 var posX = Math.round(ui.position.left / _this.keyframeWidth) * _this.keyframeWidth;
                 _this.pointerPosition = posX;
                 _this.pointerEl.css('left', _this.pointerPosition - 1);
+                _this.app.workspace.transformShapes();
             }
         });
     };
@@ -671,16 +673,17 @@ var Shape = (function () {
 ///<reference path="Shape.ts" />
 
 var Workspace = (function () {
-    function Workspace(app, workspaceContainer) {
+    function Workspace(app, workspaceContainer, workspaceWrapper) {
         var _this = this;
         this.createdLayer = false;
         this._workspaceSize = { width: 800, height: 360 };
         this.app = app;
         this.workspaceContainer = workspaceContainer;
+        this.workspaceWrapper = workspaceWrapper;
 
         this.workspaceContainer.css(this._workspaceSize);
 
-        this.workspaceContainer.on('mousedown', function (event) {
+        this.workspaceWrapper.on('mousedown', function (event) {
             //if ($(event.target).is('#workspace')) {
             if (_this.app.controlPanel.Mode == 1 /* CREATE_DIV */) {
                 _this.onDrawSquare(event);
@@ -688,7 +691,7 @@ var Workspace = (function () {
             //}
         });
 
-        this.workspaceContainer.on('mouseup', function (event) {
+        this.workspaceWrapper.on('mouseup', function (event) {
             if (_this.createdLayer) {
                 var shape = new Shape(_this.shapeParams);
                 var idLayer = _this.app.timeline.addLayer(event, shape);
@@ -731,10 +734,10 @@ var Workspace = (function () {
         });
 
         //new_object.appendTo(this.workspaceContainer);
-        this.workspaceContainer.on('mousemove', function (event) {
+        this.workspaceWrapper.on('mousemove', function (event) {
             _this.onChangeSizeSquare(event, click_y, click_x, new_object);
         }).on('mouseup', function (event) {
-            _this.workspaceContainer.off('mousemove');
+            _this.workspaceWrapper.off('mousemove');
         });
     };
 
@@ -784,7 +787,6 @@ var Workspace = (function () {
 
     Workspace.prototype.transformShapes = function () {
         var _this = this;
-        console.log('transform...');
         var currentTimestamp = this.app.timeline.pxToMilisec();
         var layers = this.app.timeline.layers;
 
@@ -988,7 +990,7 @@ var Workspace = (function () {
                     'left': params.left - 1,
                     'width': params.width + 2,
                     'height': params.height + 2,
-                    'z-index': params.zindex + 10000
+                    'z-index': params.zindex + 1000
                 });
 
                 shape.attr('data-id', keyframe.shape.id);
@@ -997,83 +999,87 @@ var Workspace = (function () {
                 shape.appendTo(_this.workspaceContainer);
                 helper.appendTo(_this.workspaceContainer);
             }
-
-            //hook draging on shapes
-            $('.shape-helper').draggable({
-                containment: 'parent',
-                scroll: false,
-                drag: function (event, ui) {
-                    var id = $(event.target).data('id');
-                    _this.workspaceContainer.find('.square[data-id="' + id + '"]').css({
-                        'top': ui.position.top + 1,
-                        'left': ui.position.left + 1
-                    });
-                },
-                stop: function (event, ui) {
-                    var layer = _this.app.timeline.getLayer($(event.target).data('id'));
-                    var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
-                    if (keyframe == null) {
-                        //keyframe = layer.getKeyframe(0);
-                        layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
-                        _this.app.timeline.renderKeyframes(layer.id);
-                    } else {
-                        keyframe.shape.setPosition({
-                            top: ui.position.top + 1,
-                            left: ui.position.left + 1
-                        });
-                    }
-
-                    _this.renderShapes();
-                    _this.transformShapes();
-                    ;
-                    _this.app.timeline.selectLayer(layer.id);
-                }
-            });
-
-            //resizable shape
-            $('.shape-helper').resizable({
-                handles: 'all',
-                autohide: true,
-                containment: 'parent',
-                resize: function (event, ui) {
-                    var id = $(event.target).data('id');
-                    var shape = _this.workspaceContainer.find('.square[data-id="' + id + '"]');
-                    shape.css({
-                        'top': ui.position.top + 1,
-                        'left': ui.position.left + 1,
-                        'width': $(event.target).width(),
-                        'height': $(event.target).height()
-                    });
-                    _this.app.controlPanel.updateDimensions({ width: $(event.target).width(), height: $(event.target).height() });
-                },
-                stop: function (event, ui) {
-                    var layer = _this.app.timeline.getLayer($(event.target).data('id'));
-                    var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
-                    if (keyframe == null) {
-                        layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
-                        _this.app.timeline.renderKeyframes(layer.id);
-                    } else {
-                        keyframe.shape.setPosition({
-                            top: ui.position.top + 1,
-                            left: ui.position.left + 1
-                        });
-                        keyframe.shape.setDimensions({
-                            width: $(event.target).width(),
-                            height: $(event.target).height()
-                        });
-                    }
-
-                    //this.renderShapes();
-                    _this.transformShapes();
-                    _this.app.timeline.selectLayer(layer.id);
-                }
-            });
         });
+
+        this.dragResize();
 
         if (this.app.controlPanel.Mode == 1 /* CREATE_DIV */) {
             $('.shape-helper').draggable('disable');
             $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
         }
+    };
+
+    Workspace.prototype.dragResize = function () {
+        var _this = this;
+        //hook draging on shapes
+        $('.shape-helper').draggable({
+            scroll: false,
+            drag: function (event, ui) {
+                var id = $(event.target).data('id');
+                _this.workspaceContainer.find('.square[data-id="' + id + '"]').css({
+                    'top': ui.position.top + 1,
+                    'left': ui.position.left + 1
+                });
+            },
+            stop: function (event, ui) {
+                var layer = _this.app.timeline.getLayer($(event.target).data('id'));
+                var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
+                if (keyframe == null) {
+                    //keyframe = layer.getKeyframe(0);
+                    layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
+                    _this.app.timeline.renderKeyframes(layer.id);
+                } else {
+                    keyframe.shape.setPosition({
+                        top: ui.position.top + 1,
+                        left: ui.position.left + 1
+                    });
+                }
+
+                _this.renderShapes();
+                _this.transformShapes();
+                ;
+                _this.app.timeline.selectLayer(layer.id);
+                $('.workspace-wrapper').perfectScrollbar('update');
+            }
+        });
+
+        //resizable shape
+        $('.shape-helper').resizable({
+            handles: 'all',
+            autohide: true,
+            resize: function (event, ui) {
+                var id = $(event.target).data('id');
+                var shape = _this.workspaceContainer.find('.square[data-id="' + id + '"]');
+                shape.css({
+                    'top': ui.position.top + 1,
+                    'left': ui.position.left + 1,
+                    'width': $(event.target).width(),
+                    'height': $(event.target).height()
+                });
+                _this.app.controlPanel.updateDimensions({ width: $(event.target).width(), height: $(event.target).height() });
+            },
+            stop: function (event, ui) {
+                var layer = _this.app.timeline.getLayer($(event.target).data('id'));
+                var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
+                if (keyframe == null) {
+                    layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
+                    _this.app.timeline.renderKeyframes(layer.id);
+                } else {
+                    keyframe.shape.setPosition({
+                        top: ui.position.top + 1,
+                        left: ui.position.left + 1
+                    });
+                    keyframe.shape.setDimensions({
+                        width: $(event.target).width(),
+                        height: $(event.target).height()
+                    });
+                }
+
+                //this.renderShapes();
+                _this.transformShapes();
+                _this.app.timeline.selectLayer(layer.id);
+            }
+        });
     };
 
     Workspace.prototype.highlightShape = function (arrayID) {
@@ -1336,6 +1342,7 @@ var Workspace = (function () {
 
         this._workspaceSize = newDimension;
         this.workspaceContainer.css(this._workspaceSize);
+        $('.workspace-wrapper').perfectScrollbar('update');
     };
 
     Workspace.prototype.getBezier = function () {
@@ -1366,6 +1373,7 @@ var ControlPanel = (function () {
         this.toolPanelEl = $('<div>').addClass('tool-panel');
         this.selectToolEl = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
         this.createDivToolEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('create-div').html('<i class="fa fa-stop"></i>').attr('title', 'Nástroj Nový DIV');
+        this.generateCodeEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-code"></i>').attr('title', 'Vygenerovat kód');
         this.controlPanelEl = $('<div>').addClass('control-panel');
         //private bgPickerEl: JQuery = $('<div>').addClass('picker');
         this.bgPickerEl = $('<input type="text" id="picker"></input>');
@@ -1393,6 +1401,7 @@ var ControlPanel = (function () {
 
         this.toolPanelEl.append(this.selectToolEl);
         this.toolPanelEl.append(this.createDivToolEl);
+        this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
 
         //Workspace dimensions
@@ -1470,6 +1479,8 @@ var ControlPanel = (function () {
 
         $(window).resize(function () {
             _this.setHeight();
+            _this.controlPanelEl.perfectScrollbar('update');
+            $('.workspace-wrapper').perfectScrollbar('update');
         });
 
         this.colorPicker = this.bgPickerEl.colpick({
@@ -1512,7 +1523,7 @@ var ControlPanel = (function () {
                 _this.renderWrap(_this.ctx);
             },
             stop: function (event, ui) {
-                _this.renderWrap(_this.ctx);
+                _this.app.workspace.setBezier(_this.renderWrap(_this.ctx));
             }
         };
 
@@ -1542,7 +1553,6 @@ var ControlPanel = (function () {
         });
 
         this.idEl.on('change', function (event) {
-            console.log('chnage event');
             _this.app.workspace.setIdEl($(event.target).val().toString());
         });
 
@@ -1576,9 +1586,16 @@ var ControlPanel = (function () {
             $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
         });
 
+        this.generateCodeEl.on('click', function (event) {
+            var generator = new GenerateCode(_this.app, _this.app.timeline.layers);
+            generator.generate();
+        });
+
         $(document).ready(function () {
             _this.ctx = _this.canvas.get(0).getContext('2d');
             _this.renderWrap(_this.ctx);
+            _this.controlPanelEl.perfectScrollbar();
+            _this.app.workspace.setBezier(_this.renderWrap(_this.ctx));
         });
     }
     ControlPanel.prototype.updateDimensions = function (d) {
@@ -1609,9 +1626,7 @@ var ControlPanel = (function () {
 
     ControlPanel.prototype.renderWrap = function (ctx) {
         var p1 = this.point1.position(), p2 = this.point2.position();
-        console.log(p1);
-        console.log(p2);
-        this.renderLines(ctx, {
+        return this.renderLines(ctx, {
             x: p1.left,
             y: p1.top
         }, {
@@ -1648,14 +1663,15 @@ var ControlPanel = (function () {
             p0: Number(((p1.x) / 200).toFixed(2)),
             p1: Number((1 - (p1.y) / 200).toFixed(2)),
             p2: Number(((p2.x) / 200).toFixed(2)),
-            p3: Number((1 - (p2.x) / 200).toFixed(2))
+            p3: Number((1 - (p2.y) / 200).toFixed(2))
         };
 
         $('#p0').html(fn.p0.toString());
         $('#p1').html(fn.p1.toString());
         $('#p2').html(fn.p2.toString());
         $('#p3').html(fn.p3.toString());
-        this.app.workspace.setBezier(fn);
+
+        return fn;
     };
 
     ControlPanel.prototype.updateBezierCurve = function (fn) {
@@ -1701,11 +1717,12 @@ var ControlPanel = (function () {
 var Application = (function () {
     function Application() {
         this.timelineEl = $('<div>').attr('id', 'timeline');
+        this.workspaceWrapperEl = $('<div>').addClass('workspace-wrapper');
         this.workspaceEl = $('<div>').attr('id', 'workspace');
         this.topContainerEl = $('<div>').attr('id', 'top-container');
         console.log('Start Application');
         this.timeline = new Timeline(this, this.timelineEl);
-        this.workspace = new Workspace(this, this.workspaceEl);
+        this.workspace = new Workspace(this, this.workspaceEl, this.workspaceWrapperEl);
         this.controlPanel = new ControlPanel(this, this.topContainerEl);
 
         $('body').append(this.topContainerEl);
@@ -1713,7 +1730,7 @@ var Application = (function () {
 
         this.controlPanel.setHeight();
 
-        this.topContainerEl.append(($('<div>').addClass('workspace-wrapper')).append(this.workspaceEl));
+        this.topContainerEl.append(this.workspaceWrapperEl.append(this.workspaceEl));
     }
     return Application;
 })();
@@ -1722,7 +1739,240 @@ $(document).ready(function () {
     console.log('DOM Loaded');
     new Application();
     $('.tooltip').tooltipster({ position: 'right' });
+    $('.workspace-wrapper').perfectScrollbar({ includePadding: true });
 });
+var GenerateCode = (function () {
+    function GenerateCode(app, l) {
+        var _this = this;
+        this.dialogEl = $('<div>').attr('id', 'dialog').html('<p></p>').attr('title', 'Výsledný kód animace');
+        this.codeWrapperEl = $('<div>').attr('id', 'code');
+        this.arrayMax = Function.prototype.apply.bind(Math.max, null);
+        this.arrayMin = Function.prototype.apply.bind(Math.min, null);
+        this.app = app;
+        this.layers = l;
+
+        $('body').find(this.dialogEl).remove();
+        $('body').append(this.dialogEl);
+        this.dialogEl.dialog({
+            autoOpen: false,
+            draggable: false,
+            height: 600,
+            width: 900,
+            resizable: false,
+            modal: true,
+            closeOnEscape: true,
+            close: function (event, ui) {
+                _this.dialogEl.remove();
+            }
+        });
+    }
+    GenerateCode.prototype.generate = function () {
+        var _this = this;
+        console.log('generate code');
+        this.dialogEl.dialog('open');
+
+        var html = '<!DOCTYPE html>\n<html lang="cs">\n<head>\n  <meta charset="UTF-8">\n  <title></title>\n';
+        html += '  <style>\n';
+        html += this.generateCss();
+        html += '  </style>\n</head>\n';
+        html += '<body>\n';
+        html += this.generateObjects();
+        html += '\n</body>\n</html>';
+        console.log(html);
+
+        html = html.replace(/[<>]/g, function (m) {
+            return { '<': '&lt;', '>': '&gt;' }[m];
+        });
+        var pre = $('<pre>').addClass('prettyprint').attr('id', 'code');
+        this.dialogEl.append(pre.html(html));
+
+        prettyPrint();
+
+        $(pre).on('dblclick', function () {
+            _this.selectText('code');
+        });
+    };
+
+    GenerateCode.prototype.generateCss = function () {
+        var css = '';
+        css += this.gCss({
+            'name': '#workspace',
+            'width': this.app.workspace.workspaceSize.width + 'px',
+            'height': this.app.workspace.workspaceSize.height + 'px',
+            'border': '1px dotted #ededed',
+            'overflow': 'hidden',
+            'position': 'relative',
+            'margin': '0 auto'
+        });
+
+        css += this.objectCss();
+
+        return css;
+    };
+
+    GenerateCode.prototype.generateObjects = function () {
+        var shapes = $('#workspace').clone();
+        shapes.find('.shape-helper').remove();
+        shapes.find('div').removeAttr('style');
+        shapes.removeAttr('style');
+
+        var markup = '  <div id="workspace">\n';
+        shapes.find('div').each(function (index) {
+            //markup += '    <div class="object' + $(this).data('id').toString() + '">' + $(this).html().toString() + '</div>\n';
+            markup += '    ' + ($(this).addClass('object' + $(this).data('id')).prop('outerHTML')) + '\n';
+        });
+        markup += '  </div>';
+        return markup;
+        /*$("<pre />", {
+        "html": '&lt;!DOCTYPE html>\n&lt;html>\n' +
+        shapes.wrapAll('<div></div>').parent().html()
+        .replace(/[<>]/g, function (m) { return { '<': '&lt;', '>': '&gt;' }[m] })
+        .replace(/((ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?)/gi, '<a href="$1">$1</a>') +
+        '\n&lt;/html>'
+        }).appendTo(this.codeWrapperEl);*/
+        /*this.generateKeyframes();
+        this.gCss({
+        'name': '#workspace',
+        'width': this.app.workspace.workspaceSize.width + 'px',
+        'height': this.app.workspace.workspaceSize.height + 'px',
+        });*/
+    };
+
+    GenerateCode.prototype.objectCss = function () {
+        var _this = this;
+        var css = '';
+        var keyframesCss = '';
+
+        this.layers.forEach(function (item, index) {
+            var percents = new Array();
+            var min = _this.arrayMin(item.timestamps);
+            var max = _this.arrayMax(item.timestamps);
+            var duration = max - min;
+
+            var nameElement = 'object' + item.id;
+
+            //1. init style for object
+            var p = (item.getKeyframeByTimestamp(item.timestamps[0])).shape.parameters;
+            var cssObject = {
+                'name': '.' + nameElement,
+                'width': p.width + 'px',
+                'height': p.height + 'px',
+                'top': p.top + 'px',
+                'left': p.left + 'px',
+                'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
+                'opacity': p.opacity,
+                'border-top-left-radius': p.borderRadius[0] + 'px',
+                'border-top-right-radius': p.borderRadius[1] + 'px',
+                'border-bottom-right-radius': p.borderRadius[2] + 'px',
+                'border-bottom-left-radius': p.borderRadius[3] + 'px',
+                'position': 'absolute',
+                '-webkit-animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's infinite',
+                'animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's infinite'
+            };
+            css += _this.gCss(cssObject);
+
+            //2. if keyframes > 1, generate it
+            if (item.timestamps.length > 1) {
+                cssObject = {};
+                cssObject['name'] = nameElement;
+
+                item.timestamps.forEach(function (timestamp, i) {
+                    var keyframe = item.getKeyframeByTimestamp(timestamp);
+                    var percent = (((keyframe.timestamp - min) / duration) * 100).toString() + '%';
+                    percents.push(percent);
+                    p = keyframe.shape.parameters;
+                    cssObject[percent] = {
+                        'width': p.width + 'px',
+                        'height': p.height + 'px',
+                        'top': p.top + 'px',
+                        'left': p.left + 'px',
+                        'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
+                        'opacity': p.opacity,
+                        'border-top-left-radius': p.borderRadius[0] + 'px',
+                        'border-top-right-radius': p.borderRadius[1] + 'px',
+                        'border-bottom-right-radius': p.borderRadius[2] + 'px',
+                        'border-bottom-left-radius': p.borderRadius[3] + 'px',
+                        '-webkit-animation-timing-function': 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')',
+                        'animation-timing-function': 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')'
+                    };
+                });
+
+                keyframesCss += _this.gKeyframes(cssObject);
+            }
+            /*var style: JQuery = $("<style>").attr({
+            class: "keyframe-style",
+            type: "text/css"
+            }).append(this.gKeyframes(c));
+            style.appendTo('head');*/
+        });
+
+        return (keyframesCss + css);
+    };
+
+    GenerateCode.prototype.gKeyframes = function (frameData) {
+        if (frameData.length) {
+            for (var i = 0; i < frameData.length; i++) {
+                var frame = frameData[i];
+                return this.gKeyframe(frame);
+            }
+        } else {
+            return this.gKeyframe(frameData);
+        }
+    };
+
+    GenerateCode.prototype.gCss = function (cssData) {
+        var elName = cssData.name || "";
+        var css = "    " + elName + " {\n";
+
+        for (var key in cssData) {
+            if (key !== "name") {
+                css += "      " + key + ": " + cssData[key] + ";\n";
+            }
+        }
+
+        css += "    }\n";
+
+        return css;
+    };
+
+    GenerateCode.prototype.gKeyframe = function (frameData) {
+        var frameName = frameData.name || "";
+        var css = '';
+        var prefix = ['-webkit-keyframes', 'keyframes'];
+        $.each(prefix, function (index, value) {
+            css += "    @" + value + " " + frameName + " {\n";
+
+            for (var key in frameData) {
+                if (key !== "name") {
+                    css += "      " + key + " {\n";
+
+                    for (var property in frameData[key]) {
+                        css += "        " + property + ":" + frameData[key][property] + ";\n";
+                    }
+
+                    css += "      }\n";
+                }
+            }
+
+            css += "    }\n";
+        });
+
+        return css;
+    };
+
+    GenerateCode.prototype.selectText = function (element) {
+        var doc = document;
+        var text = doc.getElementById(element);
+        var range, selection;
+
+        selection = window.getSelection();
+        range = document.createRange();
+        range.selectNodeContents(text);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    };
+    return GenerateCode;
+})();
 var Keyframe = (function () {
     function Keyframe(shape, timestamp, timing_function) {
         this._shape = shape;

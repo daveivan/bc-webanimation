@@ -243,8 +243,10 @@ tr.disabled td {
     user-select: none;
     height: 100%;
     margin-left: 250px;
-    overflow: auto;
+    overflow: hidden;
+    position: relative;
     padding: 2em;
+
 }
 
 #workspace {
@@ -300,7 +302,7 @@ tr.disabled td {
 
 .shape-helper.highlight {
     border: 1px solid #00ff7f;
-    z-index: 20000 !important;
+    z-index: 2000 !important;
 }
 
 .helpername {
@@ -372,10 +374,10 @@ td.keyframes-list {
     background-color: #e6e6e6;
     width: 250px;
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     float: left;
     border-right: 5px solid #a0a1a1;
+    position: relative;
 }
 
 .control-item {
@@ -547,6 +549,14 @@ text-align: center;
     background-color: #a4a5a5;
 }
 
+.generate-code {
+    background-color: #8ed2dc;
+}
+
+.generate-code:hover {
+    background-color: #4bb8c8;
+}
+
 .tooltipster-content {
     font-size: 12px !important;
     padding: 4px 3px 4px 3px !important;
@@ -603,4 +613,48 @@ text-align: center;
 .ui-slider-horizontal {
     height: 5px;
     top: 8px;
+}
+
+#code {
+
+}
+
+.ui-dialog {
+    z-index: 5000;
+    border-radius: 0;
+}
+
+.ui-dialog-titlebar {
+    background: none;
+    border-radius: 0;
+    background-color: #8ed2dc;
+    border: 0;
+}
+
+.ui-dialog-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #688e93;
+
+}
+
+.ui-icon-closethick {
+    background-color: #74bbc6 !important;
+}
+
+.ui-dialog-titlebar-close {
+    border: none !important;
+    border-radius: 0 !important;
+    width: 18px !important;
+    height: 18px !important;
+    background: none !important;
+
+}
+
+pre.prettyprint {
+     width: 90%;
+    height: 400px;
+    border: 1px solid #909090;
+    margin: 0 auto;
+    overflow: auto;   
 }

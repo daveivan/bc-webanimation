@@ -57,6 +57,7 @@
     <Content Include="assets\jqueryui\themes\base\theme.css" />
     <Content Include="assets\jqueryui\themes\base\tooltip.css" />
     <Content Include="assets\fonts\fontawesome-webfont.svg" />
+    <Content Include="assets\prettify\prettify.css" />
     <Content Include="assets\tooltipster\jquery.tooltipster.min.js" />
     <Content Include="assets\tooltipster\tooltipster-noir.css" />
     <Content Include="assets\tooltipster\tooltipster.css" />
@@ -74,6 +75,7 @@
     <Content Include="assets\perfect-scrollbar\perfect-scrollbar.min.js" />
     <Content Include="assets\jqueryui\jquery-ui-1.11.1.js" />
     <Content Include="assets\jqueryui\jquery-ui.min-1.11.1.js" />
+    <Content Include="assets\prettify\prettify.min.js" />
     <Content Include="style.css" />
     <Content Include="web.config" />
     <Content Include="assets\jquery\jquery-1.11.1.min.map" />
@@ -83,6 +85,7 @@
     <TypeScriptCompile Include="classes\Application.ts" />
     <TypeScriptCompile Include="assets\jquery\jquery.d.ts" />
     <TypeScriptCompile Include="classes\ControlPanel.ts" />
+    <TypeScriptCompile Include="classes\GenerateCode.ts" />
     <TypeScriptCompile Include="classes\Keyframe.ts" />
     <TypeScriptCompile Include="classes\Layer.ts" />
     <TypeScriptCompile Include="assets\jqueryui\jqueryui.d.ts" />

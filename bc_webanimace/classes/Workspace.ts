@@ -7,6 +7,7 @@ interface rgb {
 
 class Workspace {
     private workspaceContainer: JQuery;
+    private workspaceWrapper: JQuery;
     private createdLayer: boolean = false;
     private app: Application;
     private shapeParams: Parameters;
@@ -15,13 +16,14 @@ class Workspace {
     private bezier: Bezier_points;
     private _workspaceSize: Dimensions = {width: 800, height: 360};
 
-    constructor(app: Application, workspaceContainer: JQuery) {
+    constructor(app: Application, workspaceContainer: JQuery, workspaceWrapper: JQuery) {
         this.app = app;
         this.workspaceContainer = workspaceContainer;
+        this.workspaceWrapper = workspaceWrapper;
 
         this.workspaceContainer.css(this._workspaceSize);
 
-        this.workspaceContainer.on('mousedown', (event: JQueryEventObject) => {
+        this.workspaceWrapper.on('mousedown', (event: JQueryEventObject) => {
             //if ($(event.target).is('#workspace')) {
                 if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
                     this.onDrawSquare(event);     
@@ -29,8 +31,7 @@ class Workspace {
             //}   
         });
 
-
-        this.workspaceContainer.on('mouseup', (event: JQueryEventObject) => {
+        this.workspaceWrapper.on('mouseup', (event: JQueryEventObject) => {
             if (this.createdLayer) {
                 var shape: Shape = new Shape(this.shapeParams);
                 var idLayer: number = this.app.timeline.addLayer(event, shape);
@@ -75,10 +76,10 @@ class Workspace {
 
         //new_object.appendTo(this.workspaceContainer);
 
-        this.workspaceContainer.on('mousemove', (event: JQueryEventObject) => {
+        this.workspaceWrapper.on('mousemove', (event: JQueryEventObject) => {
             this.onChangeSizeSquare(event, click_y, click_x, new_object);
         }).on('mouseup', (event: JQueryEventObject) => {
-            this.workspaceContainer.off('mousemove');
+            this.workspaceWrapper.off('mousemove');
         });
     }
 
@@ -127,7 +128,6 @@ class Workspace {
     }
 
     public transformShapes() {
-        console.log('transform...');
         var currentTimestamp: number = this.app.timeline.pxToMilisec();
         var layers: Array<Layer> = this.app.timeline.layers;
 
@@ -333,7 +333,7 @@ class Workspace {
                     'left': params.left - 1,
                     'width': params.width + 2,
                     'height': params.height + 2,       
-                    'z-index': params.zindex + 10000,       
+                    'z-index': params.zindex + 1000,       
                 });
 
                 shape.attr('data-id', keyframe.shape.id); 
@@ -342,81 +342,84 @@ class Workspace {
                 shape.appendTo(this.workspaceContainer);
                 helper.appendTo(this.workspaceContainer);
             }
-
-            //hook draging on shapes
-            $('.shape-helper').draggable({
-                containment: 'parent',
-                scroll: false,
-                drag: (event: JQueryEventObject, ui) => {
-                    var id: number = $(event.target).data('id');
-                    this.workspaceContainer.find('.square[data-id="' + id + '"]').css({
-                        'top': ui.position.top + 1,
-                        'left': ui.position.left + 1,
-                    });
-                },
-                stop: (event, ui) => {
-                    var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
-                    var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
-                    if (keyframe == null) {
-                        //keyframe = layer.getKeyframe(0);
-                        layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                        this.app.timeline.renderKeyframes(layer.id);
-                    } else {
-                        keyframe.shape.setPosition({
-                            top: ui.position.top + 1,
-                            left: ui.position.left + 1,
-                        });
-                    }
-
-                    this.renderShapes();
-                    this.transformShapes();;
-                    this.app.timeline.selectLayer(layer.id);
-                },
-            }); 
-
-            //resizable shape
-            $('.shape-helper').resizable({
-                handles: 'all',
-                autohide: true,
-                containment: 'parent',
-                resize: (event, ui) => {
-                    var id: number = $(event.target).data('id');
-                    var shape: JQuery = this.workspaceContainer.find('.square[data-id="' + id + '"]');
-                    shape.css({
-                        'top': ui.position.top + 1,
-                        'left': ui.position.left + 1,
-                        'width': $(event.target).width(),
-                        'height': $(event.target).height(),
-                    });
-                    this.app.controlPanel.updateDimensions({ width: $(event.target).width(), height: $(event.target).height() });
-                },
-                stop: (event, ui) => {
-                    var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
-                    var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
-                    if (keyframe == null) {
-                        layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                        this.app.timeline.renderKeyframes(layer.id);
-                    } else {
-                        keyframe.shape.setPosition({
-                            top: ui.position.top + 1,
-                            left: ui.position.left + 1,
-                        });
-                        keyframe.shape.setDimensions({
-                            width: $(event.target).width(),
-                            height: $(event.target).height(),
-                        });   
-                    }
-                    //this.renderShapes();
-                    this.transformShapes();
-                    this.app.timeline.selectLayer(layer.id);
-                },
-            });
         });
+
+        this.dragResize();
 
         if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
             $('.shape-helper').draggable('disable');
             $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
         }
+    }
+
+    dragResize() {
+        //hook draging on shapes
+        $('.shape-helper').draggable({
+            scroll: false,
+            drag: (event: JQueryEventObject, ui) => {
+                var id: number = $(event.target).data('id');
+                this.workspaceContainer.find('.square[data-id="' + id + '"]').css({
+                    'top': ui.position.top + 1,
+                    'left': ui.position.left + 1,
+                });
+            },
+            stop: (event, ui) => {
+                var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
+                var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+                if (keyframe == null) {
+                    //keyframe = layer.getKeyframe(0);
+                    layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    this.app.timeline.renderKeyframes(layer.id);
+                } else {
+                    keyframe.shape.setPosition({
+                        top: ui.position.top + 1,
+                        left: ui.position.left + 1,
+                    });
+                }
+
+                this.renderShapes();
+                this.transformShapes();;
+                this.app.timeline.selectLayer(layer.id);
+                $('.workspace-wrapper').perfectScrollbar('update');
+            },
+        });
+
+        //resizable shape
+        $('.shape-helper').resizable({
+            handles: 'all',
+            autohide: true,
+            resize: (event, ui) => {
+                var id: number = $(event.target).data('id');
+                var shape: JQuery = this.workspaceContainer.find('.square[data-id="' + id + '"]');
+                shape.css({
+                    'top': ui.position.top + 1,
+                    'left': ui.position.left + 1,
+                    'width': $(event.target).width(),
+                    'height': $(event.target).height(),
+                });
+                this.app.controlPanel.updateDimensions({ width: $(event.target).width(), height: $(event.target).height() });
+            },
+            stop: (event, ui) => {
+                var layer: Layer = this.app.timeline.getLayer($(event.target).data('id'));
+                var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+                if (keyframe == null) {
+                    layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    this.app.timeline.renderKeyframes(layer.id);
+                } else {
+                    keyframe.shape.setPosition({
+                        top: ui.position.top + 1,
+                        left: ui.position.left + 1,
+                    });
+                    keyframe.shape.setDimensions({
+                        width: $(event.target).width(),
+                        height: $(event.target).height(),
+                    });
+                }
+                //this.renderShapes();
+                this.transformShapes();
+                this.app.timeline.selectLayer(layer.id);
+            },
+        });       
     }
 
     highlightShape(arrayID: Array<number>) {
@@ -590,14 +593,13 @@ class Workspace {
     setBezier(fn: Bezier_points) {
         this.bezier = fn;
         var layer: Layer = this.getHighlightedLayer();
-        if (layer) {
+        if (layer) {         
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 this.app.timeline.renderKeyframes(layer.id);
             }
             keyframe.timing_function = this.bezier;
-
             //this.renderShapes();
             this.app.timeline.selectLayer(layer.id);
         }  
@@ -674,6 +676,7 @@ class Workspace {
 
         this._workspaceSize = newDimension;
         this.workspaceContainer.css(this._workspaceSize);
+        $('.workspace-wrapper').perfectScrollbar('update');
     }
 
     getBezier() {

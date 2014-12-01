@@ -58,7 +58,7 @@ class Timeline
             this.onClickLayer(event, ui);
         });
 
-        $(document).on('click', 'td', (event: JQueryEventObject) => {
+        $(document).on('mousedown', 'td', (event: JQueryEventObject) => {
             this.onClickRow(event);
         });
 
@@ -66,7 +66,7 @@ class Timeline
             this.onCreateKeyframe(event);
         });
 
-        $(document).on('mouseup', '.keyframes > table', (event: JQueryEventObject) => {
+        $(document).on('mousedown', '.keyframes > table', (event: JQueryEventObject) => {
             this.onClickTable(event);
         });
 
@@ -75,7 +75,7 @@ class Timeline
             $(event.target).addClass('selected');
             //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             this.app.workspace.updateBezierCurve(this.getLayer($(event.target).data('layer')));
-            this.app.workspace.renderShapes();
+            //this.app.workspace.renderShapes();
         });
 
         this.timelineContainer.ready((event: JQueryEventObject) => {
@@ -213,6 +213,7 @@ class Timeline
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
             me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
+            me.app.workspace.transformShapes();
             return (value);
         }, {
             width: 150,
@@ -382,7 +383,8 @@ class Timeline
             stop: (event: JQueryEventObject, ui) => {
                 var posX = Math.round(ui.position.left / this.keyframeWidth) * this.keyframeWidth;
                 this.pointerPosition = posX;  
-                this.pointerEl.css('left', this.pointerPosition - 1);   
+                this.pointerEl.css('left', this.pointerPosition - 1);
+                this.app.workspace.transformShapes();
             },
         });
     }

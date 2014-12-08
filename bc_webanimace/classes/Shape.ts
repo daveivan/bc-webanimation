@@ -3,7 +3,6 @@
     left: number;
     width: number;
     height: number;
-    //background: string;
     backgroundR: number;
     backgroundG: number;
     backgroundB: number;
@@ -12,6 +11,9 @@
     border?: string;
     zindex?: number;   
     borderRadius: Array<number>; 
+    rotateX: number;
+    rotateY: number;
+    rotateZ: number;
 }
 
 interface Pos {
@@ -94,5 +96,17 @@ class Shape {
 
     setBorderRadiusBottomLeft(val: number) {
         this._parameters.borderRadius[3] = val;
+    }
+
+    setRotateX(val: number) {
+        this._parameters.rotateX = val;
+    }
+
+    setRotateY(val: number) {
+        this._parameters.rotateY = val;
+    }
+
+    setRotateZ(val: number) {
+        this._parameters.rotateZ = val;
     }
 }

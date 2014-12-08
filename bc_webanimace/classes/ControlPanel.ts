@@ -4,6 +4,12 @@ enum Mode {
     CREATE_DIV,
 }
 
+interface Rotate {
+    x: number;
+    y: number;
+    z: number;
+}
+
 class ControlPanel {
     private app: Application;
     private containerEl: JQuery;
@@ -43,6 +49,13 @@ class ControlPanel {
     private workspaceHeightEl: JQuery = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
 
     private idEl: JQuery = $('<input type="text"></input>').attr('id', 'id-el').addClass('number');
+
+    private rotateXEl: JQuery = $('<input>').attr('id', 'rx').addClass('number rotate');
+    private rotateXSliderEl: JQuery = $('<div>').addClass('rotate-slider').attr('id', 'rx');
+    private rotateYEl: JQuery = $('<input>').attr('id', 'ry').addClass('number rotate');
+    private rotateYSliderEl: JQuery = $('<div>').addClass('rotate-slider').attr('id', 'ry');
+    private rotateZEl: JQuery = $('<input>').attr('id', 'rz').addClass('number rotate');
+    private rotateZSliderEl: JQuery = $('<div>').addClass('rotate-slider').attr('id', 'rz');
 
     constructor(app: Application, container: JQuery) {
         this.app = app;
@@ -124,6 +137,26 @@ class ControlPanel {
         radius.append(this.borderRadiusHelperEl);
         this.controlPanelEl.append(radius);
 
+        //3D Rotate
+        var rotate: JQuery = this.itemControlEl.clone();
+        rotate.html('<h2>3D rotace</h2>').addClass('control-rotate');
+        var x: JQuery = $('<span>').html('<p>x:</p>').addClass('group-form');
+        x.append(this.rotateXSliderEl);
+        x.append(this.rotateXEl);
+        x.append(' deg');
+        rotate.append(x);
+        var y: JQuery = $('<span>').html('<p>y:</p>').addClass('group-form');
+        y.append(this.rotateYSliderEl);
+        y.append(this.rotateYEl);
+        y.append(' deg');
+        rotate.append(y);
+        var z: JQuery = $('<span>').html('<p>z:</p>').addClass('group-form');
+        z.append(this.rotateZSliderEl);
+        z.append(this.rotateZEl);
+        z.append(' deg');
+        rotate.append(z);
+        this.controlPanelEl.append(rotate);
+
         this.containerEl.append(this.controlPanelEl);
 
         $(window).resize(() => {
@@ -202,6 +235,21 @@ class ControlPanel {
             this.app.workspace.setWorkspaceDimension(parseInt($(event.target).val()), null);
         });
 
+        this.rotateXEl.on('change', (event: JQueryEventObject) => {
+            this.rotateXSliderEl.slider('value', $(event.target).val());
+            this.app.workspace.set3DRotate('x', parseInt($(event.target).val()));
+        });
+
+        this.rotateYEl.on('change', (event: JQueryEventObject) => {
+            this.rotateYSliderEl.slider('value', $(event.target).val());
+            this.app.workspace.set3DRotate('y', parseInt($(event.target).val()));
+        });
+
+        this.rotateZEl.on('change', (event: JQueryEventObject) => {
+            this.rotateZSliderEl.slider('value', $(event.target).val());
+            this.app.workspace.set3DRotate('z', parseInt($(event.target).val()));
+        });
+
         this.idEl.on('change', (event: JQueryEventObject) => {
             this.app.workspace.setIdEl($(event.target).val().toString());
         });
@@ -211,6 +259,12 @@ class ControlPanel {
                 $(event.target).trigger('change');
             }
         });
+
+        $(document).on('keyup', '.rotate', (event: JQueryEventObject) => {
+            if (event.which == 13) {
+                $(event.target).trigger('change');
+            }
+        })
 
         $(document).on('change', '.border-radius-input', (e: JQueryEventObject) => {
             this.app.workspace.setBorderRadius($(e.target).data('type'), parseInt($(e.target).val()));
@@ -246,6 +300,17 @@ class ControlPanel {
             this.renderWrap(this.ctx);
             this.controlPanelEl.perfectScrollbar();
             this.app.workspace.setBezier(this.renderWrap(this.ctx));
+
+            $('.rotate-slider').slider({
+                min: -180,
+                max: 180,
+                step: 1,
+                value: 0,
+                slide: (event, ui) => {
+                    $('input#'+ $(event.target).attr('id')).val(ui.value).change();
+                },
+            });
+            $('.rotate').val('0');
 
         });
     }
@@ -344,6 +409,21 @@ class ControlPanel {
 
     updateIdEl(id: string) {
         this.idEl.val(id);
+    }
+
+    update3DRotate(rotate: Rotate) {
+        if (rotate.x != null) {
+            this.rotateXSliderEl.slider('option', 'value', Number(rotate.x));
+            this.rotateXEl.val(rotate.x.toString());
+        }
+        if (rotate.y != null) {
+            this.rotateYSliderEl.slider('option', 'value', Number(rotate.y));
+            this.rotateYEl.val(rotate.y.toString());
+        }
+        if (rotate.z != null) {
+            this.rotateZSliderEl.slider('option', 'value', Number(rotate.z));
+            this.rotateZEl.val(rotate.z.toString());
+        }
     }
 
     get Mode (){

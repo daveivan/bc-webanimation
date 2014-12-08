@@ -72,10 +72,24 @@ class Timeline
 
         this.keyframesTableEl.on('click', '.keyframe', (event: JQueryEventObject) => {
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            this.keyframesTableEl.find('.timing-function').removeClass('selected');
             $(event.target).addClass('selected');
+            $(event.target).next('.timing-function').addClass('selected');
             //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             this.app.workspace.updateBezierCurve(this.getLayer($(event.target).data('layer')));
             //this.app.workspace.renderShapes();
+        });
+
+        this.keyframesTableEl.on('click', '.timing-function p', (event: JQueryEventObject) => {
+            var keyframeEl: JQuery = $(event.target).parent('.timing-function').prev('.keyframe');
+
+
+            this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            this.keyframesTableEl.find('.timing-function').removeClass('selected');  
+            $(event.target).parent('.timing-function').addClass('selected');
+            keyframeEl.addClass('selected');
+            var k: Keyframe = this.getLayer(parseInt(keyframeEl.data('layer'))).getKeyframe(parseInt(keyframeEl.data('index')));
+            this.app.workspace.updateBezierCurveByKeyframe(k);       
         });
 
         this.timelineContainer.ready((event: JQueryEventObject) => {
@@ -132,6 +146,7 @@ class Timeline
         rowEl.find('.range').remove();
         var keyframesTdEl: JQuery = $('<td>').addClass('keyframes-list');
 
+        this.getLayer(id).sortKeyframes();
         var keyframes: Array<Keyframe> = this.getLayer(id).getAllKeyframes();
         if (keyframes.length > 1) {
 
@@ -141,6 +156,13 @@ class Timeline
                 keyframesTdEl.append($('<div>').addClass('keyframe').attr('data-layer', id).attr('data-index', index).css({
                     'left': this.milisecToPx(keyframe.timestamp) - 5,
                 }));
+
+                if (index != (keyframes.length - 1)) {
+                    keyframesTdEl.append($('<div>').addClass('timing-function').html('<p>(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 +')</p>').css({
+                        'left': this.milisecToPx(keyframe.timestamp) + 5,
+                        'width': this.milisecToPx(keyframes[index+1].timestamp - keyframe.timestamp) - 10,
+                    }));   
+                }
                 if (keyframe.timestamp < minValue)
                     minValue = keyframe.timestamp;
                 if (keyframe.timestamp > maxValue)
@@ -373,7 +395,8 @@ class Timeline
             containment: 'parent',
             handle: '.pointer-top',
             start: (event: JQueryEventObject, ui) => {
-                this.keyframesTableEl.find('.keyframe').removeClass('selected');  
+                this.keyframesTableEl.find('.keyframe').removeClass('selected');
+                this.keyframesTableEl.find('.timing-function').removeClass('selected');
             },
             drag: (event: JQueryEventObject, ui) => {
                 this.pointerPosition = ui.position.left + 1;
@@ -392,6 +415,7 @@ class Timeline
     private onClickTable(e: JQueryEventObject) {
         if (!$(e.target).hasClass('pointer')) {
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            this.keyframesTableEl.find('.timing-function').removeClass('selected');
             var n = $(e.target).parents('table');
             var posX = e.pageX - $(n).offset().left;
             posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;

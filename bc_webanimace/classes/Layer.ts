@@ -98,7 +98,11 @@
     sortTimestamps() {
         var tmp: Array<number> = this._timestamps.sort((n1, n2) => n1 - n2);
         this._timestamps = tmp;
+    }
 
+    public sortKeyframes() {
+        var tmp: Array<Keyframe> = this._keyframes.sort((n1, n2) => n1.timestamp - n2.timestamp);
+        this._keyframes = tmp;
     }
 
     get timestamps() {

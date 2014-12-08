@@ -106,6 +106,9 @@ class Workspace {
             opacity: new_object.css('opacity'),
             zindex: this.app.timeline.layers.length,
             borderRadius: [0, 0, 0, 0],
+            rotateX: 0,
+            rotateY: 0,
+            rotateZ: 0,
     };
 
         new_object.css({
@@ -124,6 +127,80 @@ class Workspace {
         } else {
             new_object.remove();
             this.createdLayer = false;
+        }
+    }
+
+    getTransformAttr(idLayer: number, attr: string): number {
+        var currentTimestamp: number = this.app.timeline.pxToMilisec();
+        var layer: Layer = this.app.timeline.getLayer(idLayer);
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(currentTimestamp);
+            if (keyframe == null) {
+                keyframe = layer.getKeyframe(0);
+            }
+            var timestamps: Array<number> = layer.timestamps;
+
+            var left = null;
+            var right = null;
+            var index = 0;
+            for (var i = timestamps.length; i--;) {
+                if (timestamps[i] < currentTimestamp && (left === null || left < timestamps[i])) {
+                    left = timestamps[i];
+                }
+                if (timestamps[i] >= currentTimestamp && (right === null || right > timestamps[i])) {
+                    right = timestamps[i];
+                    index = i;
+                }
+            };
+
+            if (left === null && right === currentTimestamp && timestamps.length >= 2) {
+                left = right;
+                right = timestamps[index + 1];
+            }
+
+            var params: Parameters = null;
+            var interval: Array<Keyframe> = new Array<Keyframe>();
+            if (left != null) {
+                interval['left'] = layer.getKeyframeByTimestamp(left);
+                params = interval['left'].shape.parameters;
+            }
+            if (right != null) {
+                interval['right'] = layer.getKeyframeByTimestamp(right);
+                params = interval['right'].shape.parameters;
+            }
+
+            if (Object.keys(interval).length == 2) {
+                //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+                var fn: Bezier_points = interval['right'].timing_function;
+                var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+                var p: number = (currentTimestamp - left) / (right - left);
+                
+                params = {
+                    top: this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
+                    left: this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
+                    width: this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
+                    height: this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
+                    backgroundR: this.computeParameter(interval['left'].shape.parameters.backgroundR, interval['right'].shape.parameters.backgroundR, bezier(p)),
+                    backgroundG: this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
+                    backgroundB: this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
+                    backgroundA: this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
+                    opacity: this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
+                    borderRadius: [
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
+                    ],
+                    rotateX: this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
+                    rotateY: this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
+                    rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
+                }
+                
+            }
+            
+            return params[attr];
+        } else {
+            return null;
         }
     }
 
@@ -190,7 +267,7 @@ class Workspace {
             //working in mozilla?
             if (Object.keys(interval).length == 2) {
                 //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
-                var fn: Bezier_points = interval['right'].timing_function;
+                var fn: Bezier_points = interval['left'].timing_function;
                 var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
                 var p: number = (currentTimestamp - left) / (right - left);
 
@@ -210,6 +287,9 @@ class Workspace {
                         this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
                         this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
                     ],
+                    rotateX: this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
+                    rotateY: this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
+                    rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
                 }
                 
             }
@@ -239,8 +319,9 @@ class Workspace {
             'border-top-right-radius': params.borderRadius[1],
             'border-bottom-right-radius': params.borderRadius[2],
             'border-bottom-left-radius': params.borderRadius[3],
+            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg)',
         });
-        
+
         helper.css({
             'top': params.top - 1,
             'left': params.left - 1,
@@ -262,6 +343,7 @@ class Workspace {
             this.app.controlPanel.updateOpacity(params.opacity);
             this.app.controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB });
             this.app.controlPanel.updateBorderRadius(params.borderRadius);
+            this.app.controlPanel.update3DRotate({ x: params.rotateX, y: params.rotateY, z: params.rotateZ });
         }
     }
 
@@ -435,6 +517,7 @@ class Workspace {
                     this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB });
                     this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
                     this.app.controlPanel.updateIdEl(this.app.timeline.getLayer(id).idEl);
+                    this.app.controlPanel.update3DRotate({ x: shape.parameters.rotateX, y: shape.parameters.rotateY, z: shape.parameters.rotateZ });
                 }
             }
         });
@@ -444,8 +527,10 @@ class Workspace {
         var shapeEl: JQuery = this.workspaceContainer.find('.square[data-id="' + id + '"]');
         if (shapeEl.length) {
             var params: Parameters = {
-                top: shapeEl.position().top,
-                left: shapeEl.position().left,
+                //top: shapeEl.position().top,
+                //left: shapeEl.position().left,
+                top: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().top + 1,
+                left: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1,
                 width: shapeEl.width(),
                 height: shapeEl.height(),
                 //background: shapeEl.css('background-color'),
@@ -461,6 +546,18 @@ class Workspace {
                     parseInt(shapeEl.css('border-bottom-right-radius')),
                     parseInt(shapeEl.css('border-bottom-left-radius'))
                 ],
+                //not working on chrome
+                //rotateX: this.parseRotation(shapeEl.attr('style'), 0),
+                //rotateY: this.parseRotation(shapeEl.attr('style'), 1),
+                //rotateZ: this.parseRotation(shapeEl.attr('style'), 2),
+                //rotateX: 0,
+                //rotateY: 0,
+                //rotateZ: 0,
+                
+                //workaround
+                rotateX: this.getTransformAttr(id, 'rotateX'),
+                rotateY: this.getTransformAttr(id, 'rotateY'),
+                rotateZ: this.getTransformAttr(id, 'rotateZ'),
             };
 
             var shape: Shape = new Shape(params);
@@ -512,6 +609,14 @@ class Workspace {
         } else if (part == 'b') {
             return parseInt(parts[2]);
         }
+    }
+
+    parseRotation(style: any, index: number): number {
+        var s = style.split(';');
+        var t = s[s.length - 2];
+        var x = t.match(/\(.*?\)/g)[index];
+        x = x.substr(1, x.length - 2);
+        return parseInt(x.replace('deg', ''));
     }
 
     setColor(c: rgb) {
@@ -585,9 +690,32 @@ class Workspace {
                 keyframe.shape.setBorderRadiusBottomRight(value);
             }
 
-            this.renderShapes();
+            //this.renderShapes();
+            this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }           
+    }
+
+    set3DRotate(type: string, value: number) {
+        console.log('setting rotate');
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (type === 'x') {
+                keyframe.shape.setRotateX(value);
+            } else if (type === 'y') {
+                keyframe.shape.setRotateY(value);
+            } else if (type === 'z') {
+                keyframe.shape.setRotateZ(value);
+            }
+            //this.renderShapes();
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }                   
     }
 
     setBezier(fn: Bezier_points) {
@@ -601,6 +729,7 @@ class Workspace {
             }
             keyframe.timing_function = this.bezier;
             //this.renderShapes();
+            this.app.timeline.renderKeyframes(layer.id);
             this.app.timeline.selectLayer(layer.id);
         }  
     }
@@ -611,6 +740,12 @@ class Workspace {
             if (keyframe) {
                 this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
             } 
+        }
+    }
+
+    updateBezierCurveByKeyframe(keyframe: Keyframe) {
+        if (keyframe) {
+            this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
         }
     }
 

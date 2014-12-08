@@ -105,6 +105,13 @@
         this._timestamps = tmp;
     };
 
+    Layer.prototype.sortKeyframes = function () {
+        var tmp = this._keyframes.sort(function (n1, n2) {
+            return n1.timestamp - n2.timestamp;
+        });
+        this._keyframes = tmp;
+    };
+
     Object.defineProperty(Layer.prototype, "timestamps", {
         get: function () {
             return this._timestamps;
@@ -187,11 +194,24 @@ var Timeline = (function () {
 
         this.keyframesTableEl.on('click', '.keyframe', function (event) {
             _this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            _this.keyframesTableEl.find('.timing-function').removeClass('selected');
             $(event.target).addClass('selected');
+            $(event.target).next('.timing-function').addClass('selected');
 
             //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             _this.app.workspace.updateBezierCurve(_this.getLayer($(event.target).data('layer')));
             //this.app.workspace.renderShapes();
+        });
+
+        this.keyframesTableEl.on('click', '.timing-function p', function (event) {
+            var keyframeEl = $(event.target).parent('.timing-function').prev('.keyframe');
+
+            _this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            _this.keyframesTableEl.find('.timing-function').removeClass('selected');
+            $(event.target).parent('.timing-function').addClass('selected');
+            keyframeEl.addClass('selected');
+            var k = _this.getLayer(parseInt(keyframeEl.data('layer'))).getKeyframe(parseInt(keyframeEl.data('index')));
+            _this.app.workspace.updateBezierCurveByKeyframe(k);
         });
 
         this.timelineContainer.ready(function (event) {
@@ -247,6 +267,7 @@ var Timeline = (function () {
         rowEl.find('.range').remove();
         var keyframesTdEl = $('<td>').addClass('keyframes-list');
 
+        this.getLayer(id).sortKeyframes();
         var keyframes = this.getLayer(id).getAllKeyframes();
         if (keyframes.length > 1) {
             var minValue = keyframes[0].timestamp, maxValue = keyframes[0].timestamp;
@@ -255,6 +276,13 @@ var Timeline = (function () {
                 keyframesTdEl.append($('<div>').addClass('keyframe').attr('data-layer', id).attr('data-index', index).css({
                     'left': _this.milisecToPx(keyframe.timestamp) - 5
                 }));
+
+                if (index != (keyframes.length - 1)) {
+                    keyframesTdEl.append($('<div>').addClass('timing-function').html('<p>(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')</p>').css({
+                        'left': _this.milisecToPx(keyframe.timestamp) + 5,
+                        'width': _this.milisecToPx(keyframes[index + 1].timestamp - keyframe.timestamp) - 10
+                    }));
+                }
                 if (keyframe.timestamp < minValue)
                     minValue = keyframe.timestamp;
                 if (keyframe.timestamp > maxValue)
@@ -491,6 +519,7 @@ var Timeline = (function () {
             handle: '.pointer-top',
             start: function (event, ui) {
                 _this.keyframesTableEl.find('.keyframe').removeClass('selected');
+                _this.keyframesTableEl.find('.timing-function').removeClass('selected');
             },
             drag: function (event, ui) {
                 _this.pointerPosition = ui.position.left + 1;
@@ -510,6 +539,7 @@ var Timeline = (function () {
     Timeline.prototype.onClickTable = function (e) {
         if (!$(e.target).hasClass('pointer')) {
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
+            this.keyframesTableEl.find('.timing-function').removeClass('selected');
             var n = $(e.target).parents('table');
             var posX = e.pageX - $(n).offset().left;
             posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
@@ -668,6 +698,18 @@ var Shape = (function () {
     Shape.prototype.setBorderRadiusBottomLeft = function (val) {
         this._parameters.borderRadius[3] = val;
     };
+
+    Shape.prototype.setRotateX = function (val) {
+        this._parameters.rotateX = val;
+    };
+
+    Shape.prototype.setRotateY = function (val) {
+        this._parameters.rotateY = val;
+    };
+
+    Shape.prototype.setRotateZ = function (val) {
+        this._parameters.rotateZ = val;
+    };
     return Shape;
 })();
 ///<reference path="Shape.ts" />
@@ -763,7 +805,10 @@ var Workspace = (function () {
             backgroundA: 1,
             opacity: new_object.css('opacity'),
             zindex: this.app.timeline.layers.length,
-            borderRadius: [0, 0, 0, 0]
+            borderRadius: [0, 0, 0, 0],
+            rotateX: 0,
+            rotateY: 0,
+            rotateZ: 0
         };
 
         new_object.css({
@@ -782,6 +827,80 @@ var Workspace = (function () {
         } else {
             new_object.remove();
             this.createdLayer = false;
+        }
+    };
+
+    Workspace.prototype.getTransformAttr = function (idLayer, attr) {
+        var currentTimestamp = this.app.timeline.pxToMilisec();
+        var layer = this.app.timeline.getLayer(idLayer);
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(currentTimestamp);
+            if (keyframe == null) {
+                keyframe = layer.getKeyframe(0);
+            }
+            var timestamps = layer.timestamps;
+
+            var left = null;
+            var right = null;
+            var index = 0;
+            for (var i = timestamps.length; i--;) {
+                if (timestamps[i] < currentTimestamp && (left === null || left < timestamps[i])) {
+                    left = timestamps[i];
+                }
+                if (timestamps[i] >= currentTimestamp && (right === null || right > timestamps[i])) {
+                    right = timestamps[i];
+                    index = i;
+                }
+            }
+            ;
+
+            if (left === null && right === currentTimestamp && timestamps.length >= 2) {
+                left = right;
+                right = timestamps[index + 1];
+            }
+
+            var params = null;
+            var interval = new Array();
+            if (left != null) {
+                interval['left'] = layer.getKeyframeByTimestamp(left);
+                params = interval['left'].shape.parameters;
+            }
+            if (right != null) {
+                interval['right'] = layer.getKeyframeByTimestamp(right);
+                params = interval['right'].shape.parameters;
+            }
+
+            if (Object.keys(interval).length == 2) {
+                //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+                var fn = interval['right'].timing_function;
+                var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+                var p = (currentTimestamp - left) / (right - left);
+
+                params = {
+                    top: this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
+                    left: this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
+                    width: this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
+                    height: this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
+                    backgroundR: this.computeParameter(interval['left'].shape.parameters.backgroundR, interval['right'].shape.parameters.backgroundR, bezier(p)),
+                    backgroundG: this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
+                    backgroundB: this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
+                    backgroundA: this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
+                    opacity: this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
+                    borderRadius: [
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
+                        this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
+                    ],
+                    rotateX: this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
+                    rotateY: this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
+                    rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p))
+                };
+            }
+
+            return params[attr];
+        } else {
+            return null;
         }
     };
 
@@ -848,7 +967,7 @@ var Workspace = (function () {
             //working in mozilla?
             if (Object.keys(interval).length == 2) {
                 //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
-                var fn = interval['right'].timing_function;
+                var fn = interval['left'].timing_function;
                 var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
                 var p = (currentTimestamp - left) / (right - left);
 
@@ -867,7 +986,10 @@ var Workspace = (function () {
                         _this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
                         _this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
                         _this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
-                    ]
+                    ],
+                    rotateX: _this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
+                    rotateY: _this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
+                    rotateZ: _this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p))
                 };
             }
 
@@ -894,7 +1016,8 @@ var Workspace = (function () {
             'border-top-left-radius': params.borderRadius[0],
             'border-top-right-radius': params.borderRadius[1],
             'border-bottom-right-radius': params.borderRadius[2],
-            'border-bottom-left-radius': params.borderRadius[3]
+            'border-bottom-left-radius': params.borderRadius[3],
+            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg)'
         });
 
         helper.css({
@@ -918,6 +1041,7 @@ var Workspace = (function () {
             this.app.controlPanel.updateOpacity(params.opacity);
             this.app.controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB });
             this.app.controlPanel.updateBorderRadius(params.borderRadius);
+            this.app.controlPanel.update3DRotate({ x: params.rotateX, y: params.rotateY, z: params.rotateZ });
         }
     };
 
@@ -1097,6 +1221,7 @@ var Workspace = (function () {
                     _this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB });
                     _this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
                     _this.app.controlPanel.updateIdEl(_this.app.timeline.getLayer(id).idEl);
+                    _this.app.controlPanel.update3DRotate({ x: shape.parameters.rotateX, y: shape.parameters.rotateY, z: shape.parameters.rotateZ });
                 }
             }
         });
@@ -1106,8 +1231,10 @@ var Workspace = (function () {
         var shapeEl = this.workspaceContainer.find('.square[data-id="' + id + '"]');
         if (shapeEl.length) {
             var params = {
-                top: shapeEl.position().top,
-                left: shapeEl.position().left,
+                //top: shapeEl.position().top,
+                //left: shapeEl.position().left,
+                top: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().top + 1,
+                left: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1,
                 width: shapeEl.width(),
                 height: shapeEl.height(),
                 //background: shapeEl.css('background-color'),
@@ -1122,7 +1249,18 @@ var Workspace = (function () {
                     parseInt(shapeEl.css('border-top-right-radius')),
                     parseInt(shapeEl.css('border-bottom-right-radius')),
                     parseInt(shapeEl.css('border-bottom-left-radius'))
-                ]
+                ],
+                //not working on chrome
+                //rotateX: this.parseRotation(shapeEl.attr('style'), 0),
+                //rotateY: this.parseRotation(shapeEl.attr('style'), 1),
+                //rotateZ: this.parseRotation(shapeEl.attr('style'), 2),
+                //rotateX: 0,
+                //rotateY: 0,
+                //rotateZ: 0,
+                //workaround
+                rotateX: this.getTransformAttr(id, 'rotateX'),
+                rotateY: this.getTransformAttr(id, 'rotateY'),
+                rotateZ: this.getTransformAttr(id, 'rotateZ')
             };
 
             var shape = new Shape(params);
@@ -1174,6 +1312,14 @@ var Workspace = (function () {
         } else if (part == 'b') {
             return parseInt(parts[2]);
         }
+    };
+
+    Workspace.prototype.parseRotation = function (style, index) {
+        var s = style.split(';');
+        var t = s[s.length - 2];
+        var x = t.match(/\(.*?\)/g)[index];
+        x = x.substr(1, x.length - 2);
+        return parseInt(x.replace('deg', ''));
     };
 
     Workspace.prototype.setColor = function (c) {
@@ -1246,7 +1392,31 @@ var Workspace = (function () {
                 keyframe.shape.setBorderRadiusBottomRight(value);
             }
 
-            this.renderShapes();
+            //this.renderShapes();
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.set3DRotate = function (type, value) {
+        console.log('setting rotate');
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (type === 'x') {
+                keyframe.shape.setRotateX(value);
+            } else if (type === 'y') {
+                keyframe.shape.setRotateY(value);
+            } else if (type === 'z') {
+                keyframe.shape.setRotateZ(value);
+            }
+
+            //this.renderShapes();
+            this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
     };
@@ -1263,6 +1433,7 @@ var Workspace = (function () {
             keyframe.timing_function = this.bezier;
 
             //this.renderShapes();
+            this.app.timeline.renderKeyframes(layer.id);
             this.app.timeline.selectLayer(layer.id);
         }
     };
@@ -1273,6 +1444,12 @@ var Workspace = (function () {
             if (keyframe) {
                 this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
             }
+        }
+    };
+
+    Workspace.prototype.updateBezierCurveByKeyframe = function (keyframe) {
+        if (keyframe) {
+            this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
         }
     };
 
@@ -1396,6 +1573,12 @@ var ControlPanel = (function () {
         this.workspaceWidthEl = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
         this.workspaceHeightEl = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
         this.idEl = $('<input type="text"></input>').attr('id', 'id-el').addClass('number');
+        this.rotateXEl = $('<input>').attr('id', 'rx').addClass('number rotate');
+        this.rotateXSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rx');
+        this.rotateYEl = $('<input>').attr('id', 'ry').addClass('number rotate');
+        this.rotateYSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'ry');
+        this.rotateZEl = $('<input>').attr('id', 'rz').addClass('number rotate');
+        this.rotateZSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rz');
         this.app = app;
         this.containerEl = container;
 
@@ -1475,6 +1658,26 @@ var ControlPanel = (function () {
         radius.append(this.borderRadiusHelperEl);
         this.controlPanelEl.append(radius);
 
+        //3D Rotate
+        var rotate = this.itemControlEl.clone();
+        rotate.html('<h2>3D rotace</h2>').addClass('control-rotate');
+        var x = $('<span>').html('<p>x:</p>').addClass('group-form');
+        x.append(this.rotateXSliderEl);
+        x.append(this.rotateXEl);
+        x.append(' deg');
+        rotate.append(x);
+        var y = $('<span>').html('<p>y:</p>').addClass('group-form');
+        y.append(this.rotateYSliderEl);
+        y.append(this.rotateYEl);
+        y.append(' deg');
+        rotate.append(y);
+        var z = $('<span>').html('<p>z:</p>').addClass('group-form');
+        z.append(this.rotateZSliderEl);
+        z.append(this.rotateZEl);
+        z.append(' deg');
+        rotate.append(z);
+        this.controlPanelEl.append(rotate);
+
         this.containerEl.append(this.controlPanelEl);
 
         $(window).resize(function () {
@@ -1552,11 +1755,32 @@ var ControlPanel = (function () {
             _this.app.workspace.setWorkspaceDimension(parseInt($(event.target).val()), null);
         });
 
+        this.rotateXEl.on('change', function (event) {
+            _this.rotateXSliderEl.slider('value', $(event.target).val());
+            _this.app.workspace.set3DRotate('x', parseInt($(event.target).val()));
+        });
+
+        this.rotateYEl.on('change', function (event) {
+            _this.rotateYSliderEl.slider('value', $(event.target).val());
+            _this.app.workspace.set3DRotate('y', parseInt($(event.target).val()));
+        });
+
+        this.rotateZEl.on('change', function (event) {
+            _this.rotateZSliderEl.slider('value', $(event.target).val());
+            _this.app.workspace.set3DRotate('z', parseInt($(event.target).val()));
+        });
+
         this.idEl.on('change', function (event) {
             _this.app.workspace.setIdEl($(event.target).val().toString());
         });
 
         this.idEl.on('keyup', function (event) {
+            if (event.which == 13) {
+                $(event.target).trigger('change');
+            }
+        });
+
+        $(document).on('keyup', '.rotate', function (event) {
             if (event.which == 13) {
                 $(event.target).trigger('change');
             }
@@ -1596,6 +1820,17 @@ var ControlPanel = (function () {
             _this.renderWrap(_this.ctx);
             _this.controlPanelEl.perfectScrollbar();
             _this.app.workspace.setBezier(_this.renderWrap(_this.ctx));
+
+            $('.rotate-slider').slider({
+                min: -180,
+                max: 180,
+                step: 1,
+                value: 0,
+                slide: function (event, ui) {
+                    $('input#' + $(event.target).attr('id')).val(ui.value).change();
+                }
+            });
+            $('.rotate').val('0');
         });
     }
     ControlPanel.prototype.updateDimensions = function (d) {
@@ -1690,6 +1925,21 @@ var ControlPanel = (function () {
 
     ControlPanel.prototype.updateIdEl = function (id) {
         this.idEl.val(id);
+    };
+
+    ControlPanel.prototype.update3DRotate = function (rotate) {
+        if (rotate.x != null) {
+            this.rotateXSliderEl.slider('option', 'value', Number(rotate.x));
+            this.rotateXEl.val(rotate.x.toString());
+        }
+        if (rotate.y != null) {
+            this.rotateYSliderEl.slider('option', 'value', Number(rotate.y));
+            this.rotateYEl.val(rotate.y.toString());
+        }
+        if (rotate.z != null) {
+            this.rotateZSliderEl.slider('option', 'value', Number(rotate.z));
+            this.rotateZEl.val(rotate.z.toString());
+        }
     };
 
     Object.defineProperty(ControlPanel.prototype, "Mode", {
@@ -1865,9 +2115,10 @@ var GenerateCode = (function () {
                 'border-top-right-radius': p.borderRadius[1] + 'px',
                 'border-bottom-right-radius': p.borderRadius[2] + 'px',
                 'border-bottom-left-radius': p.borderRadius[3] + 'px',
+                'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg)',
                 'position': 'absolute',
-                '-webkit-animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's infinite',
-                'animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's infinite'
+                '-webkit-animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards',
+                'animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards'
             };
             css += _this.gCss(cssObject);
 
@@ -1892,9 +2143,13 @@ var GenerateCode = (function () {
                         'border-top-right-radius': p.borderRadius[1] + 'px',
                         'border-bottom-right-radius': p.borderRadius[2] + 'px',
                         'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                        '-webkit-animation-timing-function': 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')',
-                        'animation-timing-function': 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')'
+                        'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg)'
                     };
+
+                    if (i != item.timestamps.length - 1) {
+                        cssObject[percent]['-webkit-animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
+                        cssObject[percent]['animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
+                    }
                 });
 
                 keyframesCss += _this.gKeyframes(cssObject);

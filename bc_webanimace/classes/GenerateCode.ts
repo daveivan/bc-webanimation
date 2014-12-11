@@ -102,11 +102,24 @@
         var css: string = '';
         var keyframesCss: string = '';
 
+        //if infinite animation, find absolute maximum
+        if (this.app.timeline.repeat) {
+            var absoluteMax: number = 0;
+            this.layers.forEach((item: Layer, index: number) => {
+                var tmp: number = this.arrayMax(item.timestamps);
+                if (tmp > absoluteMax) absoluteMax = tmp;
+            });
+        }
+
         this.layers.forEach((item: Layer, index: number) => {
             var percents = new Array<String>();
             var min: number = this.arrayMin(item.timestamps);
             var max: number = this.arrayMax(item.timestamps);
-            var duration: number = max - min;
+            if (this.app.timeline.repeat) {
+                var duration: number = absoluteMax;
+            } else {
+                var duration: number = max - min;   
+            }
 
             var nameElement = 'object' + item.id;
 
@@ -124,11 +137,17 @@
                 'border-top-right-radius': p.borderRadius[1] + 'px',
                 'border-bottom-right-radius': p.borderRadius[2] + 'px',
                 'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg)',
+                'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
                 'position': 'absolute',
-                '-webkit-animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards',
-                'animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards',
             };
+            if (this.app.timeline.repeat) {
+                cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
+                cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
+            } else {
+                cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
+                cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';   
+            }
+
             css += this.gCss(cssObject);
 
             //2. if keyframes > 1, generate it
@@ -138,7 +157,20 @@
 
                 item.timestamps.forEach((timestamp: number, i: number) => {
                     var keyframe: Keyframe = item.getKeyframeByTimestamp(timestamp);
-                    var percent: string = (((keyframe.timestamp - min) / duration) * 100).toString() + '%';
+                    if (this.app.timeline.repeat) {
+                        var part: number = ((keyframe.timestamp) / duration);
+                    } else {
+                        var part: number = ((keyframe.timestamp - min) / duration);   
+                    }
+                    var percent: string = (part * 100).toString() + '%';
+                    //if infinite animation and not 100% append it to last keyframe
+                    if (this.app.timeline.repeat && i == item.timestamps.length-1 && part != 1) {
+                        percent += ' ,100%';
+                    }
+                    //if infinite animation and set delay, append delay to first keyframe
+                    if (this.app.timeline.repeat && i == 0 && part != 0) {
+                        percent += ', 0%';
+                    }
                     percents.push(percent);
                     p = keyframe.shape.parameters;
                     cssObject[percent] = {
@@ -152,7 +184,7 @@
                         'border-top-right-radius': p.borderRadius[1] + 'px',
                         'border-bottom-right-radius': p.borderRadius[2] + 'px',
                         'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                        'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg)',
+                        'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
                     }
 
                     if (i != item.timestamps.length - 1) {

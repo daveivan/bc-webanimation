@@ -109,6 +109,8 @@ class Workspace {
             rotateX: 0,
             rotateY: 0,
             rotateZ: 0,
+            skewX: 0,
+            skewY: 0,
     };
 
         new_object.css({
@@ -194,6 +196,8 @@ class Workspace {
                     rotateX: this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
                     rotateY: this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
                     rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
+                    skewX: this.computeParameter(interval['left'].shape.parameters.skewX, interval['right'].shape.parameters.skewX, bezier(p)),
+                    skewY: this.computeParameter(interval['left'].shape.parameters.skewY, interval['right'].shape.parameters.skewY, bezier(p)),
                 }
                 
             }
@@ -290,6 +294,8 @@ class Workspace {
                     rotateX: this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
                     rotateY: this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
                     rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
+                    skewX: this.computeParameter(interval['left'].shape.parameters.skewX, interval['right'].shape.parameters.skewX, bezier(p)),
+                    skewY: this.computeParameter(interval['left'].shape.parameters.skewY, interval['right'].shape.parameters.skewY, bezier(p)),
                 }
                 
             }
@@ -319,7 +325,7 @@ class Workspace {
             'border-top-right-radius': params.borderRadius[1],
             'border-bottom-right-radius': params.borderRadius[2],
             'border-bottom-left-radius': params.borderRadius[3],
-            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg)',
+            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg) skew(' + params.skewX + 'deg , ' + params.skewY + 'deg)',
         });
 
         helper.css({
@@ -553,11 +559,13 @@ class Workspace {
                 //rotateX: 0,
                 //rotateY: 0,
                 //rotateZ: 0,
-                
+
                 //workaround
                 rotateX: this.getTransformAttr(id, 'rotateX'),
                 rotateY: this.getTransformAttr(id, 'rotateY'),
                 rotateZ: this.getTransformAttr(id, 'rotateZ'),
+                skewX: this.getTransformAttr(id, 'skewX'),
+                skewY: this.getTransformAttr(id, 'skewY'),
             };
 
             var shape: Shape = new Shape(params);
@@ -716,6 +724,27 @@ class Workspace {
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }                   
+    }
+
+    setSkew(type: string, value: number) {
+        console.log('setting skew');
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (type === 'x') {
+                keyframe.shape.setSkewX(value);
+                console.log(value);
+            } else if (type === 'y') {
+                keyframe.shape.setSkewY(value);
+            }
+            //this.renderShapes();
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
     }
 
     setBezier(fn: Bezier_points) {

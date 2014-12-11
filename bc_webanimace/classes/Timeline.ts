@@ -14,10 +14,13 @@ class Timeline
     miliSecPerFrame: number = 100;
     groupKeyframes: number = 5;
 
+    private _repeat: boolean = false;
+
     private app: Application;
 
     newLayerEl: JQuery = $('<a class="new-layer" href = "#">Nová vrstva <i class="fa fa-file-o"></i></a>');
     deleteLayerEl: JQuery = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
+    repeatEl: JQuery = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>')
     deleteKeyframeEl: JQuery = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
     layersEl: JQuery = $('<div id="layers"></div>');
     timelineHeadEl: JQuery = $('<div class="layers-head"></div>');
@@ -56,6 +59,10 @@ class Timeline
 
         this.layersEl.on('mousedown', (event: JQueryEventObject, ui) => {
             this.onClickLayer(event, ui);
+        });
+
+        this.repeatEl.on('change', (event: JQueryEventObject) => {
+            this._repeat = this.repeatEl.find('input').is(':checked');
         });
 
         $(document).on('mousedown', 'td', (event: JQueryEventObject) => {
@@ -100,6 +107,7 @@ class Timeline
     renderTimeline()
     {
         $(this.timelineHeadEl).append(this.newLayerEl);
+        $(this.timelineHeadEl).append(this.repeatEl);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
@@ -492,6 +500,10 @@ class Timeline
             //this.app.workspace.renderShapes();
             this.app.workspace.transformShapes();
         }
+    }
+
+    get repeat() {
+        return this._repeat;
     }
 }
 

@@ -57,6 +57,11 @@ class ControlPanel {
     private rotateZEl: JQuery = $('<input>').attr('id', 'rz').addClass('number rotate');
     private rotateZSliderEl: JQuery = $('<div>').addClass('rotate-slider').attr('id', 'rz');
 
+    private skewXEl: JQuery = $('<input>').attr('id', 'skewx').addClass('number skew');
+    private skewXSliderEl: JQuery = $('<div>').addClass('skew-slider').attr('id', 'skewx');
+    private skewYEl: JQuery = $('<input>').attr('id', 'skewy').addClass('number skew');
+    private skewYSliderEl: JQuery = $('<div>').addClass('skew-slider').attr('id', 'skewy');
+
     constructor(app: Application, container: JQuery) {
         this.app = app;
         this.containerEl = container;
@@ -157,6 +162,21 @@ class ControlPanel {
         rotate.append(z);
         this.controlPanelEl.append(rotate);
 
+        //skew
+        var skew: JQuery = this.itemControlEl.clone();
+        skew.html('<h2>Zkosení</h2>').addClass('control-rotate');
+        var x: JQuery = $('<span>').html('<p>x:</p>').addClass('group-form');
+        x.append(this.skewXSliderEl);
+        x.append(this.skewXEl);
+        x.append(' deg');
+        skew.append(x);
+        var y: JQuery = $('<span>').html('<p>y:</p>').addClass('group-form');
+        y.append(this.skewYSliderEl);
+        y.append(this.skewYEl);
+        y.append(' deg');
+        skew.append(y);
+        this.controlPanelEl.append(skew);
+
         this.containerEl.append(this.controlPanelEl);
 
         $(window).resize(() => {
@@ -250,6 +270,16 @@ class ControlPanel {
             this.app.workspace.set3DRotate('z', parseInt($(event.target).val()));
         });
 
+        this.skewXEl.on('change', (event: JQueryEventObject) => {
+            this.skewXSliderEl.slider('value', $(event.target).val());
+            this.app.workspace.setSkew('x', parseInt($(event.target).val()));
+        });
+
+        this.skewYEl.on('change', (event: JQueryEventObject) => {
+            this.skewYSliderEl.slider('value', $(event.target).val());
+            this.app.workspace.setSkew('y', parseInt($(event.target).val()));
+        });
+
         this.idEl.on('change', (event: JQueryEventObject) => {
             this.app.workspace.setIdEl($(event.target).val().toString());
         });
@@ -307,10 +337,23 @@ class ControlPanel {
                 step: 1,
                 value: 0,
                 slide: (event, ui) => {
-                    $('input#'+ $(event.target).attr('id')).val(ui.value).change();
+                    $('input#' + $(event.target).attr('id')).val(ui.value).change();
                 },
             });
+
             $('.rotate').val('0');
+
+            $('.skew-slider').slider({
+                min: -90,
+                max: 90,
+                step: 1,
+                value: 0,
+                slide: (event, ui) => {
+                    $('input#' + $(event.target).attr('id')).val(ui.value).change();
+                },
+            });
+
+            $('.skew').val('0');
 
         });
     }

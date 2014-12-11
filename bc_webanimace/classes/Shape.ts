@@ -14,6 +14,8 @@
     rotateX: number;
     rotateY: number;
     rotateZ: number;
+    skewX: number;
+    skewY: number;
 }
 
 interface Pos {
@@ -108,5 +110,13 @@ class Shape {
 
     setRotateZ(val: number) {
         this._parameters.rotateZ = val;
+    }
+
+    setSkewX(val: number) {
+        this._parameters.skewX = val;
+    }
+
+    setSkewY(val: number) {
+        this._parameters.skewY = val;
     }
 }

@@ -140,8 +140,10 @@ var Timeline = (function () {
         //convert frame to time
         this.miliSecPerFrame = 100;
         this.groupKeyframes = 5;
+        this._repeat = false;
         this.newLayerEl = $('<a class="new-layer" href = "#">Nová vrstva <i class="fa fa-file-o"></i></a>');
         this.deleteLayerEl = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
+        this.repeatEl = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>');
         this.deleteKeyframeEl = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
         this.layersEl = $('<div id="layers"></div>');
         this.timelineHeadEl = $('<div class="layers-head"></div>');
@@ -178,6 +180,10 @@ var Timeline = (function () {
 
         this.layersEl.on('mousedown', function (event, ui) {
             _this.onClickLayer(event, ui);
+        });
+
+        this.repeatEl.on('change', function (event) {
+            _this._repeat = _this.repeatEl.find('input').is(':checked');
         });
 
         $(document).on('mousedown', 'td', function (event) {
@@ -220,6 +226,7 @@ var Timeline = (function () {
     }
     Timeline.prototype.renderTimeline = function () {
         $(this.timelineHeadEl).append(this.newLayerEl);
+        $(this.timelineHeadEl).append(this.repeatEl);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
@@ -621,6 +628,14 @@ var Timeline = (function () {
             this.app.workspace.transformShapes();
         }
     };
+
+    Object.defineProperty(Timeline.prototype, "repeat", {
+        get: function () {
+            return this._repeat;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return Timeline;
 })();
 var Shape = (function () {
@@ -709,6 +724,14 @@ var Shape = (function () {
 
     Shape.prototype.setRotateZ = function (val) {
         this._parameters.rotateZ = val;
+    };
+
+    Shape.prototype.setSkewX = function (val) {
+        this._parameters.skewX = val;
+    };
+
+    Shape.prototype.setSkewY = function (val) {
+        this._parameters.skewY = val;
     };
     return Shape;
 })();
@@ -808,7 +831,9 @@ var Workspace = (function () {
             borderRadius: [0, 0, 0, 0],
             rotateX: 0,
             rotateY: 0,
-            rotateZ: 0
+            rotateZ: 0,
+            skewX: 0,
+            skewY: 0
         };
 
         new_object.css({
@@ -894,7 +919,9 @@ var Workspace = (function () {
                     ],
                     rotateX: this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
                     rotateY: this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
-                    rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p))
+                    rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
+                    skewX: this.computeParameter(interval['left'].shape.parameters.skewX, interval['right'].shape.parameters.skewX, bezier(p)),
+                    skewY: this.computeParameter(interval['left'].shape.parameters.skewY, interval['right'].shape.parameters.skewY, bezier(p))
                 };
             }
 
@@ -989,7 +1016,9 @@ var Workspace = (function () {
                     ],
                     rotateX: _this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
                     rotateY: _this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
-                    rotateZ: _this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p))
+                    rotateZ: _this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
+                    skewX: _this.computeParameter(interval['left'].shape.parameters.skewX, interval['right'].shape.parameters.skewX, bezier(p)),
+                    skewY: _this.computeParameter(interval['left'].shape.parameters.skewY, interval['right'].shape.parameters.skewY, bezier(p))
                 };
             }
 
@@ -1017,7 +1046,7 @@ var Workspace = (function () {
             'border-top-right-radius': params.borderRadius[1],
             'border-bottom-right-radius': params.borderRadius[2],
             'border-bottom-left-radius': params.borderRadius[3],
-            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg)'
+            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg) skew(' + params.skewX + 'deg , ' + params.skewY + 'deg)'
         });
 
         helper.css({
@@ -1260,7 +1289,9 @@ var Workspace = (function () {
                 //workaround
                 rotateX: this.getTransformAttr(id, 'rotateX'),
                 rotateY: this.getTransformAttr(id, 'rotateY'),
-                rotateZ: this.getTransformAttr(id, 'rotateZ')
+                rotateZ: this.getTransformAttr(id, 'rotateZ'),
+                skewX: this.getTransformAttr(id, 'skewX'),
+                skewY: this.getTransformAttr(id, 'skewY')
             };
 
             var shape = new Shape(params);
@@ -1413,6 +1444,28 @@ var Workspace = (function () {
                 keyframe.shape.setRotateY(value);
             } else if (type === 'z') {
                 keyframe.shape.setRotateZ(value);
+            }
+
+            //this.renderShapes();
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.setSkew = function (type, value) {
+        console.log('setting skew');
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (type === 'x') {
+                keyframe.shape.setSkewX(value);
+                console.log(value);
+            } else if (type === 'y') {
+                keyframe.shape.setSkewY(value);
             }
 
             //this.renderShapes();
@@ -1579,6 +1632,10 @@ var ControlPanel = (function () {
         this.rotateYSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'ry');
         this.rotateZEl = $('<input>').attr('id', 'rz').addClass('number rotate');
         this.rotateZSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rz');
+        this.skewXEl = $('<input>').attr('id', 'skewx').addClass('number skew');
+        this.skewXSliderEl = $('<div>').addClass('skew-slider').attr('id', 'skewx');
+        this.skewYEl = $('<input>').attr('id', 'skewy').addClass('number skew');
+        this.skewYSliderEl = $('<div>').addClass('skew-slider').attr('id', 'skewy');
         this.app = app;
         this.containerEl = container;
 
@@ -1678,6 +1735,21 @@ var ControlPanel = (function () {
         rotate.append(z);
         this.controlPanelEl.append(rotate);
 
+        //skew
+        var skew = this.itemControlEl.clone();
+        skew.html('<h2>Zkosení</h2>').addClass('control-rotate');
+        var x = $('<span>').html('<p>x:</p>').addClass('group-form');
+        x.append(this.skewXSliderEl);
+        x.append(this.skewXEl);
+        x.append(' deg');
+        skew.append(x);
+        var y = $('<span>').html('<p>y:</p>').addClass('group-form');
+        y.append(this.skewYSliderEl);
+        y.append(this.skewYEl);
+        y.append(' deg');
+        skew.append(y);
+        this.controlPanelEl.append(skew);
+
         this.containerEl.append(this.controlPanelEl);
 
         $(window).resize(function () {
@@ -1770,6 +1842,16 @@ var ControlPanel = (function () {
             _this.app.workspace.set3DRotate('z', parseInt($(event.target).val()));
         });
 
+        this.skewXEl.on('change', function (event) {
+            _this.skewXSliderEl.slider('value', $(event.target).val());
+            _this.app.workspace.setSkew('x', parseInt($(event.target).val()));
+        });
+
+        this.skewYEl.on('change', function (event) {
+            _this.skewYSliderEl.slider('value', $(event.target).val());
+            _this.app.workspace.setSkew('y', parseInt($(event.target).val()));
+        });
+
         this.idEl.on('change', function (event) {
             _this.app.workspace.setIdEl($(event.target).val().toString());
         });
@@ -1830,7 +1912,20 @@ var ControlPanel = (function () {
                     $('input#' + $(event.target).attr('id')).val(ui.value).change();
                 }
             });
+
             $('.rotate').val('0');
+
+            $('.skew-slider').slider({
+                min: -90,
+                max: 90,
+                step: 1,
+                value: 0,
+                slide: function (event, ui) {
+                    $('input#' + $(event.target).attr('id')).val(ui.value).change();
+                }
+            });
+
+            $('.skew').val('0');
         });
     }
     ControlPanel.prototype.updateDimensions = function (d) {
@@ -2093,11 +2188,25 @@ var GenerateCode = (function () {
         var css = '';
         var keyframesCss = '';
 
+        //if infinite animation, find absolute maximum
+        if (this.app.timeline.repeat) {
+            var absoluteMax = 0;
+            this.layers.forEach(function (item, index) {
+                var tmp = _this.arrayMax(item.timestamps);
+                if (tmp > absoluteMax)
+                    absoluteMax = tmp;
+            });
+        }
+
         this.layers.forEach(function (item, index) {
             var percents = new Array();
             var min = _this.arrayMin(item.timestamps);
             var max = _this.arrayMax(item.timestamps);
-            var duration = max - min;
+            if (_this.app.timeline.repeat) {
+                var duration = absoluteMax;
+            } else {
+                var duration = max - min;
+            }
 
             var nameElement = 'object' + item.id;
 
@@ -2115,11 +2224,17 @@ var GenerateCode = (function () {
                 'border-top-right-radius': p.borderRadius[1] + 'px',
                 'border-bottom-right-radius': p.borderRadius[2] + 'px',
                 'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg)',
-                'position': 'absolute',
-                '-webkit-animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards',
-                'animation': nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards'
+                'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
+                'position': 'absolute'
             };
+            if (_this.app.timeline.repeat) {
+                cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
+                cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
+            } else {
+                cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
+                cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
+            }
+
             css += _this.gCss(cssObject);
 
             //2. if keyframes > 1, generate it
@@ -2129,7 +2244,22 @@ var GenerateCode = (function () {
 
                 item.timestamps.forEach(function (timestamp, i) {
                     var keyframe = item.getKeyframeByTimestamp(timestamp);
-                    var percent = (((keyframe.timestamp - min) / duration) * 100).toString() + '%';
+                    if (_this.app.timeline.repeat) {
+                        var part = ((keyframe.timestamp) / duration);
+                    } else {
+                        var part = ((keyframe.timestamp - min) / duration);
+                    }
+                    var percent = (part * 100).toString() + '%';
+
+                    //if infinite animation and not 100% append it to last keyframe
+                    if (_this.app.timeline.repeat && i == item.timestamps.length - 1 && part != 1) {
+                        percent += ' ,100%';
+                    }
+
+                    //if infinite animation and set delay, append delay to first keyframe
+                    if (_this.app.timeline.repeat && i == 0 && part != 0) {
+                        percent += ', 0%';
+                    }
                     percents.push(percent);
                     p = keyframe.shape.parameters;
                     cssObject[percent] = {
@@ -2143,7 +2273,7 @@ var GenerateCode = (function () {
                         'border-top-right-radius': p.borderRadius[1] + 'px',
                         'border-bottom-right-radius': p.borderRadius[2] + 'px',
                         'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                        'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg)'
+                        'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)'
                     };
 
                     if (i != item.timestamps.length - 1) {

@@ -474,7 +474,7 @@ input.number {
     text-align: center;
 }
 
-input.rotate {
+input.rotate, input.skew {
     margin-bottom: 5px;
 }
 
@@ -514,7 +514,7 @@ text-align: center;
     z-index: 1;
 }
 
-.rotate-slider {
+.rotate-slider, .skew-slider {
     width: 130px;
     display: inline-block;
     z-index: 1;

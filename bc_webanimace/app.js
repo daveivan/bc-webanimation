@@ -1071,6 +1071,7 @@ var Workspace = (function () {
             this.app.controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB });
             this.app.controlPanel.updateBorderRadius(params.borderRadius);
             this.app.controlPanel.update3DRotate({ x: params.rotateX, y: params.rotateY, z: params.rotateZ });
+            this.app.controlPanel.updateSkew({ x: params.skewX, y: params.skewY });
         }
     };
 
@@ -2034,6 +2035,17 @@ var ControlPanel = (function () {
         if (rotate.z != null) {
             this.rotateZSliderEl.slider('option', 'value', Number(rotate.z));
             this.rotateZEl.val(rotate.z.toString());
+        }
+    };
+
+    ControlPanel.prototype.updateSkew = function (skew) {
+        if (skew.x != null) {
+            this.skewXSliderEl.slider('option', 'value', Number(skew.x));
+            this.skewXEl.val(skew.x.toString());
+        }
+        if (skew.y != null) {
+            this.skewYSliderEl.slider('option', 'value', Number(skew.y));
+            this.skewYEl.val(skew.y.toString());
         }
     };
 

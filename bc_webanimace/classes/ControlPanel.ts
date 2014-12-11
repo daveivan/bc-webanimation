@@ -10,6 +10,11 @@ interface Rotate {
     z: number;
 }
 
+interface Skew {
+    x: number;
+    y: number;
+}
+
 class ControlPanel {
     private app: Application;
     private containerEl: JQuery;
@@ -466,6 +471,17 @@ class ControlPanel {
         if (rotate.z != null) {
             this.rotateZSliderEl.slider('option', 'value', Number(rotate.z));
             this.rotateZEl.val(rotate.z.toString());
+        }
+    }
+
+    updateSkew(skew: Skew) {
+        if (skew.x != null) {
+            this.skewXSliderEl.slider('option', 'value', Number(skew.x));
+            this.skewXEl.val(skew.x.toString());           
+        }
+        if (skew.y != null) {
+            this.skewYSliderEl.slider('option', 'value', Number(skew.y));
+            this.skewYEl.val(skew.y.toString());            
         }
     }
 

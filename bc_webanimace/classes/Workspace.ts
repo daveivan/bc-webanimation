@@ -350,6 +350,7 @@ class Workspace {
             this.app.controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB });
             this.app.controlPanel.updateBorderRadius(params.borderRadius);
             this.app.controlPanel.update3DRotate({ x: params.rotateX, y: params.rotateY, z: params.rotateZ });
+            this.app.controlPanel.updateSkew({ x: params.skewX, y: params.skewY });
         }
     }
 

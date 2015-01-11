@@ -69,33 +69,27 @@
         return css;
     }
 
-    generateObjects(): string {
+    generateObjectsTmp(): string {
         var shapes = $('#workspace').clone();
         shapes.find('.shape-helper').remove();
-        shapes.find('div').removeAttr('style');
+        shapes.find('.shape').removeAttr('style');
         shapes.removeAttr('style');
 
         var markup: string = '  <div id="workspace">\n';
-        shapes.find('div').each(function(index) {
-            //markup += '    <div class="object' + $(this).data('id').toString() + '">' + $(this).html().toString() + '</div>\n';
+        shapes.find('.shape').each(function(index) {
             markup += '    ' + ($(this).addClass('object'+$(this).data('id')).prop('outerHTML')) + '\n';
         });
         markup += '  </div>';
         return markup;
-        /*$("<pre />", {
-            "html": '&lt;!DOCTYPE html>\n&lt;html>\n' +
-            shapes.wrapAll('<div></div>').parent().html()
-                .replace(/[<>]/g, function (m) { return { '<': '&lt;', '>': '&gt;' }[m] })
-                .replace(/((ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?)/gi, '<a href="$1">$1</a>') +
-            '\n&lt;/html>'
-        }).appendTo(this.codeWrapperEl);*/
+    }
 
-        /*this.generateKeyframes();
-        this.gCss({
-            'name': '#workspace',
-            'width': this.app.workspace.workspaceSize.width + 'px',
-            'height': this.app.workspace.workspaceSize.height + 'px',
-        });*/
+    generateObjects() {
+        var markup: string = '  <div id="workspace">\n';
+        this.layers.forEach((layer: Layer, index: number) => {
+            markup += layer.getObject();
+        });
+        markup += '  </div>';
+        return markup;
     }
 
     objectCss() {
@@ -124,22 +118,8 @@
             var nameElement = 'object' + item.id;
 
             //1. init style for object
-            var p: Parameters = (item.getKeyframeByTimestamp(item.timestamps[0])).shape.parameters;
-            var cssObject: any = {
-                'name': '.' + nameElement,
-                'width': p.width + 'px',
-                'height': p.height + 'px',
-                'top': p.top + 'px',
-                'left': p.left + 'px',
-                'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
-                'opacity': p.opacity,
-                'border-top-left-radius': p.borderRadius[0] + 'px',
-                'border-top-right-radius': p.borderRadius[1] + 'px',
-                'border-bottom-right-radius': p.borderRadius[2] + 'px',
-                'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
-                'position': 'absolute',
-            };
+            var cssObject = item.getInitStyles(nameElement);
+
             if (this.app.timeline.repeat) {
                 cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
                 cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
@@ -172,20 +152,7 @@
                         percent += ', 0%';
                     }
                     percents.push(percent);
-                    p = keyframe.shape.parameters;
-                    cssObject[percent] = {
-                        'width': p.width + 'px',
-                        'height': p.height + 'px',
-                        'top': p.top + 'px',
-                        'left': p.left + 'px',
-                        'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
-                        'opacity': p.opacity,
-                        'border-top-left-radius': p.borderRadius[0] + 'px',
-                        'border-top-right-radius': p.borderRadius[1] + 'px',
-                        'border-bottom-right-radius': p.borderRadius[2] + 'px',
-                        'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                        'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
-                    }
+                    cssObject[percent] = item.getKeyframeStyle(timestamp);
 
                     if (i != item.timestamps.length - 1) {
                         cssObject[percent]['-webkit-animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
@@ -195,12 +162,6 @@
 
                 keyframesCss += this.gKeyframes(cssObject);
             }
-
-            /*var style: JQuery = $("<style>").attr({
-                class: "keyframe-style",
-                type: "text/css"
-            }).append(this.gKeyframes(c));
-            style.appendTo('head');*/
         });
 
         return (keyframesCss + css);

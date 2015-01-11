@@ -1,36 +1,6 @@
-﻿interface Parameters {
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-    backgroundR: number;
-    backgroundG: number;
-    backgroundB: number;
-    backgroundA: number;
-    opacity: number;
-    border?: string;
-    zindex?: number;   
-    borderRadius: Array<number>; 
-    rotateX: number;
-    rotateY: number;
-    rotateZ: number;
-    skewX: number;
-    skewY: number;
-}
-
-interface Pos {
-    top: number;
-    left: number;
-}
-
-interface Dimensions {
-    width: number;
-    height: number;
-}
-
-class Shape {
-    private _parameters: Parameters;
-    private _id;
+﻿class Shape implements IShape {
+    _parameters: Parameters;
+    private _id: number;
 
     constructor(params: Parameters) {
         this._parameters = params;
@@ -66,10 +36,11 @@ class Shape {
         this._parameters.height = d.height;
     }
 
-    setBackground(c: rgb) {
+    setBackground(c: rgba) {
         this.parameters.backgroundR = c.r;
         this.parameters.backgroundG = c.g;
         this.parameters.backgroundB = c.b;
+        this.parameters.backgroundA = c.a;
     }
 
     setOpacity(o: number) {
@@ -119,4 +90,12 @@ class Shape {
     setSkewY(val: number) {
         this._parameters.skewY = val;
     }
-}
+
+    setOriginX(val: number) {
+        this._parameters.originX = val;
+    }
+
+    setOriginY(val: number) {
+        this._parameters.originY = val;
+    }
+}  

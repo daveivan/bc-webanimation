@@ -30,14 +30,13 @@ class Application {
         this.controlPanel.setHeight();
 
         this.topContainerEl.append(this.workspaceWrapperEl.append(this.workspaceEl));
-
     }
 }
+
 
 $(document).ready(() => {
     console.log('DOM Loaded');
     new Application();
     $('.tooltip').tooltipster({ position: 'right' });
     $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });
-
 });

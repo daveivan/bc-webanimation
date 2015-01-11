@@ -1,4 +1,10 @@
-﻿var Layer = (function () {
+﻿var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var Layer = (function () {
     function Layer(name, fn, shape) {
         if (typeof shape === "undefined") { shape = null; }
         this._order = 0;
@@ -7,10 +13,12 @@
         this._keyframes = new Array();
         this._timestamps = new Array();
         if (shape != null) {
-            this._keyframes.push(new Keyframe(shape, 0, fn));
+            shape.id = this.id;
+            this.addKeyframe(shape, 0, fn);
         }
 
         this.idEl = null;
+        this.globalShape = shape;
     }
     Object.defineProperty(Layer.prototype, "order", {
         get: function () {
@@ -30,6 +38,18 @@
         },
         set: function (id) {
             this._idEl = id;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+
+    Object.defineProperty(Layer.prototype, "globalShape", {
+        get: function () {
+            return this._globalShape;
+        },
+        set: function (shape) {
+            this._globalShape = shape;
         },
         enumerable: true,
         configurable: true
@@ -120,12 +140,355 @@
         configurable: true
     });
 
+    Layer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left = rangeData.left;
+        var right = rangeData.right;
+        var rng = rangeData.rng;
+        var params = rangeData.params;
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p = (position - left) / (right - left);
+
+            params = {
+                top: Math.round(this.computeAttr(rng['l'].shape.parameters.top, rng['r'].shape.parameters.top, bezier(p))),
+                left: Math.round(this.computeAttr(rng['l'].shape.parameters.left, rng['r'].shape.parameters.left, bezier(p))),
+                width: Math.round(this.computeAttr(rng['l'].shape.parameters.width, rng['r'].shape.parameters.width, bezier(p))),
+                height: Math.round(this.computeAttr(rng['l'].shape.parameters.height, rng['r'].shape.parameters.height, bezier(p))),
+                backgroundR: Math.round(this.computeAttr(rng['l'].shape.parameters.backgroundR, rng['r'].shape.parameters.backgroundR, bezier(p))),
+                backgroundG: Math.round(this.computeAttr(rng['l'].shape.parameters.backgroundG, rng['r'].shape.parameters.backgroundG, bezier(p))),
+                backgroundB: Math.round(this.computeAttr(rng['l'].shape.parameters.backgroundB, rng['r'].shape.parameters.backgroundB, bezier(p))),
+                backgroundA: this.computeAttr(rng['l'].shape.parameters.backgroundA, rng['r'].shape.parameters.backgroundA, bezier(p)),
+                opacity: this.computeAttr(rng['l'].shape.parameters.opacity, rng['r'].shape.parameters.opacity, bezier(p)),
+                borderRadius: [
+                    Math.round(this.computeAttr(rng['l'].shape.parameters.borderRadius[0], rng['r'].shape.parameters.borderRadius[0], bezier(p))),
+                    Math.round(this.computeAttr(rng['l'].shape.parameters.borderRadius[1], rng['r'].shape.parameters.borderRadius[1], bezier(p))),
+                    Math.round(this.computeAttr(rng['l'].shape.parameters.borderRadius[2], rng['r'].shape.parameters.borderRadius[2], bezier(p))),
+                    Math.round(this.computeAttr(rng['l'].shape.parameters.borderRadius[3], rng['r'].shape.parameters.borderRadius[3], bezier(p)))
+                ],
+                rotateX: Math.round(this.computeAttr(rng['l'].shape.parameters.rotateX, rng['r'].shape.parameters.rotateX, bezier(p))),
+                rotateY: Math.round(this.computeAttr(rng['l'].shape.parameters.rotateY, rng['r'].shape.parameters.rotateY, bezier(p))),
+                rotateZ: Math.round(this.computeAttr(rng['l'].shape.parameters.rotateZ, rng['r'].shape.parameters.rotateZ, bezier(p))),
+                skewX: Math.round(this.computeAttr(rng['l'].shape.parameters.skewX, rng['r'].shape.parameters.skewX, bezier(p))),
+                skewY: Math.round(this.computeAttr(rng['l'].shape.parameters.skewY, rng['r'].shape.parameters.skewY, bezier(p))),
+                originX: this.computeAttr(rng['l'].shape.parameters.originX, rng['r'].shape.parameters.originX, bezier(p)),
+                originY: this.computeAttr(rng['l'].shape.parameters.originY, rng['r'].shape.parameters.originY, bezier(p))
+            };
+        }
+
+        //set new attributes to object
+        shape.css({
+            'top': params.top,
+            'left': params.left,
+            'width': params.width,
+            'height': params.height,
+            'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
+            'border': params.border,
+            'z-index': shape.css('z-index'),
+            'opacity': params.opacity,
+            'border-top-left-radius': params.borderRadius[0],
+            'border-top-right-radius': params.borderRadius[1],
+            'border-bottom-right-radius': params.borderRadius[2],
+            'border-bottom-left-radius': params.borderRadius[3],
+            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg) skew(' + params.skewX + 'deg , ' + params.skewY + 'deg)',
+            'transform-origin': params.originX + '% ' + params.originY + '%'
+        });
+
+        helper.css({
+            'top': params.top - 1,
+            'left': params.left - 1,
+            'width': params.width + 2,
+            'height': params.height + 2,
+            'z-index': helper.css('z-index')
+        });
+
+        if (this.idEl != null) {
+            shape.attr('id', this.idEl);
+        } else {
+            shape.removeAttr('id');
+        }
+
+        if (currentLayerId == this.id) {
+            controlPanel.updateDimensions({ width: params.width, height: params.height });
+            controlPanel.updateOpacity(params.opacity);
+            controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB }, params.backgroundA);
+            controlPanel.updateBorderRadius(params.borderRadius);
+            controlPanel.update3DRotate({ x: params.rotateX, y: params.rotateY, z: params.rotateZ });
+            controlPanel.updateSkew({ x: params.skewX, y: params.skewY });
+            controlPanel.updateTransformOrigin(params.originX, params.originY);
+            $('.shape-helper.highlight').first().find('.origin-point').css({
+                'left': params.originX + '%',
+                'top': params.originY + '%'
+            });
+        }
+    };
+
+    Layer.prototype.getRange = function (position) {
+        var params = null;
+
+        //find interval between position
+        var left = null, right = null;
+        var index = 0;
+        for (var i = this.timestamps.length; i--;) {
+            if (this.timestamps[i] < position && (left === null || left < this.timestamps[i])) {
+                left = this.timestamps[i];
+            }
+            if (this.timestamps[i] >= position && (right === null || right > this.timestamps[i])) {
+                right = this.timestamps[i];
+                index = i;
+            }
+        }
+
+        if (left === null && right === position && this.timestamps.length >= 2) {
+            left = right;
+            right = this.timestamps[index + 1];
+        }
+
+        var rng = new Array();
+        if (left != null) {
+            rng['l'] = this.getKeyframeByTimestamp(left);
+            params = rng['l'].shape.parameters;
+        }
+        if (right != null) {
+            rng['r'] = this.getKeyframeByTimestamp(right);
+            params = rng['r'].shape.parameters;
+        }
+
+        return { rng: rng, left: left, right: right, params: params };
+    };
+
+    Layer.prototype.computeAttr = function (leftAttr, rightAttr, b) {
+        var value = null;
+        var absValue = (Math.abs(rightAttr - leftAttr)) * b;
+        if (leftAttr > rightAttr) {
+            value = Number(leftAttr) - Number(absValue);
+        } else {
+            value = Number(leftAttr) + Number(absValue);
+        }
+        return (Number(value));
+    };
+
+    Layer.prototype.getInitStyles = function (nameElement) {
+        var p = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
+        var cssObject = {
+            'name': '.' + nameElement,
+            'width': p.width + 'px',
+            'height': p.height + 'px',
+            'top': p.top + 'px',
+            'left': p.left + 'px',
+            'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
+            'opacity': p.opacity,
+            'border-top-left-radius': p.borderRadius[0] + 'px',
+            'border-top-right-radius': p.borderRadius[1] + 'px',
+            'border-bottom-right-radius': p.borderRadius[2] + 'px',
+            'border-bottom-left-radius': p.borderRadius[3] + 'px',
+            'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
+            'transform-origin': p.originX + '% ' + p.originY + '%',
+            'position': 'absolute'
+        };
+
+        return cssObject;
+    };
+
+    Layer.prototype.getKeyframeStyle = function (timestamp) {
+        var p = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
+        var cssObject = {
+            'width': p.width + 'px',
+            'height': p.height + 'px',
+            'top': p.top + 'px',
+            'left': p.left + 'px',
+            'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
+            'opacity': p.opacity,
+            'border-top-left-radius': p.borderRadius[0] + 'px',
+            'border-top-right-radius': p.borderRadius[1] + 'px',
+            'border-bottom-right-radius': p.borderRadius[2] + 'px',
+            'border-bottom-left-radius': p.borderRadius[3] + 'px',
+            'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
+            'transform-origin': p.originX + '% ' + p.originY + '%'
+        };
+
+        return cssObject;
+    };
+
+    Layer.prototype.getObject = function () {
+        return '';
+    };
+
     Layer.prototype.toString = function () {
         return "ID: " + this.id + "Jmeno vrstvy: " + this.name + ", poradi: " + this.order;
     };
     Layer.counter = 0;
     return Layer;
 })();
+
+var RectangleLayer = (function (_super) {
+    __extends(RectangleLayer, _super);
+    function RectangleLayer(name, fn, shape) {
+        if (typeof shape === "undefined") { shape = null; }
+        _super.call(this, name, fn, shape);
+    }
+    RectangleLayer.prototype.jsem = function () {
+        console.log('jsem cverec');
+    };
+
+    RectangleLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    };
+
+    RectangleLayer.prototype.getInitStyles = function (nameElement) {
+        return _super.prototype.getInitStyles.call(this, nameElement);
+    };
+
+    RectangleLayer.prototype.getKeyframeStyle = function (timestamp) {
+        return _super.prototype.getKeyframeStyle.call(this, timestamp);
+    };
+
+    RectangleLayer.prototype.getObject = function () {
+        var object = '    <div class="square object' + this.id + '"></div>\n';
+        if (this.idEl != null) {
+            object = '    <div id="' + this.idEl + '" class="square object' + this.id + '"></div>\n';
+        }
+        return object;
+    };
+    return RectangleLayer;
+})(Layer);
+
+var ImageLayer = (function (_super) {
+    __extends(ImageLayer, _super);
+    function ImageLayer(name, fn, shape) {
+        if (typeof shape === "undefined") { shape = null; }
+        _super.call(this, name, fn, shape);
+    }
+    ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    };
+
+    ImageLayer.prototype.jsem = function () {
+        console.log('jsem obrázek');
+    };
+
+    ImageLayer.prototype.getInitStyles = function (nameElement) {
+        var cssObject = _super.prototype.getInitStyles.call(this, nameElement);
+
+        return cssObject;
+    };
+
+    ImageLayer.prototype.getKeyframeStyle = function (timestamp) {
+        return _super.prototype.getKeyframeStyle.call(this, timestamp);
+    };
+
+    ImageLayer.prototype.getObject = function () {
+        var g = this.globalShape;
+        var object = '    <img class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
+        if (this.idEl != null) {
+            object = '    <img id="' + this.idEl + '" class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
+        }
+        return object;
+    };
+    return ImageLayer;
+})(Layer);
+
+var TextLayer = (function (_super) {
+    __extends(TextLayer, _super);
+    function TextLayer(name, fn, shape) {
+        if (typeof shape === "undefined") { shape = null; }
+        _super.call(this, name, fn, shape);
+    }
+    TextLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left = rangeData.left;
+        var right = rangeData.right;
+        var rng = rangeData.rng;
+
+        var fontParams = null;
+        var g = this.globalShape;
+
+        if (left != null) {
+            fontParams = {
+                color: rng['l'].shape.getColor(),
+                size: rng['l'].shape.getSize(),
+                fontFamily: g.getFamily()
+            };
+        }
+        if (right != null) {
+            fontParams = {
+                color: rng['r'].shape.getColor(),
+                size: rng['r'].shape.getSize(),
+                fontFamily: g.getFamily()
+            };
+        }
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p = (position - left) / (right - left);
+
+            fontParams = {
+                color: {
+                    r: Math.round(this.computeAttr(rng['l'].shape.getColor().r, rng['r'].shape.getColor().r, bezier(p))),
+                    g: Math.round(this.computeAttr(rng['l'].shape.getColor().g, rng['r'].shape.getColor().g, bezier(p))),
+                    b: Math.round(this.computeAttr(rng['l'].shape.getColor().b, rng['r'].shape.getColor().b, bezier(p)))
+                },
+                size: this.computeAttr(rng['l'].shape.getSize(), rng['r'].shape.getSize(), bezier(p)),
+                fontFamily: g.getFamily()
+            };
+        }
+
+        shape.css({
+            'color': 'rgb(' + fontParams.color.r + ',' + fontParams.color.g + ',' + fontParams.color.b + ')',
+            'font-size': fontParams.size,
+            'font-family': fontParams.fontFamily
+        });
+
+        if (currentLayerId == this.id) {
+            controlPanel.updateFont(fontParams.color, fontParams.size, fontParams.fontFamily);
+        }
+    };
+
+    TextLayer.prototype.jsem = function () {
+        console.log('jsem text');
+    };
+
+    TextLayer.prototype.getInitStyles = function (nameElement) {
+        var shape = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;
+
+        var cssObject = _super.prototype.getInitStyles.call(this, nameElement);
+        cssObject['display'] = 'inline';
+        cssObject['font-size'] = shape.getSize() + 'px';
+        cssObject['font-family'] = '"' + shape.getFamily() + '"';
+        cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
+
+        return cssObject;
+    };
+
+    TextLayer.prototype.getKeyframeStyle = function (timestamp) {
+        var shape = (this.getKeyframeByTimestamp(timestamp)).shape;
+
+        var cssObject = _super.prototype.getKeyframeStyle.call(this, timestamp);
+        cssObject['font-size'] = shape.getSize() + 'px';
+        cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
+
+        return cssObject;
+    };
+
+    TextLayer.prototype.getObject = function () {
+        var g = this.globalShape;
+        var object = '    <span class="text object' + this.id + '">' + g.getContent() + '</span>\n';
+        if (this.idEl != null) {
+            object = '    <span id="' + this.idEl + '" class="text object' + this.id + '">' + g.getContent() + '</span>\n';
+        }
+        return object;
+    };
+    return TextLayer;
+})(Layer);
 ///<reference path="Layer.ts" />
 var Timeline = (function () {
     function Timeline(app, timelineContainer) {
@@ -141,7 +504,6 @@ var Timeline = (function () {
         this.miliSecPerFrame = 100;
         this.groupKeyframes = 5;
         this._repeat = false;
-        this.newLayerEl = $('<a class="new-layer" href = "#">Nová vrstva <i class="fa fa-file-o"></i></a>');
         this.deleteLayerEl = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
         this.repeatEl = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>');
         this.deleteKeyframeEl = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
@@ -159,11 +521,6 @@ var Timeline = (function () {
         this.layers = new Array();
 
         this.renderTimeline();
-
-        this.newLayerEl.on('click', function (event) {
-            _this.addLayer(event);
-            return false;
-        });
 
         this.deleteLayerEl.on('click', function (event) {
             _this.deleteLayers(event);
@@ -225,7 +582,6 @@ var Timeline = (function () {
         });
     }
     Timeline.prototype.renderTimeline = function () {
-        $(this.timelineHeadEl).append(this.newLayerEl);
         $(this.timelineHeadEl).append(this.repeatEl);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
@@ -362,6 +718,7 @@ var Timeline = (function () {
         //add jeditable plugin
         var me = this;
         $('.editable').editable(function (value, settings) {
+            console.log('shit');
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
             me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
@@ -374,12 +731,18 @@ var Timeline = (function () {
         });
     };
 
-    Timeline.prototype.selectLayer = function (id) {
+    Timeline.prototype.selectLayer = function (id, idKeyframe) {
+        if (typeof idKeyframe === "undefined") { idKeyframe = null; }
         //select layer by ID
         this.keyframesTableEl.find('tbody tr').removeClass('selected');
         this.layersEl.find('.layer').removeClass('selected');
         this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
         this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
+
+        if (idKeyframe != null) {
+            (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').addClass('selected');
+            (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').next('.timing-function').addClass('selected');
+        }
 
         //highlight shape
         this.app.workspace.highlightShape([id]);
@@ -398,26 +761,10 @@ var Timeline = (function () {
         this.keyframesTableEl.find('thead').append(head);
     };
 
-    Timeline.prototype.addLayer = function (e, shape) {
-        if (typeof shape === "undefined") { shape = null; }
-        console.log('Adding new layer...');
-
-        //remove initial example layer
+    Timeline.prototype.addLayer = function (layer) {
         this.keyframesTableEl.find('tbody tr.disabled').remove();
-
-        //create layer & push to array & set order(depend on index of array)
-        var layer = new Layer('Vrstva ' + (Layer.counter + 1), this.app.workspace.getBezier());
         this.layers.push(layer);
         layer.order = this.layers.length;
-
-        //insert shape to layer
-        if (shape != null) {
-            //init keyframe
-            shape.id = layer.id;
-            layer.addKeyframe(shape, 0, this.app.workspace.getBezier());
-        }
-
-        //render new layer list
         this.renderLayers();
 
         this.selectLayer(layer.id);
@@ -636,6 +983,11 @@ var Timeline = (function () {
         enumerable: true,
         configurable: true
     });
+
+    Timeline.prototype.getSelectedKeyframeID = function (idLayer) {
+        var el = (this.keyframesTableEl.find('tr.layer-row[data-id="' + idLayer + '"]')).find('.keyframe.selected');
+        return el.data('index');
+    };
     return Timeline;
 })();
 var Shape = (function () {
@@ -684,6 +1036,7 @@ var Shape = (function () {
         this.parameters.backgroundR = c.r;
         this.parameters.backgroundG = c.g;
         this.parameters.backgroundB = c.b;
+        this.parameters.backgroundA = c.a;
     };
 
     Shape.prototype.setOpacity = function (o) {
@@ -733,6 +1086,14 @@ var Shape = (function () {
     Shape.prototype.setSkewY = function (val) {
         this._parameters.skewY = val;
     };
+
+    Shape.prototype.setOriginX = function (val) {
+        this._parameters.originX = val;
+    };
+
+    Shape.prototype.setOriginY = function (val) {
+        this._parameters.originY = val;
+    };
     return Shape;
 })();
 ///<reference path="Shape.ts" />
@@ -742,9 +1103,14 @@ var Workspace = (function () {
         var _this = this;
         this.createdLayer = false;
         this._workspaceSize = { width: 800, height: 360 };
+        this.workspaceOverlay = $('<div>').addClass('workspace-overlay');
+        this.uploadArea = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
+        this.uploadBtn = $('<input type="file"></input>').addClass('pick-image');
         this.app = app;
         this.workspaceContainer = workspaceContainer;
         this.workspaceWrapper = workspaceWrapper;
+        this.uploadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.uploadBtn));
+        this.workspaceOverlay.append(this.uploadArea);
 
         this.workspaceContainer.css(this._workspaceSize);
 
@@ -756,10 +1122,17 @@ var Workspace = (function () {
             //}
         });
 
+        this.workspaceWrapper.on('dblclick', function (event) {
+            if (_this.app.controlPanel.Mode == 3 /* TEXT */) {
+                _this.onCreateText(event);
+            }
+        });
+
         this.workspaceWrapper.on('mouseup', function (event) {
             if (_this.createdLayer) {
-                var shape = new Shape(_this.shapeParams);
-                var idLayer = _this.app.timeline.addLayer(event, shape);
+                var shape = new Rectangle(_this.shapeParams);
+                var layer = new RectangleLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), shape);
+                var idLayer = _this.app.timeline.addLayer(layer);
                 _this.renderShapes();
                 _this.transformShapes();
                 _this.highlightShape([idLayer]);
@@ -769,22 +1142,35 @@ var Workspace = (function () {
 
         this.workspaceContainer.on('mousedown', '.shape-helper', function (event) {
             _this.createdLayer = false;
-            var id = $(event.target).closest('.shape-helper').data('id');
-            _this.app.timeline.selectLayer(id);
-            _this.app.timeline.scrollTo(id);
+            if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
+                var id = $(event.target).closest('.shape-helper').data('id');
+                _this.app.timeline.selectLayer(id);
+                _this.app.timeline.scrollTo(id);
+            }
+        });
+
+        //fix for draggable origin point
+        this.workspaceContainer.on('click', '.shape-helper', function (event) {
+            if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
+                var id = $(event.target).closest('.shape-helper').data('id');
+                _this.highlightShape([id]);
+            }
         });
 
         this.workspaceContainer.on('mouseover', '.shape-helper', function (event) {
-            $(event.target).find('.helpername').show();
+            if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
+                $(event.target).find('.helpername').show();
+            }
         });
 
         this.workspaceContainer.on('mouseout', '.shape-helper', function (event) {
-            $(event.target).find('.helpername').hide();
+            if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
+                $(event.target).find('.helpername').hide();
+            }
         });
     }
     Workspace.prototype.onDrawSquare = function (e) {
         var _this = this;
-        console.log('mousedown');
         var new_object = $('<div>').addClass('shape-helper');
         var click_y = e.pageY - this.workspaceContainer.offset().top;
         var click_x = e.pageX - this.workspaceContainer.offset().left;
@@ -793,7 +1179,7 @@ var Workspace = (function () {
             'top': click_y,
             'left': click_x,
             //'background': this.getRandomColor(),
-            'background': 'rgb(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ')',
+            'background': 'rgba(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ', ' + this.color.a + ')',
             'z-index': this.app.timeline.layers.length,
             'opacity': this.opacity
         });
@@ -816,16 +1202,23 @@ var Workspace = (function () {
         new_x = (move_x < click_x) ? (click_x - width) : click_x;
         new_y = (move_y < click_y) ? (click_y - height) : click_y;
 
+        //var c = $.color.extract(new_object, 'background-color');
+        var barva = parseCSSColor(new_object.css('background-color'));
+        var c = {
+            r: barva[0],
+            g: barva[1],
+            b: barva[2],
+            a: barva[3]
+        };
         var params = {
             top: new_y,
             left: new_x,
             width: width,
             height: height,
-            //background: new_object.css('background-color'),
-            backgroundR: this.convertRBGtoColor(new_object.css('background-color'), 'r'),
-            backgroundG: this.convertRBGtoColor(new_object.css('background-color'), 'g'),
-            backgroundB: this.convertRBGtoColor(new_object.css('background-color'), 'b'),
-            backgroundA: 1,
+            backgroundR: c.r,
+            backgroundG: c.g,
+            backgroundB: c.b,
+            backgroundA: c.a,
             opacity: new_object.css('opacity'),
             zindex: this.app.timeline.layers.length,
             borderRadius: [0, 0, 0, 0],
@@ -833,7 +1226,9 @@ var Workspace = (function () {
             rotateY: 0,
             rotateZ: 0,
             skewX: 0,
-            skewY: 0
+            skewY: 0,
+            originX: 50,
+            originY: 50
         };
 
         new_object.css({
@@ -909,7 +1304,7 @@ var Workspace = (function () {
                     backgroundR: this.computeParameter(interval['left'].shape.parameters.backgroundR, interval['right'].shape.parameters.backgroundR, bezier(p)),
                     backgroundG: this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
                     backgroundB: this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
-                    backgroundA: this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
+                    backgroundA: this.computeOpacity(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
                     opacity: this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
                     borderRadius: [
                         this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
@@ -921,7 +1316,9 @@ var Workspace = (function () {
                     rotateY: this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
                     rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
                     skewX: this.computeParameter(interval['left'].shape.parameters.skewX, interval['right'].shape.parameters.skewX, bezier(p)),
-                    skewY: this.computeParameter(interval['left'].shape.parameters.skewY, interval['right'].shape.parameters.skewY, bezier(p))
+                    skewY: this.computeParameter(interval['left'].shape.parameters.skewY, interval['right'].shape.parameters.skewY, bezier(p)),
+                    originX: this.computeOpacity(interval['left'].shape.parameters.originX, interval['right'].shape.parameters.originX, bezier(p)),
+                    originY: this.computeOpacity(interval['left'].shape.parameters.originY, interval['right'].shape.parameters.originY, bezier(p))
                 };
             }
 
@@ -935,144 +1332,13 @@ var Workspace = (function () {
         var _this = this;
         var currentTimestamp = this.app.timeline.pxToMilisec();
         var layers = this.app.timeline.layers;
+        layers.forEach(function (layer, index) {
+            var shape = _this.workspaceContainer.find('.shape[data-id="' + layer.id + '"]');
+            var helper = _this.workspaceContainer.find('.shape-helper[data-id="' + layer.id + '"]');
+            var currentLayerId = _this.workspaceContainer.find('.shape-helper.highlight').first().data('id');
 
-        layers.forEach(function (item, index) {
-            var keyframe = item.getKeyframeByTimestamp(currentTimestamp);
-
-            //if no keyframe, take get init keyframe
-            if (keyframe == null) {
-                keyframe = item.getKeyframe(0);
-            }
-
-            var timestamps = item.timestamps;
-
-            //find closest left and right
-            /*var left: number = null;
-            var right: number = null;
-            var i = 0;
-            timestamps.forEach((value: number, index: number) => {
-            if (currentTimestamp > value) {
-            left = value;
-            i = index;
-            }
-            });*/
-            var left = null;
-            var right = null;
-            var index = 0;
-            for (var i = timestamps.length; i--;) {
-                if (timestamps[i] < currentTimestamp && (left === null || left < timestamps[i])) {
-                    left = timestamps[i];
-                }
-                if (timestamps[i] >= currentTimestamp && (right === null || right > timestamps[i])) {
-                    right = timestamps[i];
-                    index = i;
-                }
-            }
-            ;
-
-            if (left === null && right === currentTimestamp && timestamps.length >= 2) {
-                left = right;
-                right = timestamps[index + 1];
-            }
-
-            /*if (i < (timestamps.length-1)) {
-            right = timestamps[i+1];
-            }*/
-            var params = null;
-            var interval = new Array();
-            if (left != null) {
-                interval['left'] = item.getKeyframeByTimestamp(left);
-                params = interval['left'].shape.parameters;
-            }
-            if (right != null) {
-                interval['right'] = item.getKeyframeByTimestamp(right);
-                params = interval['right'].shape.parameters;
-            }
-
-            /*console.log(interval['left']);
-            console.log(interval['right']);*/
-            //working in mozilla?
-            if (Object.keys(interval).length == 2) {
-                //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
-                var fn = interval['left'].timing_function;
-                var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
-                var p = (currentTimestamp - left) / (right - left);
-
-                params = {
-                    top: _this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
-                    left: _this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
-                    width: _this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
-                    height: _this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
-                    backgroundR: _this.computeParameter(interval['left'].shape.parameters.backgroundR, interval['right'].shape.parameters.backgroundR, bezier(p)),
-                    backgroundG: _this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
-                    backgroundB: _this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
-                    backgroundA: _this.computeParameter(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
-                    opacity: _this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
-                    borderRadius: [
-                        _this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
-                        _this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
-                        _this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
-                        _this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
-                    ],
-                    rotateX: _this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
-                    rotateY: _this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
-                    rotateZ: _this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
-                    skewX: _this.computeParameter(interval['left'].shape.parameters.skewX, interval['right'].shape.parameters.skewX, bezier(p)),
-                    skewY: _this.computeParameter(interval['left'].shape.parameters.skewY, interval['right'].shape.parameters.skewY, bezier(p))
-                };
-            }
-
-            _this.transformShape(item.id, params, item.idEl);
-            //this.transformShape(item.id, keyframe.shape._parameters);
+            layer.transform(currentTimestamp, shape, helper, currentLayerId, _this.app.controlPanel);
         });
-    };
-
-    Workspace.prototype.transformShape = function (id, params, idEl) {
-        if (typeof idEl === "undefined") { idEl = null; }
-        var shape = this.workspaceContainer.find('.square[data-id="' + id + '"]');
-        var helper = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]');
-
-        shape.css({
-            'top': params.top,
-            'left': params.left,
-            'width': params.width,
-            'height': params.height,
-            //'background': params.background,
-            'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
-            'border': params.border,
-            'z-index': shape.css('z-index'),
-            'opacity': params.opacity,
-            'border-top-left-radius': params.borderRadius[0],
-            'border-top-right-radius': params.borderRadius[1],
-            'border-bottom-right-radius': params.borderRadius[2],
-            'border-bottom-left-radius': params.borderRadius[3],
-            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg) skew(' + params.skewX + 'deg , ' + params.skewY + 'deg)'
-        });
-
-        helper.css({
-            'top': params.top - 1,
-            'left': params.left - 1,
-            'width': params.width + 2,
-            'height': params.height + 2,
-            'z-index': helper.css('z-index')
-        });
-
-        if (idEl != null) {
-            shape.attr('id', idEl);
-        } else {
-            shape.removeAttr('id');
-        }
-
-        //if current layer, set dimensions in control panel
-        var highlightLayerID = this.workspaceContainer.find('.shape-helper.highlight').first().data('id');
-        if (highlightLayerID == id) {
-            this.app.controlPanel.updateDimensions({ width: params.width, height: params.height });
-            this.app.controlPanel.updateOpacity(params.opacity);
-            this.app.controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB });
-            this.app.controlPanel.updateBorderRadius(params.borderRadius);
-            this.app.controlPanel.update3DRotate({ x: params.rotateX, y: params.rotateY, z: params.rotateZ });
-            this.app.controlPanel.updateSkew({ x: params.skewX, y: params.skewY });
-        }
     };
 
     Workspace.prototype.computeParameter = function (leftParam, rightParam, b) {
@@ -1104,8 +1370,9 @@ var Workspace = (function () {
         this.workspaceContainer.empty();
 
         layers.forEach(function (item, index) {
-            var shape = $('<div>').addClass('square');
+            var shape = $('<div>').addClass('shape square');
             var helper = $('<div>').addClass('shape-helper');
+            helper.append($('<div>').addClass('origin-point'));
             if (item.idEl) {
                 var helpername = $('<div>').addClass('helpername').html('<p>' + item.name + '<span class="div-id">#' + item.idEl + '</span></p>');
             } else {
@@ -1120,6 +1387,15 @@ var Workspace = (function () {
                 keyframe = item.getKeyframe(0);
             }
             if (keyframe != null) {
+                if (keyframe.shape instanceof Img) {
+                    shape = $('<img>').addClass('shape image');
+                }
+
+                if (keyframe.shape instanceof TextField) {
+                    var l = item;
+                    shape = $('<span>').addClass('shape froala text').html(l.globalShape.getContent());
+                }
+
                 var params = keyframe.shape.parameters;
                 var css = {
                     'top': params.top,
@@ -1147,6 +1423,31 @@ var Workspace = (function () {
                     'z-index': params.zindex + 1000
                 });
 
+                if (keyframe.shape instanceof Img) {
+                    var img = keyframe.shape;
+                    shape.attr('src', img.getSrc());
+                }
+
+                if (keyframe.shape instanceof TextField) {
+                    var text = keyframe.shape;
+                    shape.css({
+                        'color': 'rgba(' + text.getColor().r + ',' + text.getColor().g + ',' + text.getColor().b + ')',
+                        'font-size': text.getSize(),
+                        'font-family': text.getFamily()
+                    });
+                    shape.froala({
+                        inlineMode: true,
+                        paragraphy: false,
+                        allowedTags: [],
+                        buttons: [],
+                        placeholder: 'Zadejte text...'
+                    });
+
+                    shape.on('editable.contentChanged', function (e, editor) {
+                        _this.onChangeText(shape.data('id'), editor.trackHTML);
+                    });
+                }
+
                 shape.attr('data-id', keyframe.shape.id);
                 helper.attr('data-id', keyframe.shape.id);
                 helpername.appendTo(helper);
@@ -1157,20 +1458,25 @@ var Workspace = (function () {
 
         this.dragResize();
 
-        if (this.app.controlPanel.Mode == 1 /* CREATE_DIV */) {
-            $('.shape-helper').draggable('disable');
-            $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
-        }
+        /*if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
+        $('.shape-helper').draggable('disable');
+        //$('.origin-point').draggable('disable');
+        $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
+        }*/
+        this.onChangeMode();
     };
 
     Workspace.prototype.dragResize = function () {
         var _this = this;
+        $('.origin-point').draggable();
+
         //hook draging on shapes
         $('.shape-helper').draggable({
             scroll: false,
             drag: function (event, ui) {
+                console.log('dragging helper');
                 var id = $(event.target).data('id');
-                _this.workspaceContainer.find('.square[data-id="' + id + '"]').css({
+                _this.workspaceContainer.find('.shape[data-id="' + id + '"]').css({
                     'top': ui.position.top + 1,
                     'left': ui.position.left + 1
                 });
@@ -1189,7 +1495,7 @@ var Workspace = (function () {
                     });
                 }
 
-                _this.renderShapes();
+                //this.renderShapes();
                 _this.transformShapes();
                 ;
                 _this.app.timeline.selectLayer(layer.id);
@@ -1203,7 +1509,7 @@ var Workspace = (function () {
             autohide: true,
             resize: function (event, ui) {
                 var id = $(event.target).data('id');
-                var shape = _this.workspaceContainer.find('.square[data-id="' + id + '"]');
+                var shape = _this.workspaceContainer.find('.shape[data-id="' + id + '"]');
                 shape.css({
                     'top': ui.position.top + 1,
                     'left': ui.position.left + 1,
@@ -1238,7 +1544,9 @@ var Workspace = (function () {
 
     Workspace.prototype.highlightShape = function (arrayID) {
         var _this = this;
+        //var originPoint: JQuery = $('<div>').addClass('origin-point');
         this.workspaceContainer.find('.shape-helper').removeClass('highlight');
+        this.workspaceContainer.find('.shape-helper').find('.origin-point').hide();
         arrayID.forEach(function (id, index) {
             _this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
 
@@ -1248,30 +1556,71 @@ var Workspace = (function () {
                 if (shape) {
                     _this.app.controlPanel.updateDimensions({ width: shape.parameters.width, height: shape.parameters.height });
                     _this.app.controlPanel.updateOpacity(shape.parameters.opacity);
-                    _this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB });
+                    _this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB }, shape.parameters.backgroundA);
                     _this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
                     _this.app.controlPanel.updateIdEl(_this.app.timeline.getLayer(id).idEl);
                     _this.app.controlPanel.update3DRotate({ x: shape.parameters.rotateX, y: shape.parameters.rotateY, z: shape.parameters.rotateZ });
+                    _this.app.controlPanel.updateTransformOrigin(shape.parameters.originX, shape.parameters.originY);
+
+                    (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
+                        'left': shape.parameters.originX + '%',
+                        'top': shape.parameters.originY + '%'
+                    });
+
+                    if (shape instanceof TextField) {
+                        var text = shape;
+                        var layer = _this.app.timeline.getLayer(id);
+                        _this.app.controlPanel.updateFont(text.getColor(), text.getSize(), layer.globalShape.getFamily());
+                    }
+
+                    if (_this.app.controlPanel.originMode) {
+                        (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').show();
+                        console.log('is origin mode');
+                        $('.origin-point').draggable('option', {
+                            drag: function (event, ui) {
+                                var xPercent = ui.position.left / shape.parameters.width * 100;
+                                var yPercent = ui.position.top / shape.parameters.height * 100;
+                                xPercent = Math.round(xPercent * 100) / 100;
+                                yPercent = Math.round(yPercent * 100) / 100;
+
+                                _this.app.controlPanel.updateTransformOrigin(xPercent, yPercent);
+                            },
+                            stop: function (event, ui) {
+                                var xPercent = ui.position.left / shape.parameters.width * 100;
+                                var yPercent = ui.position.top / shape.parameters.height * 100;
+                                xPercent = Math.round(xPercent * 100) / 100;
+                                yPercent = Math.round(yPercent * 100) / 100;
+
+                                _this.setTransformOrigin('x', xPercent);
+                                _this.setTransformOrigin('y', yPercent);
+                            }
+                        });
+                    }
                 }
             }
         });
     };
 
     Workspace.prototype.getCurrentShape = function (id) {
-        var shapeEl = this.workspaceContainer.find('.square[data-id="' + id + '"]');
+        var shapeEl = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
         if (shapeEl.length) {
+            //var c = $.color.extract(shapeEl, 'background-color');
+            var barva = parseCSSColor(shapeEl.css('background-color'));
+            var c = {
+                r: barva[0],
+                g: barva[1],
+                b: barva[2],
+                a: barva[3]
+            };
             var params = {
-                //top: shapeEl.position().top,
-                //left: shapeEl.position().left,
                 top: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().top + 1,
                 left: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1,
                 width: shapeEl.width(),
                 height: shapeEl.height(),
-                //background: shapeEl.css('background-color'),
-                backgroundR: this.convertRBGtoColor(shapeEl.css('background-color'), 'r'),
-                backgroundG: this.convertRBGtoColor(shapeEl.css('background-color'), 'g'),
-                backgroundB: this.convertRBGtoColor(shapeEl.css('background-color'), 'b'),
-                backgroundA: 1,
+                backgroundR: c.r,
+                backgroundG: c.g,
+                backgroundB: c.b,
+                backgroundA: c.a,
                 opacity: parseFloat(shapeEl.css('opacity')),
                 zindex: parseInt(shapeEl.css('z-index')),
                 borderRadius: [
@@ -1280,22 +1629,36 @@ var Workspace = (function () {
                     parseInt(shapeEl.css('border-bottom-right-radius')),
                     parseInt(shapeEl.css('border-bottom-left-radius'))
                 ],
-                //not working on chrome
-                //rotateX: this.parseRotation(shapeEl.attr('style'), 0),
-                //rotateY: this.parseRotation(shapeEl.attr('style'), 1),
-                //rotateZ: this.parseRotation(shapeEl.attr('style'), 2),
-                //rotateX: 0,
-                //rotateY: 0,
-                //rotateZ: 0,
-                //workaround
                 rotateX: this.getTransformAttr(id, 'rotateX'),
                 rotateY: this.getTransformAttr(id, 'rotateY'),
                 rotateZ: this.getTransformAttr(id, 'rotateZ'),
                 skewX: this.getTransformAttr(id, 'skewX'),
-                skewY: this.getTransformAttr(id, 'skewY')
+                skewY: this.getTransformAttr(id, 'skewY'),
+                originX: this.getTransformAttr(id, 'originX'),
+                originY: this.getTransformAttr(id, 'originY')
             };
 
-            var shape = new Shape(params);
+            //if background is transparent
+            if (c.a == 0) {
+                params['backgroundR'] = this.color.r;
+                params['backgroundG'] = this.color.g;
+                params['backgroundB'] = this.color.b;
+            }
+
+            if (this.app.timeline.getLayer(id).globalShape instanceof Img) {
+                var shape = new Img(params, shapeEl.attr('src'));
+            } else if (this.app.timeline.getLayer(id).globalShape instanceof TextField) {
+                var color = {
+                    r: this.getPartOfRGBA(shapeEl.css('color'), 'r'),
+                    g: this.getPartOfRGBA(shapeEl.css('color'), 'g'),
+                    b: this.getPartOfRGBA(shapeEl.css('color'), 'b')
+                };
+                var size = parseFloat(shapeEl.css('font-size'));
+                var font = shapeEl.css('font-family');
+                var shape = new TextField(params, shapeEl.html().toString(), color, size, font);
+            } else {
+                var shape = new Rectangle(params);
+            }
             shape.id = id;
 
             return shape;
@@ -1335,7 +1698,7 @@ var Workspace = (function () {
         return value;
     };
 
-    Workspace.prototype.convertRBGtoColor = function (rgb, part) {
+    Workspace.prototype.getPartOfRGBA = function (rgb, part) {
         var parts = rgb.match(/\d+/g);
         if (part == 'r') {
             return parseInt(parts[0]);
@@ -1343,6 +1706,8 @@ var Workspace = (function () {
             return parseInt(parts[1]);
         } else if (part == 'b') {
             return parseInt(parts[2]);
+        } else if (part == 'a') {
+            return parseInt(parts[3]);
         }
     };
 
@@ -1354,8 +1719,13 @@ var Workspace = (function () {
         return parseInt(x.replace('deg', ''));
     };
 
-    Workspace.prototype.setColor = function (c) {
-        this.color = c;
+    Workspace.prototype.setColor = function (c, alpha) {
+        this.color = {
+            r: c.r,
+            g: c.g,
+            b: c.b,
+            a: alpha
+        };
         var layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
@@ -1365,6 +1735,30 @@ var Workspace = (function () {
             }
             keyframe.shape.setBackground(this.color);
 
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.setFont = function (params, newKeyframe) {
+        if (typeof newKeyframe === "undefined") { newKeyframe = true; }
+        this.fontParameters = params;
+        var layer = this.getHighlightedLayer();
+        if (layer && layer.getKeyframe(0).shape instanceof TextField) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null && newKeyframe) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+
+            if (keyframe != null) {
+                var textField = keyframe.shape;
+                textField.setFont(this.fontParameters);
+            }
+            var l = layer;
+            l.globalShape.setFamily(this.fontParameters.fontFamily);
+
+            //this.renderShapes();
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
@@ -1381,7 +1775,7 @@ var Workspace = (function () {
             }
             keyframe.shape.setOpacity(opacity);
 
-            this.renderShapes();
+            this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
     };
@@ -1453,6 +1847,27 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.setTransformOrigin = function (type, value) {
+        console.log('setting transform-origin');
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                this.app.timeline.renderKeyframes(layer.id);
+            }
+            if (type === 'x') {
+                keyframe.shape.setOriginX(value);
+            } else if (type === 'y') {
+                keyframe.shape.setOriginY(value);
+            }
+
+            //this.renderShapes();
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
     Workspace.prototype.setSkew = function (type, value) {
         console.log('setting skew');
         var layer = this.getHighlightedLayer();
@@ -1479,16 +1894,13 @@ var Workspace = (function () {
         this.bezier = fn;
         var layer = this.getHighlightedLayer();
         if (layer) {
-            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
-            if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+            var keyframeID = this.app.timeline.getSelectedKeyframeID(layer.id);
+            var keyframe = layer.getKeyframe(keyframeID);
+            if (keyframe != null) {
+                keyframe.timing_function = this.bezier;
                 this.app.timeline.renderKeyframes(layer.id);
+                this.app.timeline.selectLayer(layer.id, keyframeID);
             }
-            keyframe.timing_function = this.bezier;
-
-            //this.renderShapes();
-            this.app.timeline.renderKeyframes(layer.id);
-            this.app.timeline.selectLayer(layer.id);
         }
     };
 
@@ -1580,12 +1992,203 @@ var Workspace = (function () {
         return this.bezier;
     };
 
+    Workspace.prototype.setOriginVisible = function () {
+        this.highlightShape([this.workspaceContainer.find('.shape-helper.highlight').first().data('id')]);
+    };
+
     Workspace.prototype.getHighlightedLayer = function () {
         var layer = this.app.timeline.getLayer(this.workspaceContainer.find('.shape-helper.highlight').first().data('id'));
         if (layer) {
             return layer;
         } else {
             return null;
+        }
+    };
+
+    Workspace.prototype.insertMode = function (active) {
+        var _this = this;
+        if (typeof active === "undefined") { active = true; }
+        if (active) {
+            this.workspaceWrapper.append(this.workspaceOverlay);
+            this.workspaceOverlay.css({
+                'height': this.workspaceWrapper.outerHeight(),
+                'width': this.workspaceWrapper.outerWidth()
+            });
+            this.uploadArea.on('dragenter', function (event) {
+                console.log('enter');
+                $(event.target).addClass('over');
+            });
+
+            this.uploadArea.on('dragleave', function (event) {
+                $(event.target).removeClass('over');
+            });
+
+            this.uploadArea.on('dragover', function (event) {
+                console.log('over');
+                event.preventDefault();
+            });
+
+            this.uploadArea.on('drop', function (event) {
+                console.log('upload');
+                event.stopPropagation();
+                event.preventDefault();
+                var files = event.originalEvent.dataTransfer.files;
+                _this.uploadImage(files);
+            });
+
+            this.uploadBtn.on('change', function (event) {
+                console.log('pick image');
+                _this.uploadImage(event.target.files);
+            });
+        } else {
+            $('.insert-image').removeClass('active');
+            this.workspaceOverlay.remove();
+        }
+    };
+
+    Workspace.prototype.uploadImage = function (files) {
+        var _this = this;
+        var image = files[0];
+        if (image.type.match('image.*')) {
+            var reader = new FileReader();
+            reader.onload = (function (theFile) {
+                return function (e) {
+                    var img = new Image();
+                    img.onload = function () {
+                        var p = {
+                            top: 0,
+                            left: 0,
+                            width: img.width,
+                            height: img.height,
+                            backgroundR: 255,
+                            backgroundG: 255,
+                            backgroundB: 255,
+                            backgroundA: 0,
+                            opacity: 1,
+                            borderRadius: [0, 0, 0, 0],
+                            rotateX: 0,
+                            rotateY: 0,
+                            rotateZ: 0,
+                            skewX: 0,
+                            skewY: 0,
+                            originX: 50,
+                            originY: 50,
+                            zindex: _this.app.timeline.layers.length
+                        };
+                        var image = new Img(p, e.target.result);
+                        var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
+                        var idLayer = _this.app.timeline.addLayer(layer);
+                        _this.renderShapes();
+                        _this.transformShapes();
+                        _this.highlightShape([idLayer]);
+
+                        _this.app.controlPanel.Mode = 0 /* SELECT */;
+                        $('.tool-btn.select').addClass('active');
+                        _this.onChangeMode();
+                    };
+
+                    img.src = e.target.result;
+                    //create image layer
+                };
+            })(image);
+
+            reader.readAsDataURL(image);
+        }
+
+        this.insertMode(false);
+    };
+
+    Workspace.prototype.onCreateText = function (e) {
+        console.log('creating textfield');
+
+        var params = {
+            top: e.pageY - this.workspaceContainer.offset().top - 10,
+            left: e.pageX - this.workspaceContainer.offset().left - 5,
+            width: 150,
+            height: 75,
+            backgroundR: 255,
+            backgroundG: 255,
+            backgroundB: 255,
+            backgroundA: 0,
+            opacity: 1,
+            borderRadius: [0, 0, 0, 0],
+            rotateX: 0,
+            rotateY: 0,
+            rotateZ: 0,
+            skewX: 0,
+            skewY: 0,
+            originX: 50,
+            originY: 50,
+            zindex: this.app.timeline.layers.length
+        };
+
+        var shape = new TextField(params, null, this.fontParameters.color, this.fontParameters.size, this.fontParameters.fontFamily);
+        var layer = new TextLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), shape);
+        var idLayer = this.app.timeline.addLayer(layer);
+        this.renderShapes();
+        this.transformShapes();
+        this.highlightShape([idLayer]);
+        this.onChangeMode();
+    };
+
+    Workspace.prototype.onChangeText = function (id, text) {
+        console.log(text);
+        var shape = this.app.timeline.getLayer(id).globalShape;
+        shape.setContent(text);
+    };
+
+    Workspace.prototype.onChangeMode = function () {
+        var _this = this;
+        console.log('onChangeMode');
+        var mode = this.app.controlPanel.Mode;
+        if (mode == 0 /* SELECT */) {
+            $('.shape-helper').draggable('enable');
+            $('.origin-point').draggable('enable');
+            $('.shape-helper').resizable('enable');
+        } else {
+            $('.shape-helper').draggable('disable');
+            $('.origin-point').draggable('disable');
+            $('.shape-helper').resizable('disable');
+        }
+
+        if (mode == 2 /* IMAGE */) {
+            this.insertMode(true);
+        } else {
+            this.insertMode(false);
+        }
+
+        if (mode == 3 /* TEXT */) {
+            $('.workspace-wrapper').addClass('text-mode');
+            $('.froala').froala('enable');
+            $('.froala').removeClass('nonedit');
+            this.workspaceContainer.find('.shape.text').each(function (index, el) {
+                $(el).css({
+                    'z-index': parseInt(_this.workspaceContainer.find('.shape-helper' + '[data-id="' + $(el).data('id') + '"]').css('z-index')) + 1
+                });
+            });
+        } else {
+            $('.workspace-wrapper').removeClass('text-mode');
+            $('.froala').froala('disable');
+            $('.froala').addClass('nonedit');
+            this.workspaceContainer.find('.shape.text').each(function (index, el) {
+                var keyframe = _this.app.timeline.getLayer($(el).data('id')).getKeyframe(0);
+                $(el).css({
+                    'z-index': keyframe.shape.parameters.zindex
+                });
+            });
+            var sel;
+            if (window.getSelection) {
+                sel = window.getSelection();
+            } else {
+                sel = document.selection;
+            }
+            if (sel) {
+                if (sel.removeAllRanges) {
+                    sel.removeAllRanges();
+                } else if (sel.empty) {
+                    sel.empty();
+                }
+            }
         }
     };
     return Workspace;
@@ -1595,19 +2198,30 @@ var Mode;
 (function (Mode) {
     Mode[Mode["SELECT"] = 0] = "SELECT";
     Mode[Mode["CREATE_DIV"] = 1] = "CREATE_DIV";
+    Mode[Mode["IMAGE"] = 2] = "IMAGE";
+    Mode[Mode["TEXT"] = 3] = "TEXT";
 })(Mode || (Mode = {}));
 
 var ControlPanel = (function () {
     function ControlPanel(app, container) {
         var _this = this;
+        this._mode = 0 /* SELECT */;
         this.initColor = { r: 44, g: 208, b: 219 };
+        this.initOrigin = [50, 50];
+        this.initFontSize = 16;
+        this.initTextColor = { r: 0, g: 0, b: 0 };
+        this.isOriginVisible = false;
+        this.fontFamily = ['Segoe UI', 'Georgia', 'Times', 'Arial', 'Calibri', 'Verdana', 'serif', 'sans-serif'];
         this.toolPanelEl = $('<div>').addClass('tool-panel');
         this.selectToolEl = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
         this.createDivToolEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('create-div').html('<i class="fa fa-stop"></i>').attr('title', 'Nástroj Nový DIV');
         this.generateCodeEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-code"></i>').attr('title', 'Vygenerovat kód');
+        this.insertImageEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
+        this.insertTextEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
         this.controlPanelEl = $('<div>').addClass('control-panel');
-        //private bgPickerEl: JQuery = $('<div>').addClass('picker');
         this.bgPickerEl = $('<input type="text" id="picker"></input>');
+        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
+        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
         this.itemControlEl = $('<div>').addClass('control-item');
         this.opacityEl = $('<input>').attr('id', 'opacity-input');
         this.opacitySliderEl = $('<div>').addClass('opacity-slider');
@@ -1626,7 +2240,7 @@ var ControlPanel = (function () {
         this.canvas = $('<canvas id="bezierCurve" width="200" height="200"></canvas>');
         this.workspaceWidthEl = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
         this.workspaceHeightEl = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
-        this.idEl = $('<input type="text"></input>').attr('id', 'id-el').addClass('number');
+        this.idEl = $('<input type="text"></input>').attr('id', 'id-el');
         this.rotateXEl = $('<input>').attr('id', 'rx').addClass('number rotate');
         this.rotateXSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rx');
         this.rotateYEl = $('<input>').attr('id', 'ry').addClass('number rotate');
@@ -1637,32 +2251,44 @@ var ControlPanel = (function () {
         this.skewXSliderEl = $('<div>').addClass('skew-slider').attr('id', 'skewx');
         this.skewYEl = $('<input>').attr('id', 'skewy').addClass('number skew');
         this.skewYSliderEl = $('<div>').addClass('skew-slider').attr('id', 'skewy');
+        this.transformOriginVisibleEl = $('<input>').attr('type', 'checkbox').attr('id', 'visible').prop('checked', false);
+        this.transformOriginXEl = $('<input>').attr('id', 'originx').addClass('number origin');
+        this.transformOriginYEl = $('<input>').attr('id', 'originy').addClass('number origin');
+        this.fontColorEl = $('<input>').attr('type', 'text').attr('id', 'text-color').addClass('font-attr');
+        this.fontSizeEl = $('<input>').attr('type', 'text').attr('id', 'text-size').addClass('number font-attr');
+        this.fontFamilyEl = $('<select>').attr('id', 'text-family').addClass('font-attr');
         this.app = app;
         this.containerEl = container;
 
         this.toolPanelEl.append(this.selectToolEl);
         this.toolPanelEl.append(this.createDivToolEl);
+        this.toolPanelEl.append(this.insertImageEl);
+        this.toolPanelEl.append(this.insertTextEl);
         this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
 
         //Workspace dimensions
         var workspaceXY = this.itemControlEl.clone();
         workspaceXY.html('<h2>Rozměry plátna</h2>');
-        var w = $('<span>').html('width: ').addClass('group-form');
+        var row = $('<div>').addClass('row');
+        var w = $('<div>').html('width: ').addClass('group half');
         w.append(this.workspaceWidthEl.val(this.app.workspace.workspaceSize.width.toString()));
         w.append(' px');
-        workspaceXY.append(w);
-        var h = $('<span>').html('height: ').addClass('group-form');
+        row.append(w);
+        var h = $('<div>').html('height: ').addClass('group half last');
         h.append(this.workspaceHeightEl.val(this.app.workspace.workspaceSize.height.toString()));
         h.append((' px'));
-        workspaceXY.append(h);
+        row.append(h);
+        workspaceXY.append(row);
         this.controlPanelEl.append(workspaceXY);
 
         var idElement = this.itemControlEl.clone();
         idElement.html('<h2>ID elementu</h2>');
-        var g = $('<span>').html('#').addClass('group-form fullwidth');
+        var row = $('<div>').addClass('row');
+        var g = $('<div>').html('#').addClass('group full');
         g.append(this.idEl);
-        idElement.append(g);
+        row.append(g);
+        idElement.append(row);
         this.controlPanelEl.append(idElement);
 
         //Bezier curve
@@ -1680,9 +2306,16 @@ var ControlPanel = (function () {
         //background
         var newItem = this.itemControlEl.clone();
         newItem.html('<h2>Barva pozadí elementu</h2>');
-        var s = $('<span>').html('#').addClass('bg-input');
+        var row = $('<div>').addClass('row');
+        var s = $('<div>').html('#').addClass('group quarter');
         s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
-        newItem.append(s);
+        row.append(s);
+        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
+        this.bgOpacityEl.val('1');
+        a.append(this.bgOpacitySliderEl);
+        a.append(this.bgOpacityEl);
+        row.append(a);
+        newItem.append(row);
         this.controlPanelEl.append(newItem);
 
         //opacity
@@ -1696,14 +2329,16 @@ var ControlPanel = (function () {
         //dimensions
         var dim = this.itemControlEl.clone();
         dim.html('<h2>Rozměry elementu</h2>');
-        var w = $('<span>').html('width: ').addClass('group-form');
+        var row = $('<div>').addClass('row');
+        var w = $('<div>').html('width: ').addClass('group half');
         w.append(this.dimensionXEl);
         w.append(' px');
-        dim.append(w);
-        var h = $('<span>').html('height: ').addClass('group-form');
+        row.append(w);
+        var h = $('<div>').html('height: ').addClass('group half last');
         h.append(this.dimensionYEl);
         h.append(' px');
-        dim.append(h);
+        row.append(h);
+        dim.append(row);
         this.controlPanelEl.append(dim);
 
         //border-radius
@@ -1715,6 +2350,50 @@ var ControlPanel = (function () {
         this.borderRadiusHelperEl.append(this.borderRadiusBREl.val('0'));
         radius.append(this.borderRadiusHelperEl);
         this.controlPanelEl.append(radius);
+
+        //Font
+        var font = this.itemControlEl.clone();
+        this.fontSizeEl.val(this.initFontSize.toString());
+        this.fontColorEl.val($.colpick.rgbToHex(this.initTextColor));
+        font.html('<h2>Text</h2>');
+        var row = $('<div>').addClass('row');
+        this.fontFamily.forEach(function (val, index) {
+            _this.fontFamilyEl.append($("<option>").attr('value', val).text(val));
+        });
+        var family = $('<div>').html('font-family: ').addClass('group full font-family last');
+        family.append(this.fontFamilyEl);
+        row.append(family);
+        var color = $('<div>').html('color: #').addClass('group quarter-3');
+        color.append(this.fontColorEl);
+        row.append(color);
+        var size = $('<div>').html('size: ').addClass('group quarter last');
+        size.append(this.fontSizeEl);
+        size.append(' px');
+        row.append(size);
+        font.append(row);
+
+        this.controlPanelEl.append(font);
+
+        //Transform-origin
+        this.transformOriginXEl.val(this.initOrigin[0].toString());
+        this.transformOriginYEl.val(this.initOrigin[1].toString());
+        var origin = this.itemControlEl.clone();
+        origin.html('<h2>Transform-origin</h2>').addClass('control-origin');
+        var row = $('<div>').addClass('row');
+        var visibleLabel = $('<label>').html('Zobrazit polohu na plátně');
+        visibleLabel.prepend(this.transformOriginVisibleEl);
+        row.append(visibleLabel);
+        var x = $('<div>').html('poz. x: ').addClass('group half');
+        x.append(this.transformOriginXEl);
+        x.append(' %');
+        row.append(x);
+        var y = $('<div>').html('poz. y: ').addClass('group half last');
+        y.append(this.transformOriginYEl);
+        y.append(' %');
+        row.append(y);
+        origin.append(row);
+
+        this.controlPanelEl.append(origin);
 
         //3D Rotate
         var rotate = this.itemControlEl.clone();
@@ -1768,14 +2447,47 @@ var ControlPanel = (function () {
                 if (!bySetColor)
                     $(el).val(hex);
                 if (!bySetColor) {
-                    _this.app.workspace.setColor(rgb);
+                    _this.app.workspace.setColor(rgb, parseFloat(_this.bgOpacityEl.val()));
                 }
             }
         }).on('change', function (e) {
             _this.colorPicker.colpickSetColor($(e.target).val());
-            _this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()));
+            _this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(_this.bgOpacityEl.val()));
         });
-        this.app.workspace.setColor(this.initColor);
+        this.app.workspace.setColor(this.initColor, parseFloat(this.bgOpacityEl.val()));
+
+        this.textColorPicker = this.fontColorEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initTextColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb);
+                    _this.app.workspace.setFont({
+                        color: rgb,
+                        fontFamily: _this.fontFamilyEl.val(),
+                        size: parseFloat(_this.fontSizeEl.val())
+                    });
+                }
+            }
+        }).on('change', function (e) {
+            _this.textColorPicker.colpickSetColor($(e.target).val());
+
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()));
+            _this.app.workspace.setFont({
+                color: $.colpick.hexToRgb($(e.target).val()),
+                fontFamily: _this.fontFamilyEl.val(),
+                size: parseFloat(_this.fontSizeEl.val())
+            });
+        });
+        this.app.workspace.setFont({
+            color: this.initTextColor,
+            fontFamily: this.fontFamily[0],
+            size: this.initFontSize
+        });
 
         this.opacitySliderEl.slider({
             min: 0,
@@ -1784,6 +2496,16 @@ var ControlPanel = (function () {
             value: 1,
             slide: function (event, ui) {
                 _this.opacityEl.val(ui.value).change();
+            }
+        });
+
+        this.bgOpacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 1,
+            slide: function (event, ui) {
+                _this.bgOpacityEl.val(ui.value).change();
             }
         });
 
@@ -1810,6 +2532,12 @@ var ControlPanel = (function () {
         this.opacityEl.on('change', function (e) {
             _this.opacitySliderEl.slider('value', $(e.target).val());
             _this.app.workspace.setOpacity($(e.target).val());
+        });
+
+        this.bgOpacityEl.on('change', function (e) {
+            console.log('alhpa');
+            _this.bgOpacitySliderEl.slider('value', $(e.target).val());
+            _this.app.workspace.setColor($.colpick.hexToRgb(_this.bgPickerEl.val()), parseFloat(_this.bgOpacityEl.val()));
         });
 
         this.dimensionXEl.on('change', function (event) {
@@ -1863,6 +2591,24 @@ var ControlPanel = (function () {
             }
         });
 
+        this.transformOriginVisibleEl.on('change', function (event) {
+            console.log($(event.target).is(':checked'));
+            if ($(event.target).is(':checked')) {
+                _this.isOriginVisible = true;
+            } else {
+                _this.isOriginVisible = false;
+            }
+            _this.app.workspace.setOriginVisible();
+        });
+
+        this.transformOriginXEl.on('change', function (event) {
+            _this.app.workspace.setTransformOrigin('x', $(event.target).val());
+        });
+
+        this.transformOriginYEl.on('change', function (event) {
+            _this.app.workspace.setTransformOrigin('y', $(event.target).val());
+        });
+
         $(document).on('keyup', '.rotate', function (event) {
             if (event.which == 13) {
                 $(event.target).trigger('change');
@@ -1879,26 +2625,72 @@ var ControlPanel = (function () {
             }
         });
 
+        this.fontColorEl.on('change', function (e) {
+            _this.app.workspace.setFont({
+                color: $.colpick.hexToRgb(_this.fontColorEl.val()),
+                fontFamily: _this.fontFamilyEl.val(),
+                size: parseFloat(_this.fontSizeEl.val())
+            });
+        });
+
+        this.fontSizeEl.on('change', function (e) {
+            _this.app.workspace.setFont({
+                color: $.colpick.hexToRgb(_this.fontColorEl.val()),
+                fontFamily: _this.fontFamilyEl.val(),
+                size: parseFloat(_this.fontSizeEl.val())
+            });
+        });
+
+        this.fontFamilyEl.on('change', function (e) {
+            _this.app.workspace.setFont({
+                color: $.colpick.hexToRgb(_this.fontColorEl.val()),
+                fontFamily: _this.fontFamilyEl.val(),
+                size: parseFloat(_this.fontSizeEl.val())
+            }, false);
+        });
+
         this.selectToolEl.on('click', function (event) {
+            _this._mode = 0 /* SELECT */;
             $('.tool-btn').removeClass('active');
             $(event.target).closest('a').addClass('active');
-            $('.shape-helper').draggable('enable');
-            $('.shape-helper').resizable('enable');
+            _this.app.workspace.onChangeMode();
         });
 
         this.createDivToolEl.on('click', function (event) {
+            _this._mode = 1 /* CREATE_DIV */;
             $('.tool-btn').removeClass('active');
             $(event.target).closest('a').addClass('active');
-            $('.shape-helper').draggable('disable');
-            $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
+            _this.app.workspace.onChangeMode();
+        });
+
+        this.insertImageEl.on('click', function (event) {
+            $('.workspace-wrapper').removeClass('text-mode');
+            if ($(event.target).closest('a').hasClass('active')) {
+                $(event.target).closest('a').removeClass('active');
+                _this.selectToolEl.trigger('click');
+            } else {
+                _this._mode = 2 /* IMAGE */;
+                $('.tool-btn').removeClass('active');
+                $(event.target).closest('a').addClass('active');
+            }
+            _this.app.workspace.onChangeMode();
+        });
+
+        this.insertTextEl.on('click', function (event) {
+            _this._mode = 3 /* TEXT */;
+            $('.tool-btn').removeClass('active');
+            $(event.target).closest('a').addClass('active');
+            _this.app.workspace.onChangeMode();
         });
 
         this.generateCodeEl.on('click', function (event) {
             var generator = new GenerateCode(_this.app, _this.app.timeline.layers);
+            _this.app.workspace.insertMode(false);
             generator.generate();
         });
 
         $(document).ready(function () {
+            _this.selectToolEl.trigger('click');
             _this.ctx = _this.canvas.get(0).getContext('2d');
             _this.renderWrap(_this.ctx);
             _this.controlPanelEl.perfectScrollbar();
@@ -1939,9 +2731,11 @@ var ControlPanel = (function () {
         this.opacityEl.val(opacity.toString());
     };
 
-    ControlPanel.prototype.updateColor = function (color) {
+    ControlPanel.prototype.updateColor = function (color, alpha) {
         this.colorPicker.colpickSetColor(color, false);
         this.bgPickerEl.val($.colpick.rgbToHex(color));
+        this.bgOpacityEl.val(alpha.toFixed(2).toString());
+        this.bgOpacitySliderEl.slider('option', 'value', Number(alpha));
     };
 
     ControlPanel.prototype.updateBorderRadius = function (bradius) {
@@ -1949,6 +2743,13 @@ var ControlPanel = (function () {
         this.borderRadiusTREl.val(bradius[1].toString());
         this.borderRadiusBLEl.val(bradius[3].toString());
         this.borderRadiusBREl.val(bradius[2].toString());
+    };
+
+    ControlPanel.prototype.updateFont = function (color, size, family) {
+        this.textColorPicker.colpickSetColor(color, false);
+        this.fontColorEl.val($.colpick.rgbToHex(color));
+        this.fontSizeEl.val(size.toString());
+        this.fontFamilyEl.val(family);
     };
 
     ControlPanel.prototype.setHeight = function () {
@@ -2049,14 +2850,42 @@ var ControlPanel = (function () {
         }
     };
 
+    ControlPanel.prototype.updateTransformOrigin = function (top, left) {
+        this.transformOriginXEl.val(top.toString());
+        this.transformOriginYEl.val(left.toString());
+    };
+
     Object.defineProperty(ControlPanel.prototype, "Mode", {
+        /*get Mode (){
+        if (this.selectToolEl.hasClass('active')) {
+        return Mode.SELECT;
+        } else if (this.createDivToolEl.hasClass('active')) {
+        return Mode.CREATE_DIV;
+        } else if (this.insertImageEl.hasClass('active')) {
+        return Mode.IMAGE;
+        } else if (this.insertTextEl.hasClass('active')) {
+        return Mode.TEXT;
+        } else {
+        return null;
+        }
+        }*/
         get: function () {
-            if (this.selectToolEl.hasClass('active')) {
-                return 0 /* SELECT */;
-            } else if (this.createDivToolEl.hasClass('active')) {
-                return 1 /* CREATE_DIV */;
+            return this._mode;
+        },
+        set: function (mode) {
+            this._mode = mode;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+
+    Object.defineProperty(ControlPanel.prototype, "originMode", {
+        get: function () {
+            if (this.isOriginVisible == true) {
+                return true;
             } else {
-                return null;
+                return false;
             }
         },
         enumerable: true,
@@ -2167,32 +2996,27 @@ var GenerateCode = (function () {
         return css;
     };
 
-    GenerateCode.prototype.generateObjects = function () {
+    GenerateCode.prototype.generateObjectsTmp = function () {
         var shapes = $('#workspace').clone();
         shapes.find('.shape-helper').remove();
-        shapes.find('div').removeAttr('style');
+        shapes.find('.shape').removeAttr('style');
         shapes.removeAttr('style');
 
         var markup = '  <div id="workspace">\n';
-        shapes.find('div').each(function (index) {
-            //markup += '    <div class="object' + $(this).data('id').toString() + '">' + $(this).html().toString() + '</div>\n';
+        shapes.find('.shape').each(function (index) {
             markup += '    ' + ($(this).addClass('object' + $(this).data('id')).prop('outerHTML')) + '\n';
         });
         markup += '  </div>';
         return markup;
-        /*$("<pre />", {
-        "html": '&lt;!DOCTYPE html>\n&lt;html>\n' +
-        shapes.wrapAll('<div></div>').parent().html()
-        .replace(/[<>]/g, function (m) { return { '<': '&lt;', '>': '&gt;' }[m] })
-        .replace(/((ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?)/gi, '<a href="$1">$1</a>') +
-        '\n&lt;/html>'
-        }).appendTo(this.codeWrapperEl);*/
-        /*this.generateKeyframes();
-        this.gCss({
-        'name': '#workspace',
-        'width': this.app.workspace.workspaceSize.width + 'px',
-        'height': this.app.workspace.workspaceSize.height + 'px',
-        });*/
+    };
+
+    GenerateCode.prototype.generateObjects = function () {
+        var markup = '  <div id="workspace">\n';
+        this.layers.forEach(function (layer, index) {
+            markup += layer.getObject();
+        });
+        markup += '  </div>';
+        return markup;
     };
 
     GenerateCode.prototype.objectCss = function () {
@@ -2223,22 +3047,8 @@ var GenerateCode = (function () {
             var nameElement = 'object' + item.id;
 
             //1. init style for object
-            var p = (item.getKeyframeByTimestamp(item.timestamps[0])).shape.parameters;
-            var cssObject = {
-                'name': '.' + nameElement,
-                'width': p.width + 'px',
-                'height': p.height + 'px',
-                'top': p.top + 'px',
-                'left': p.left + 'px',
-                'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
-                'opacity': p.opacity,
-                'border-top-left-radius': p.borderRadius[0] + 'px',
-                'border-top-right-radius': p.borderRadius[1] + 'px',
-                'border-bottom-right-radius': p.borderRadius[2] + 'px',
-                'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
-                'position': 'absolute'
-            };
+            var cssObject = item.getInitStyles(nameElement);
+
             if (_this.app.timeline.repeat) {
                 cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
                 cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
@@ -2273,20 +3083,7 @@ var GenerateCode = (function () {
                         percent += ', 0%';
                     }
                     percents.push(percent);
-                    p = keyframe.shape.parameters;
-                    cssObject[percent] = {
-                        'width': p.width + 'px',
-                        'height': p.height + 'px',
-                        'top': p.top + 'px',
-                        'left': p.left + 'px',
-                        'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
-                        'opacity': p.opacity,
-                        'border-top-left-radius': p.borderRadius[0] + 'px',
-                        'border-top-right-radius': p.borderRadius[1] + 'px',
-                        'border-bottom-right-radius': p.borderRadius[2] + 'px',
-                        'border-bottom-left-radius': p.borderRadius[3] + 'px',
-                        'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)'
-                    };
+                    cssObject[percent] = item.getKeyframeStyle(timestamp);
 
                     if (i != item.timestamps.length - 1) {
                         cssObject[percent]['-webkit-animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
@@ -2296,11 +3093,6 @@ var GenerateCode = (function () {
 
                 keyframesCss += _this.gKeyframes(cssObject);
             }
-            /*var style: JQuery = $("<style>").attr({
-            class: "keyframe-style",
-            type: "text/css"
-            }).append(this.gKeyframes(c));
-            style.appendTo('head');*/
         });
 
         return (keyframesCss + css);
@@ -2370,6 +3162,17 @@ var GenerateCode = (function () {
     };
     return GenerateCode;
 })();
+var Img = (function (_super) {
+    __extends(Img, _super);
+    function Img(params, src) {
+        _super.call(this, params);
+        this._src = src;
+    }
+    Img.prototype.getSrc = function () {
+        return this._src;
+    };
+    return Img;
+})(Shape);
 var Keyframe = (function () {
     function Keyframe(shape, timestamp, timing_function) {
         this._shape = shape;
@@ -2416,4 +3219,50 @@ var Keyframe = (function () {
 
     return Keyframe;
 })();
+var Rectangle = (function (_super) {
+    __extends(Rectangle, _super);
+    function Rectangle(params) {
+        _super.call(this, params);
+    }
+    return Rectangle;
+})(Shape);
+var TextField = (function (_super) {
+    __extends(TextField, _super);
+    function TextField(params, content, color, size, family) {
+        _super.call(this, params);
+        this._content = content;
+        this.color = color;
+        this.size = size;
+        this.family = family;
+    }
+    TextField.prototype.getContent = function () {
+        return this._content;
+    };
+
+    TextField.prototype.getColor = function () {
+        return this.color;
+    };
+
+    TextField.prototype.getSize = function () {
+        return this.size;
+    };
+
+    TextField.prototype.getFamily = function () {
+        return this.family;
+    };
+
+    TextField.prototype.setFont = function (p) {
+        this.color = p.color;
+        this.size = p.size;
+    };
+
+    TextField.prototype.setContent = function (text) {
+        this._content = text;
+    };
+
+    TextField.prototype.setFamily = function (family) {
+        this.family = family;
+    };
+    return TextField;
+})(Shape);
 //# sourceMappingURL=app.js.map

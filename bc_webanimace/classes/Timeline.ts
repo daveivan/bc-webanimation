@@ -18,7 +18,6 @@ class Timeline
 
     private app: Application;
 
-    newLayerEl: JQuery = $('<a class="new-layer" href = "#">Nová vrstva <i class="fa fa-file-o"></i></a>');
     deleteLayerEl: JQuery = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
     repeatEl: JQuery = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>')
     deleteKeyframeEl: JQuery = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
@@ -38,11 +37,6 @@ class Timeline
         this.layers = new Array<Layer>();
 
         this.renderTimeline();
-
-        this.newLayerEl.on('click', (event: JQueryEventObject) => {
-            this.addLayer(event);
-            return false;
-        });
 
         this.deleteLayerEl.on('click', (event: JQueryEventObject) => {
             this.deleteLayers(event);
@@ -106,7 +100,6 @@ class Timeline
 
     renderTimeline()
     {
-        $(this.timelineHeadEl).append(this.newLayerEl);
         $(this.timelineHeadEl).append(this.repeatEl);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
@@ -239,7 +232,8 @@ class Timeline
 
         //add jeditable plugin
         var me: any = this;
-        $('.editable').editable(function(value: string, settings: any) {
+        $('.editable').editable(function (value: string, settings: any) {
+            console.log('shit');
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
             me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
@@ -249,16 +243,20 @@ class Timeline
             width: 150,
             onblur: 'submit',
            event: 'dblclick',
-        });
+            });
     }
 
-    selectLayer(id: number) {
+    selectLayer(id: number, idKeyframe: number = null) {
         //select layer by ID
         this.keyframesTableEl.find('tbody tr').removeClass('selected');
         this.layersEl.find('.layer').removeClass('selected');
         this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
         this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
 
+        if (idKeyframe != null) {
+            (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').addClass('selected');
+            (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').next('.timing-function').addClass('selected');
+        }
         //highlight shape
         this.app.workspace.highlightShape([id]);
     }
@@ -278,26 +276,10 @@ class Timeline
         this.keyframesTableEl.find('thead').append(head);
     }
 
-    public addLayer(e: JQueryEventObject, shape: Shape = null): number
-    {
-        console.log('Adding new layer...');
-
-        //remove initial example layer
+    public addLayer(layer): number {
         this.keyframesTableEl.find('tbody tr.disabled').remove();
-
-        //create layer & push to array & set order(depend on index of array)
-        var layer = new Layer('Vrstva ' + (Layer.counter + 1), this.app.workspace.getBezier());
         this.layers.push(layer);
         layer.order = this.layers.length;
-
-        //insert shape to layer
-        if (shape != null) {
-            //init keyframe
-            shape.id = layer.id;
-            layer.addKeyframe(shape, 0, this.app.workspace.getBezier());
-        }
-    
-        //render new layer list
         this.renderLayers();
 
         this.selectLayer(layer.id);
@@ -504,6 +486,11 @@ class Timeline
 
     get repeat() {
         return this._repeat;
+    }
+
+    getSelectedKeyframeID(idLayer: number) {
+        var el: JQuery = (this.keyframesTableEl.find('tr.layer-row[data-id="' + idLayer + '"]')).find('.keyframe.selected');
+        return el.data('index');
     }
 }
 

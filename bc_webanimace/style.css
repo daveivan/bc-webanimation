@@ -145,6 +145,15 @@ table {
         text-align: right;
     padding-top: 2px;
     padding-right: 10px;
+    float: left;
+}
+
+.keyframes-footer {
+    position: relative;
+    z-index: 101;
+    width: 600px;
+    height: 100%;
+    float: left;
 }
 
 .timeline-footer {
@@ -302,7 +311,7 @@ tr.disabled td {
 
 .shape-helper.highlight {
     border: 1px solid #00ff7f;
-    z-index: 2000 !important;
+    z-index: 9998 !important;
 }
 
 .helpername {
@@ -442,7 +451,7 @@ td.keyframes-list {
 	height:20px;
 	border-right:20px solid #2cd0db;
 	line-height:20px;
-    z-index: 9999;
+    z-index: 10001;
     text-align: center;
     background-color: #fdfdfd;
     color: #4e4e4e;
@@ -454,7 +463,7 @@ td.keyframes-list {
 }
 
 .colpick {
-    z-index: 3;
+    z-index: 9999;
 }
 
 .bg-input {
@@ -678,7 +687,7 @@ text-align: center;
 }
 
 .ui-dialog {
-    z-index: 5000;
+    z-index: 10010;
     border-radius: 0;
 }
 
@@ -718,7 +727,7 @@ pre.prettyprint {
 }
 
 .workspace-overlay {
-    z-index: 9999;
+    z-index: 10005;
     background-color: #fff;
     background-color: rgba(250, 250, 250, 0.4);
     top: 0;
@@ -733,6 +742,10 @@ pre.prettyprint {
     margin: 0 auto;
     margin-top: 4em;
     background-color: rgba(255, 255, 255, 0.9);
+}
+
+.upload-area.over {
+    z-index: 10;
 }
 
 .upload-area p{
@@ -806,7 +819,7 @@ pointer-events: none
 }
 
 .editable {
-    z-index: 90000;
+    z-index: 20000;
 }
 
 .row:after {
@@ -872,7 +885,7 @@ input#id-el {
 }
 
 .group.font-family select {
-    width: 67%;
+    width: 65%;
     border: 1px solid #c9cacb;
     background-color: #fdfdfd;
     color: #4e4e4e;
@@ -880,4 +893,59 @@ input#id-el {
 
 input.origin {
     width: 45px;
+}
+
+.breadcrumb {
+    font-size: 12px;
+    color: #646464;
+    margin-left: 20px;
+    margin-top: 10px;
+}
+
+.breadcrumb a {
+    color: #646464;
+    font-weight: bold;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb span:last-child a {
+    font-weight: normal;
+    text-decoration: none;
+    cursor: default;
+    display: inline;
+}
+
+.breadcrumb span {
+    margin-left: 15px;
+}
+
+.breadcrumb span:after {
+    content: '>';
+    position: relative;
+    left: 7px;
+}
+
+.breadcrumb span:last-child:after {
+    display: none;
+}
+
+.shape.square {
+    overflow: hidden;
+}
+
+.shape.square.scope {
+    overflow: visible;
+    z-index: 10002 !important;
+}
+
+.overlay-scope {
+    background-color: rgba(0, 0, 0, 0.3);
+    width: 100%;
+    height: 100%;
+    z-index: 10001;
+    position: absolute;
+    left: 0;
 }

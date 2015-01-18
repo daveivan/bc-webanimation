@@ -3,6 +3,8 @@ class Timeline
 {
     timelineContainer: JQuery;
     layers: Array<Layer>;
+    //array of arrays, for rendering layers by scope
+    groupedLayers: Array<Array<Layer>>;
     pointerPosition: number = 0;
     //width of one keyframe in px
     keyframeWidth: number = 15;
@@ -28,6 +30,7 @@ class Timeline
     keyframesEl: JQuery = $('<div class="keyframes"></div>');
     timelineFooterEl: JQuery = $('<div class="timeline-footer"></div>');
     layersFooterEl: JQuery = $('<div class="layers-footer"></div>');
+    keyframesFooterEl: JQuery = $('<div class="keyframes-footer"></div>');
     keyframesTableEl: JQuery = $('<table><thead></thead><tbody></tbody>');
     pointerEl: JQuery = $('<div class="pointer"><div class="pointer-top"></div></div>');
 
@@ -35,8 +38,12 @@ class Timeline
         this.app = app;
         this.timelineContainer = timelineContainer;
         this.layers = new Array<Layer>();
+        this.groupedLayers = new Array<Array<Layer>>();
+        this.groupedLayers[0] = new Array<Layer>();
 
         this.renderTimeline();
+
+        this.buildBreadcrumb(null);
 
         this.deleteLayerEl.on('click', (event: JQueryEventObject) => {
             this.deleteLayers(event);
@@ -76,9 +83,7 @@ class Timeline
             this.keyframesTableEl.find('.timing-function').removeClass('selected');
             $(event.target).addClass('selected');
             $(event.target).next('.timing-function').addClass('selected');
-            //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             this.app.workspace.updateBezierCurve(this.getLayer($(event.target).data('layer')));
-            //this.app.workspace.renderShapes();
         });
 
         this.keyframesTableEl.on('click', '.timing-function p', (event: JQueryEventObject) => {
@@ -107,6 +112,7 @@ class Timeline
         $(this.layersFooterEl).append(this.deleteLayerEl);
         $(this.layersFooterEl).append(this.deleteKeyframeEl);
         $(this.timelineFooterEl).append(this.layersFooterEl);
+        $(this.timelineFooterEl).append(this.keyframesFooterEl);
         $(this.fixedWidthEl).append(this.timelineFooterEl);
         $(this.layersWrapperEl).append(this.fixedWidthEl);
         $(this.timelineContainer).append(this.layersWrapperEl);
@@ -210,22 +216,27 @@ class Timeline
         this.layersEl.empty();
         this.keyframesTableEl.find('tbody').empty();
 
+        var isEmpty: boolean = true;
+
         //render new layers list from array
         this.layers.forEach((item: Layer, index: number) => {
-            var layerItem: JQuery = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
-            layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
-            if (item.idEl) {
-                layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));   
+            if (this.app.workspace.scope == item.parent) {
+                var layerItem: JQuery = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
+                layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
+                if (item.idEl) {
+                    layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
+                }
+                this.layersEl.append(layerItem);
+                //and render frames fot this layer
+                this.renderRow(item.id);
+                //render keyframes
+                this.renderKeyframes(item.id);
+                isEmpty = false;
             }
-            this.layersEl.append(layerItem);
-            //and render frames fot this layer
-            this.renderRow(item.id);
-            //render keyframes
-            this.renderKeyframes(item.id);
         });
 
         //if array layers is empty, insert default layer
-        if (this.layers.length == 0) {
+        if (this.layers.length == 0 || isEmpty) {
             this.renderRow(0, 'disabled');
             this.layersEl.append($('<div>').addClass('layer disabled').html('Vložte novou vrstvu'));
         }
@@ -233,7 +244,6 @@ class Timeline
         //add jeditable plugin
         var me: any = this;
         $('.editable').editable(function (value: string, settings: any) {
-            console.log('shit');
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
             me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
@@ -250,15 +260,19 @@ class Timeline
         //select layer by ID
         this.keyframesTableEl.find('tbody tr').removeClass('selected');
         this.layersEl.find('.layer').removeClass('selected');
-        this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
-        this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
+        if (id != null) {
+            this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
+            this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
 
-        if (idKeyframe != null) {
-            (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').addClass('selected');
-            (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').next('.timing-function').addClass('selected');
+            if (idKeyframe != null) {
+                (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').addClass('selected');
+                (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').next('.timing-function').addClass('selected');
+            }
+            //highlight shape
+            this.app.workspace.highlightShape([id]);
+        } else {
+            this.app.workspace.highlightShape(null); 
         }
-        //highlight shape
-        this.app.workspace.highlightShape([id]);
     }
 
     private renderHeader()
@@ -279,6 +293,14 @@ class Timeline
     public addLayer(layer): number {
         this.keyframesTableEl.find('tbody tr.disabled').remove();
         this.layers.push(layer);
+        if (layer.parent == null) {
+            (this.groupedLayers[0]).push(layer);
+        } else {
+            if (!this.groupedLayers[layer.parent]) {
+                this.groupedLayers[layer.parent] = new Array<Layer>();
+            }
+            (this.groupedLayers[layer.parent]).push(layer);
+        }
         layer.order = this.layers.length;
         this.renderLayers();
 
@@ -289,13 +311,26 @@ class Timeline
         return layer.id;
     }
 
+    private deleteLayer(index: number) {
+        var deletedLayer: Layer = this.layers[index];
+        this.layers.splice(index, 1);
+
+        //find childrens
+        for (var i: number = this.layers.length - 1; i >= 0; i--) {
+            if (this.layers[i].parent == deletedLayer.id) {
+                this.deleteLayer(i);
+            }   
+        }
+    }
+
     private deleteLayers(e: JQueryEventObject) {
         console.log('Deleting layers...');
 
         //iteration from end of array of selected layers
         var selectedLayers: Array<JQueryEventObject> = this.layersEl.find('div.layer.selected').get();
         for (var i: number = selectedLayers.length - 1; i >= 0; i--) {
-            this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
+            //this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
+            this.deleteLayer(parseInt($(selectedLayers[i]).attr('id')));
         }
 
         //render layers
@@ -303,12 +338,14 @@ class Timeline
 
         //render workspace
         this.app.workspace.renderShapes();
+        this.app.workspace.transformShapes();
 
         //scroll to last layer
         this.selectLayer(this.layersEl.find('.layer').last().data('id'));
         this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
         this.layersWrapperEl.perfectScrollbar('update');
         //this.scrollTo(this.layersEl.find('.layer').last().data('id'));
+
     }
 
     private sort(e: JQueryEventObject, ui)
@@ -316,16 +353,27 @@ class Timeline
         var order: Array<string> = $(e.target).sortable('toArray');
         var firstSelectedEl: JQuery = $(this.layersEl.find('.selected').get(0));
 
+        var outOfScopeLayers: Array < Layer> = new Array<Layer>();
+        this.layers.forEach((layer: Layer, index: number) => {
+            if (layer.parent != this.app.workspace.scope) {
+                outOfScopeLayers.push(layer);
+            }
+        });
+
         var tmpLayers: Array<Layer> = new Array<Layer>();
         order.forEach((value: string, index: number) => {
             var layer: Layer = this.layers[parseInt(value)];
             tmpLayers.push(layer);
-            var keyframe: Keyframe = layer.getKeyframe(0);
-            if (keyframe) {
-                keyframe.shape.setZindex(index);
+            //TODO - update z-index podle poradi (brat v potaz keyframe nebo aktualizace do global shape?)
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(this.app.workspace.getCurrentShape(layer.id), this.pxToMilisec(), this.app.workspace.bezier);
+                this.renderKeyframes(layer.id);
             }
+            keyframe.shape.setZindex(index);
         });
-        this.layers = tmpLayers;
+
+        this.layers = outOfScopeLayers.concat(tmpLayers);
 
         //render layers
         this.renderLayers();
@@ -363,6 +411,7 @@ class Timeline
         this.layersEl.css('left', posX);
         $('.first').css('top', posY);
         this.layersFooterEl.css('left', posX);
+        this.keyframesFooterEl.css('left', posX);
         this.timelineFooterEl.css('bottom', 0 - posY);
         this.pointerEl.find('.pointer-top').css('top', posY);
     }
@@ -390,7 +439,6 @@ class Timeline
             },
             drag: (event: JQueryEventObject, ui) => {
                 this.pointerPosition = ui.position.left + 1;
-                //this.app.workspace.renderShapes();
                 this.app.workspace.transformShapes();
             },
             stop: (event: JQueryEventObject, ui) => {
@@ -410,8 +458,7 @@ class Timeline
             var posX = e.pageX - $(n).offset().left;
             posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
             this.pointerPosition = posX;
-            this.pointerEl.css('left', this.pointerPosition - 1);   
-            //this.app.workspace.renderShapes();
+            this.pointerEl.css('left', this.pointerPosition - 1);
             this.app.workspace.transformShapes();
         }
     }
@@ -479,7 +526,6 @@ class Timeline
             this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
 
             this.renderKeyframes(keyframeEl.data('layer'));
-            //this.app.workspace.renderShapes();
             this.app.workspace.transformShapes();
         }
     }
@@ -491,6 +537,30 @@ class Timeline
     getSelectedKeyframeID(idLayer: number) {
         var el: JQuery = (this.keyframesTableEl.find('tr.layer-row[data-id="' + idLayer + '"]')).find('.keyframe.selected');
         return el.data('index');
+    }
+
+    buildBreadcrumb(scope: number) {
+        console.log('building breadcrumb');
+        $('.breadcrumb').remove();
+        var container: JQuery = $('<div>').addClass('breadcrumb');
+        var currentLayer: Layer = this.getLayer(scope);
+        console.log(currentLayer);
+        if (currentLayer) {
+            container.append($('<span>').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));   
+            this.getParent(currentLayer.parent, container);
+        }
+        container.prepend($('<span>').html('<a href="#" class="set-scope">Hlavní plátno</a>'));
+        this.keyframesFooterEl.append(container);
+    }
+
+    getParent(parent: number, container: JQuery): Layer {
+        var layer: Layer = null;
+        layer = this.getLayer(parent);
+        if (layer) {
+            container.prepend($('<span>').html('<a href="#" class="set-scope" data-id=' + layer.id + '>' + layer.name + '</a>'));
+            this.getParent(layer.parent, container);            
+        }
+        return layer; 
     }
 }
 

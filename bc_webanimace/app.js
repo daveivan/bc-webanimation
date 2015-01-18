@@ -1,13 +1,9 @@
-﻿var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var Layer = (function () {
+﻿var Layer = (function () {
     function Layer(name, fn, shape) {
         if (typeof shape === "undefined") { shape = null; }
         this._order = 0;
+        this._parent = null;
+        this.nesting = 0;
         this.name = name;
         this.id = ++Layer.counter;
         this._keyframes = new Array();
@@ -26,6 +22,18 @@ var Layer = (function () {
         },
         set: function (order) {
             this._order = order;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
+
+    Object.defineProperty(Layer.prototype, "parent", {
+        get: function () {
+            return this._parent;
+        },
+        set: function (id) {
+            this._parent = id;
         },
         enumerable: true,
         configurable: true
@@ -159,10 +167,12 @@ var Layer = (function () {
                 left: Math.round(this.computeAttr(rng['l'].shape.parameters.left, rng['r'].shape.parameters.left, bezier(p))),
                 width: Math.round(this.computeAttr(rng['l'].shape.parameters.width, rng['r'].shape.parameters.width, bezier(p))),
                 height: Math.round(this.computeAttr(rng['l'].shape.parameters.height, rng['r'].shape.parameters.height, bezier(p))),
-                backgroundR: Math.round(this.computeAttr(rng['l'].shape.parameters.backgroundR, rng['r'].shape.parameters.backgroundR, bezier(p))),
-                backgroundG: Math.round(this.computeAttr(rng['l'].shape.parameters.backgroundG, rng['r'].shape.parameters.backgroundG, bezier(p))),
-                backgroundB: Math.round(this.computeAttr(rng['l'].shape.parameters.backgroundB, rng['r'].shape.parameters.backgroundB, bezier(p))),
-                backgroundA: this.computeAttr(rng['l'].shape.parameters.backgroundA, rng['r'].shape.parameters.backgroundA, bezier(p)),
+                background: {
+                    r: Math.round(this.computeAttr(rng['l'].shape.parameters.background.r, rng['r'].shape.parameters.background.r, bezier(p))),
+                    g: Math.round(this.computeAttr(rng['l'].shape.parameters.background.g, rng['r'].shape.parameters.background.g, bezier(p))),
+                    b: Math.round(this.computeAttr(rng['l'].shape.parameters.background.b, rng['r'].shape.parameters.background.b, bezier(p))),
+                    a: this.computeAttr(rng['l'].shape.parameters.background.a, rng['r'].shape.parameters.background.a, bezier(p))
+                },
                 opacity: this.computeAttr(rng['l'].shape.parameters.opacity, rng['r'].shape.parameters.opacity, bezier(p)),
                 borderRadius: [
                     Math.round(this.computeAttr(rng['l'].shape.parameters.borderRadius[0], rng['r'].shape.parameters.borderRadius[0], bezier(p))),
@@ -170,13 +180,20 @@ var Layer = (function () {
                     Math.round(this.computeAttr(rng['l'].shape.parameters.borderRadius[2], rng['r'].shape.parameters.borderRadius[2], bezier(p))),
                     Math.round(this.computeAttr(rng['l'].shape.parameters.borderRadius[3], rng['r'].shape.parameters.borderRadius[3], bezier(p)))
                 ],
-                rotateX: Math.round(this.computeAttr(rng['l'].shape.parameters.rotateX, rng['r'].shape.parameters.rotateX, bezier(p))),
-                rotateY: Math.round(this.computeAttr(rng['l'].shape.parameters.rotateY, rng['r'].shape.parameters.rotateY, bezier(p))),
-                rotateZ: Math.round(this.computeAttr(rng['l'].shape.parameters.rotateZ, rng['r'].shape.parameters.rotateZ, bezier(p))),
-                skewX: Math.round(this.computeAttr(rng['l'].shape.parameters.skewX, rng['r'].shape.parameters.skewX, bezier(p))),
-                skewY: Math.round(this.computeAttr(rng['l'].shape.parameters.skewY, rng['r'].shape.parameters.skewY, bezier(p))),
-                originX: this.computeAttr(rng['l'].shape.parameters.originX, rng['r'].shape.parameters.originX, bezier(p)),
-                originY: this.computeAttr(rng['l'].shape.parameters.originY, rng['r'].shape.parameters.originY, bezier(p))
+                rotate: {
+                    x: Math.round(this.computeAttr(rng['l'].shape.parameters.rotate.x, rng['r'].shape.parameters.rotate.x, bezier(p))),
+                    y: Math.round(this.computeAttr(rng['l'].shape.parameters.rotate.y, rng['r'].shape.parameters.rotate.y, bezier(p))),
+                    z: Math.round(this.computeAttr(rng['l'].shape.parameters.rotate.z, rng['r'].shape.parameters.rotate.z, bezier(p)))
+                },
+                skew: {
+                    x: Math.round(this.computeAttr(rng['l'].shape.parameters.skew.x, rng['r'].shape.parameters.skew.x, bezier(p))),
+                    y: Math.round(this.computeAttr(rng['l'].shape.parameters.skew.y, rng['r'].shape.parameters.skew.y, bezier(p)))
+                },
+                origin: {
+                    x: this.computeAttr(rng['l'].shape.parameters.origin.x, rng['r'].shape.parameters.origin.x, bezier(p)),
+                    y: this.computeAttr(rng['l'].shape.parameters.origin.y, rng['r'].shape.parameters.origin.y, bezier(p))
+                },
+                zindex: rng['l'].shape.parameters.zindex
             };
         }
 
@@ -186,16 +203,16 @@ var Layer = (function () {
             'left': params.left,
             'width': params.width,
             'height': params.height,
-            'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
+            'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
             'border': params.border,
-            'z-index': shape.css('z-index'),
+            'z-index': params.zindex,
             'opacity': params.opacity,
             'border-top-left-radius': params.borderRadius[0],
             'border-top-right-radius': params.borderRadius[1],
             'border-bottom-right-radius': params.borderRadius[2],
             'border-bottom-left-radius': params.borderRadius[3],
-            'transform': 'rotateX(' + params.rotateX + 'deg) rotateY(' + params.rotateY + 'deg) rotateZ(' + params.rotateZ + 'deg) skew(' + params.skewX + 'deg , ' + params.skewY + 'deg)',
-            'transform-origin': params.originX + '% ' + params.originY + '%'
+            'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+            'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
         });
 
         helper.css({
@@ -215,14 +232,14 @@ var Layer = (function () {
         if (currentLayerId == this.id) {
             controlPanel.updateDimensions({ width: params.width, height: params.height });
             controlPanel.updateOpacity(params.opacity);
-            controlPanel.updateColor({ r: params.backgroundR, g: params.backgroundG, b: params.backgroundB }, params.backgroundA);
+            controlPanel.updateColor({ r: params.background.r, g: params.background.g, b: params.background.b }, params.background.a);
             controlPanel.updateBorderRadius(params.borderRadius);
-            controlPanel.update3DRotate({ x: params.rotateX, y: params.rotateY, z: params.rotateZ });
-            controlPanel.updateSkew({ x: params.skewX, y: params.skewY });
-            controlPanel.updateTransformOrigin(params.originX, params.originY);
+            controlPanel.update3DRotate({ x: params.rotate.x, y: params.rotate.y, z: params.rotate.z });
+            controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
+            controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
             $('.shape-helper.highlight').first().find('.origin-point').css({
-                'left': params.originX + '%',
-                'top': params.originY + '%'
+                'left': params.origin.x + '%',
+                'top': params.origin.y + '%'
             });
         }
     };
@@ -276,40 +293,142 @@ var Layer = (function () {
         var p = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
         var cssObject = {
             'name': '.' + nameElement,
+            'position': 'absolute',
             'width': p.width + 'px',
             'height': p.height + 'px',
             'top': p.top + 'px',
             'left': p.left + 'px',
-            'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
-            'opacity': p.opacity,
-            'border-top-left-radius': p.borderRadius[0] + 'px',
-            'border-top-right-radius': p.borderRadius[1] + 'px',
-            'border-bottom-right-radius': p.borderRadius[2] + 'px',
-            'border-bottom-left-radius': p.borderRadius[3] + 'px',
-            'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
-            'transform-origin': p.originX + '% ' + p.originY + '%',
-            'position': 'absolute'
+            'background': 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')'
         };
+
+        if (p.opacity != 1) {
+            cssObject['opacity'] = p.opacity;
+        }
+
+        if ((p.borderRadius[0] == p.borderRadius[1]) && (p.borderRadius[0] == p.borderRadius[2]) && (p.borderRadius[0] == p.borderRadius[3])) {
+            if (p.borderRadius[0] != 0) {
+                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+            }
+        } else {
+            cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
+            cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
+            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
+            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
+        }
+
+        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0) {
+            if ((p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) && (p.skew.x != 0 || p.skew.y != 0)) {
+                cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
+            } else if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) {
+                cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg)';
+            } else if (p.skew.x != 0 || p.skew.y != 0) {
+                cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
+            }
+
+            if (p.origin.x != 50 && p.origin.y != 50) {
+                cssObject['transform-origin'] = p.origin.x + '% ' + p.origin.y + '%';
+            }
+        }
 
         return cssObject;
     };
 
     Layer.prototype.getKeyframeStyle = function (timestamp) {
-        var p = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
-        var cssObject = {
-            'width': p.width + 'px',
-            'height': p.height + 'px',
-            'top': p.top + 'px',
-            'left': p.left + 'px',
-            'background': 'rgba(' + p.backgroundR + ',' + p.backgroundG + ',' + p.backgroundB + ',' + p.backgroundA + ')',
-            'opacity': p.opacity,
-            'border-top-left-radius': p.borderRadius[0] + 'px',
-            'border-top-right-radius': p.borderRadius[1] + 'px',
-            'border-bottom-right-radius': p.borderRadius[2] + 'px',
-            'border-bottom-left-radius': p.borderRadius[3] + 'px',
-            'transform': 'rotateX(' + p.rotateX + 'deg) rotateY(' + p.rotateY + 'deg) rotateZ(' + p.rotateZ + 'deg) skew(' + p.skewX + 'deg , ' + p.skewY + 'deg)',
-            'transform-origin': p.originX + '% ' + p.originY + '%'
+        //check, if parameters ís changing
+        var change = {
+            width: false,
+            height: false,
+            top: false,
+            left: false,
+            bg: false,
+            opacity: false,
+            radius: false,
+            rotate: false,
+            skew: false,
+            origin: false
         };
+        var initP = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
+        this.getAllKeyframes().forEach(function (k, i) {
+            var p = k.shape.parameters;
+            if (initP.width != p.width)
+                change.width = true;
+            if (initP.height != p.height)
+                change.height = true;
+            if (initP.top != p.top)
+                change.top = true;
+            if (initP.left != p.left)
+                change.left = true;
+            if (initP.background.r != p.background.r)
+                change.bg = true;
+            if (initP.background.g != p.background.g)
+                change.bg = true;
+            if (initP.background.b != p.background.b)
+                change.bg = true;
+            if (initP.background.a != p.background.a)
+                change.bg = true;
+            if (initP.opacity != p.opacity)
+                change.opacity = true;
+            if (initP.borderRadius[0] != p.borderRadius[0])
+                change.radius = true;
+            if (initP.borderRadius[1] != p.borderRadius[1])
+                change.radius = true;
+            if (initP.borderRadius[2] != p.borderRadius[2])
+                change.radius = true;
+            if (initP.borderRadius[3] != p.borderRadius[3])
+                change.radius = true;
+            if (initP.rotate.x != p.rotate.x)
+                change.rotate = true;
+            if (initP.rotate.y != p.rotate.y)
+                change.rotate = true;
+            if (initP.rotate.z != p.rotate.z)
+                change.rotate = true;
+            if (initP.skew.x != p.skew.x)
+                change.skew = true;
+            if (initP.skew.y != p.skew.y)
+                change.skew = true;
+            if (initP.origin.x != p.origin.x)
+                change.origin = true;
+            if (initP.origin.y != p.origin.y)
+                change.origin = true;
+        });
+
+        var p = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
+        var cssObject = {};
+
+        if (change.width)
+            cssObject['width'] = p.width + 'px';
+        if (change.height)
+            cssObject['height'] = p.height + 'px';
+        if (change.top)
+            cssObject['top'] = p.top + 'px';
+        if (change.left)
+            cssObject['left'] = p.left + 'px';
+        if (change.bg)
+            cssObject['background'] = 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')';
+        if (change.opacity)
+            cssObject['opacity'] = p.opacity;
+        if (change.radius) {
+            if ((p.borderRadius[0] == p.borderRadius[1]) && (p.borderRadius[0] == p.borderRadius[2]) && (p.borderRadius[0] == p.borderRadius[3])) {
+                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+            } else {
+                cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
+                cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
+                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
+                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
+            }
+        }
+        if (change.rotate && change.skew) {
+            cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
+        } else if (change.rotate) {
+            cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg)';
+        } else if (change.skew) {
+            cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
+        }
+
+        if (change.rotate && change.skew) {
+            if (change.origin)
+                cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
+        }
 
         return cssObject;
     };
@@ -318,177 +437,83 @@ var Layer = (function () {
         return '';
     };
 
+    Layer.prototype.renderShape = function (container, position, currentScope) {
+        return null;
+    };
+
+    Layer.prototype.renderShapeCore = function (shape, container, position, currentScope) {
+        //get keyframe by pointer position
+        var keyframe = this.getKeyframeByTimestamp(position);
+
+        //if no keyframe, get init keyframe
+        if (keyframe == null) {
+            keyframe = this.getKeyframe(0);
+        }
+        if (keyframe != null) {
+            var params = keyframe.shape.parameters;
+            var css = {
+                'top': params.top,
+                'left': params.left,
+                'width': params.width,
+                'height': params.height,
+                'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.a + ',' + params.background.a + ')',
+                'border': params.border,
+                'z-index': params.zindex,
+                'opacity': params.opacity,
+                'border-top-left-radius': params.borderRadius[0],
+                'border-top-right-radius': params.borderRadius[1],
+                'border-bottom-right-radius': params.borderRadius[2],
+                'border-bottom-left-radius': params.borderRadius[3]
+            };
+            shape.css(css);
+
+            if (this.idEl) {
+                shape.attr('id', this.idEl);
+            }
+
+            shape.attr('data-id', keyframe.shape.id);
+
+            if (container.find('.shape[data-id="' + this.id + '"]').length) {
+                container.find('.shape[data-id="' + this.id + '"]').remove();
+            }
+
+            shape.appendTo(container);
+
+            //if current scope is rendered scope, show helpers
+            if (currentScope == this.parent) {
+                var helper = $('<div>').addClass('shape-helper');
+                helper.append($('<div>').addClass('origin-point'));
+                if (this.idEl) {
+                    var helpername = $('<div>').addClass('helpername').html('<p>' + this.name + '<span class="div-id">#' + this.idEl + '</span></p>');
+                } else {
+                    var helpername = $('<div>').addClass('helpername').html('<p>' + this.name + '</p>');
+                }
+                helper.css({
+                    'top': params.top - 1,
+                    'left': params.left - 1,
+                    'width': params.width + 2,
+                    'height': params.height + 2,
+                    'z-index': params.zindex + 1000
+                });
+
+                helper.attr('data-id', keyframe.shape.id);
+                helpername.appendTo(helper);
+                if (container.find('.shape-helper[data-id="' + this.id + '"]').length) {
+                    container.find('.shape-helper[data-id="' + this.id + '"]').remove();
+                }
+                helper.appendTo(container);
+            }
+        }
+
+        return shape;
+    };
+
     Layer.prototype.toString = function () {
         return "ID: " + this.id + "Jmeno vrstvy: " + this.name + ", poradi: " + this.order;
     };
     Layer.counter = 0;
     return Layer;
 })();
-
-var RectangleLayer = (function (_super) {
-    __extends(RectangleLayer, _super);
-    function RectangleLayer(name, fn, shape) {
-        if (typeof shape === "undefined") { shape = null; }
-        _super.call(this, name, fn, shape);
-    }
-    RectangleLayer.prototype.jsem = function () {
-        console.log('jsem cverec');
-    };
-
-    RectangleLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
-    };
-
-    RectangleLayer.prototype.getInitStyles = function (nameElement) {
-        return _super.prototype.getInitStyles.call(this, nameElement);
-    };
-
-    RectangleLayer.prototype.getKeyframeStyle = function (timestamp) {
-        return _super.prototype.getKeyframeStyle.call(this, timestamp);
-    };
-
-    RectangleLayer.prototype.getObject = function () {
-        var object = '    <div class="square object' + this.id + '"></div>\n';
-        if (this.idEl != null) {
-            object = '    <div id="' + this.idEl + '" class="square object' + this.id + '"></div>\n';
-        }
-        return object;
-    };
-    return RectangleLayer;
-})(Layer);
-
-var ImageLayer = (function (_super) {
-    __extends(ImageLayer, _super);
-    function ImageLayer(name, fn, shape) {
-        if (typeof shape === "undefined") { shape = null; }
-        _super.call(this, name, fn, shape);
-    }
-    ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
-    };
-
-    ImageLayer.prototype.jsem = function () {
-        console.log('jsem obrázek');
-    };
-
-    ImageLayer.prototype.getInitStyles = function (nameElement) {
-        var cssObject = _super.prototype.getInitStyles.call(this, nameElement);
-
-        return cssObject;
-    };
-
-    ImageLayer.prototype.getKeyframeStyle = function (timestamp) {
-        return _super.prototype.getKeyframeStyle.call(this, timestamp);
-    };
-
-    ImageLayer.prototype.getObject = function () {
-        var g = this.globalShape;
-        var object = '    <img class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
-        if (this.idEl != null) {
-            object = '    <img id="' + this.idEl + '" class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
-        }
-        return object;
-    };
-    return ImageLayer;
-})(Layer);
-
-var TextLayer = (function (_super) {
-    __extends(TextLayer, _super);
-    function TextLayer(name, fn, shape) {
-        if (typeof shape === "undefined") { shape = null; }
-        _super.call(this, name, fn, shape);
-    }
-    TextLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
-
-        //find interval between position
-        var rangeData = this.getRange(position);
-        var left = rangeData.left;
-        var right = rangeData.right;
-        var rng = rangeData.rng;
-
-        var fontParams = null;
-        var g = this.globalShape;
-
-        if (left != null) {
-            fontParams = {
-                color: rng['l'].shape.getColor(),
-                size: rng['l'].shape.getSize(),
-                fontFamily: g.getFamily()
-            };
-        }
-        if (right != null) {
-            fontParams = {
-                color: rng['r'].shape.getColor(),
-                size: rng['r'].shape.getSize(),
-                fontFamily: g.getFamily()
-            };
-        }
-
-        //if exist left && right, compute attributes
-        if (Object.keys(rng).length == 2) {
-            var fn = rng['l'].timing_function;
-            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
-            var p = (position - left) / (right - left);
-
-            fontParams = {
-                color: {
-                    r: Math.round(this.computeAttr(rng['l'].shape.getColor().r, rng['r'].shape.getColor().r, bezier(p))),
-                    g: Math.round(this.computeAttr(rng['l'].shape.getColor().g, rng['r'].shape.getColor().g, bezier(p))),
-                    b: Math.round(this.computeAttr(rng['l'].shape.getColor().b, rng['r'].shape.getColor().b, bezier(p)))
-                },
-                size: this.computeAttr(rng['l'].shape.getSize(), rng['r'].shape.getSize(), bezier(p)),
-                fontFamily: g.getFamily()
-            };
-        }
-
-        shape.css({
-            'color': 'rgb(' + fontParams.color.r + ',' + fontParams.color.g + ',' + fontParams.color.b + ')',
-            'font-size': fontParams.size,
-            'font-family': fontParams.fontFamily
-        });
-
-        if (currentLayerId == this.id) {
-            controlPanel.updateFont(fontParams.color, fontParams.size, fontParams.fontFamily);
-        }
-    };
-
-    TextLayer.prototype.jsem = function () {
-        console.log('jsem text');
-    };
-
-    TextLayer.prototype.getInitStyles = function (nameElement) {
-        var shape = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;
-
-        var cssObject = _super.prototype.getInitStyles.call(this, nameElement);
-        cssObject['display'] = 'inline';
-        cssObject['font-size'] = shape.getSize() + 'px';
-        cssObject['font-family'] = '"' + shape.getFamily() + '"';
-        cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
-
-        return cssObject;
-    };
-
-    TextLayer.prototype.getKeyframeStyle = function (timestamp) {
-        var shape = (this.getKeyframeByTimestamp(timestamp)).shape;
-
-        var cssObject = _super.prototype.getKeyframeStyle.call(this, timestamp);
-        cssObject['font-size'] = shape.getSize() + 'px';
-        cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
-
-        return cssObject;
-    };
-
-    TextLayer.prototype.getObject = function () {
-        var g = this.globalShape;
-        var object = '    <span class="text object' + this.id + '">' + g.getContent() + '</span>\n';
-        if (this.idEl != null) {
-            object = '    <span id="' + this.idEl + '" class="text object' + this.id + '">' + g.getContent() + '</span>\n';
-        }
-        return object;
-    };
-    return TextLayer;
-})(Layer);
 ///<reference path="Layer.ts" />
 var Timeline = (function () {
     function Timeline(app, timelineContainer) {
@@ -514,13 +539,18 @@ var Timeline = (function () {
         this.keyframesEl = $('<div class="keyframes"></div>');
         this.timelineFooterEl = $('<div class="timeline-footer"></div>');
         this.layersFooterEl = $('<div class="layers-footer"></div>');
+        this.keyframesFooterEl = $('<div class="keyframes-footer"></div>');
         this.keyframesTableEl = $('<table><thead></thead><tbody></tbody>');
         this.pointerEl = $('<div class="pointer"><div class="pointer-top"></div></div>');
         this.app = app;
         this.timelineContainer = timelineContainer;
         this.layers = new Array();
+        this.groupedLayers = new Array();
+        this.groupedLayers[0] = new Array();
 
         this.renderTimeline();
+
+        this.buildBreadcrumb(null);
 
         this.deleteLayerEl.on('click', function (event) {
             _this.deleteLayers(event);
@@ -560,10 +590,7 @@ var Timeline = (function () {
             _this.keyframesTableEl.find('.timing-function').removeClass('selected');
             $(event.target).addClass('selected');
             $(event.target).next('.timing-function').addClass('selected');
-
-            //this.app.workspace.renderShapes(); <-- OK misto toho se zavola event pri kliku na tabulku a provede se transformace transformShapes
             _this.app.workspace.updateBezierCurve(_this.getLayer($(event.target).data('layer')));
-            //this.app.workspace.renderShapes();
         });
 
         this.keyframesTableEl.on('click', '.timing-function p', function (event) {
@@ -589,6 +616,7 @@ var Timeline = (function () {
         $(this.layersFooterEl).append(this.deleteLayerEl);
         $(this.layersFooterEl).append(this.deleteKeyframeEl);
         $(this.timelineFooterEl).append(this.layersFooterEl);
+        $(this.timelineFooterEl).append(this.keyframesFooterEl);
         $(this.fixedWidthEl).append(this.timelineFooterEl);
         $(this.layersWrapperEl).append(this.fixedWidthEl);
         $(this.timelineContainer).append(this.layersWrapperEl);
@@ -693,24 +721,29 @@ var Timeline = (function () {
         this.layersEl.empty();
         this.keyframesTableEl.find('tbody').empty();
 
+        var isEmpty = true;
+
         //render new layers list from array
         this.layers.forEach(function (item, index) {
-            var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
-            layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
-            if (item.idEl) {
-                layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
+            if (_this.app.workspace.scope == item.parent) {
+                var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
+                layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
+                if (item.idEl) {
+                    layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
+                }
+                _this.layersEl.append(layerItem);
+
+                //and render frames fot this layer
+                _this.renderRow(item.id);
+
+                //render keyframes
+                _this.renderKeyframes(item.id);
+                isEmpty = false;
             }
-            _this.layersEl.append(layerItem);
-
-            //and render frames fot this layer
-            _this.renderRow(item.id);
-
-            //render keyframes
-            _this.renderKeyframes(item.id);
         });
 
         //if array layers is empty, insert default layer
-        if (this.layers.length == 0) {
+        if (this.layers.length == 0 || isEmpty) {
             this.renderRow(0, 'disabled');
             this.layersEl.append($('<div>').addClass('layer disabled').html('Vložte novou vrstvu'));
         }
@@ -718,7 +751,6 @@ var Timeline = (function () {
         //add jeditable plugin
         var me = this;
         $('.editable').editable(function (value, settings) {
-            console.log('shit');
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
             me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
@@ -736,16 +768,20 @@ var Timeline = (function () {
         //select layer by ID
         this.keyframesTableEl.find('tbody tr').removeClass('selected');
         this.layersEl.find('.layer').removeClass('selected');
-        this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
-        this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
+        if (id != null) {
+            this.layersEl.find('[data-id="' + id + '"]').addClass('selected');
+            this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
 
-        if (idKeyframe != null) {
-            (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').addClass('selected');
-            (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').next('.timing-function').addClass('selected');
+            if (idKeyframe != null) {
+                (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').addClass('selected');
+                (this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]')).find('.keyframe[data-index="' + idKeyframe + '"]').next('.timing-function').addClass('selected');
+            }
+
+            //highlight shape
+            this.app.workspace.highlightShape([id]);
+        } else {
+            this.app.workspace.highlightShape(null);
         }
-
-        //highlight shape
-        this.app.workspace.highlightShape([id]);
     };
 
     Timeline.prototype.renderHeader = function () {
@@ -764,6 +800,14 @@ var Timeline = (function () {
     Timeline.prototype.addLayer = function (layer) {
         this.keyframesTableEl.find('tbody tr.disabled').remove();
         this.layers.push(layer);
+        if (layer.parent == null) {
+            (this.groupedLayers[0]).push(layer);
+        } else {
+            if (!this.groupedLayers[layer.parent]) {
+                this.groupedLayers[layer.parent] = new Array();
+            }
+            (this.groupedLayers[layer.parent]).push(layer);
+        }
         layer.order = this.layers.length;
         this.renderLayers();
 
@@ -774,13 +818,25 @@ var Timeline = (function () {
         return layer.id;
     };
 
+    Timeline.prototype.deleteLayer = function (index) {
+        var deletedLayer = this.layers[index];
+        this.layers.splice(index, 1);
+
+        for (var i = this.layers.length - 1; i >= 0; i--) {
+            if (this.layers[i].parent == deletedLayer.id) {
+                this.deleteLayer(i);
+            }
+        }
+    };
+
     Timeline.prototype.deleteLayers = function (e) {
         console.log('Deleting layers...');
 
         //iteration from end of array of selected layers
         var selectedLayers = this.layersEl.find('div.layer.selected').get();
         for (var i = selectedLayers.length - 1; i >= 0; i--) {
-            this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
+            //this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
+            this.deleteLayer(parseInt($(selectedLayers[i]).attr('id')));
         }
 
         //render layers
@@ -788,6 +844,7 @@ var Timeline = (function () {
 
         //render workspace
         this.app.workspace.renderShapes();
+        this.app.workspace.transformShapes();
 
         //scroll to last layer
         this.selectLayer(this.layersEl.find('.layer').last().data('id'));
@@ -801,16 +858,28 @@ var Timeline = (function () {
         var order = $(e.target).sortable('toArray');
         var firstSelectedEl = $(this.layersEl.find('.selected').get(0));
 
+        var outOfScopeLayers = new Array();
+        this.layers.forEach(function (layer, index) {
+            if (layer.parent != _this.app.workspace.scope) {
+                outOfScopeLayers.push(layer);
+            }
+        });
+
         var tmpLayers = new Array();
         order.forEach(function (value, index) {
             var layer = _this.layers[parseInt(value)];
             tmpLayers.push(layer);
-            var keyframe = layer.getKeyframe(0);
-            if (keyframe) {
-                keyframe.shape.setZindex(index);
+
+            //TODO - update z-index podle poradi (brat v potaz keyframe nebo aktualizace do global shape?)
+            var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                keyframe = layer.addKeyframe(_this.app.workspace.getCurrentShape(layer.id), _this.pxToMilisec(), _this.app.workspace.bezier);
+                _this.renderKeyframes(layer.id);
             }
+            keyframe.shape.setZindex(index);
         });
-        this.layers = tmpLayers;
+
+        this.layers = outOfScopeLayers.concat(tmpLayers);
 
         //render layers
         this.renderLayers();
@@ -850,6 +919,7 @@ var Timeline = (function () {
         this.layersEl.css('left', posX);
         $('.first').css('top', posY);
         this.layersFooterEl.css('left', posX);
+        this.keyframesFooterEl.css('left', posX);
         this.timelineFooterEl.css('bottom', 0 - posY);
         this.pointerEl.find('.pointer-top').css('top', posY);
     };
@@ -877,8 +947,6 @@ var Timeline = (function () {
             },
             drag: function (event, ui) {
                 _this.pointerPosition = ui.position.left + 1;
-
-                //this.app.workspace.renderShapes();
                 _this.app.workspace.transformShapes();
             },
             stop: function (event, ui) {
@@ -899,8 +967,6 @@ var Timeline = (function () {
             posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
             this.pointerPosition = posX;
             this.pointerEl.css('left', this.pointerPosition - 1);
-
-            //this.app.workspace.renderShapes();
             this.app.workspace.transformShapes();
         }
     };
@@ -970,8 +1036,6 @@ var Timeline = (function () {
             this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
 
             this.renderKeyframes(keyframeEl.data('layer'));
-
-            //this.app.workspace.renderShapes();
             this.app.workspace.transformShapes();
         }
     };
@@ -987,6 +1051,30 @@ var Timeline = (function () {
     Timeline.prototype.getSelectedKeyframeID = function (idLayer) {
         var el = (this.keyframesTableEl.find('tr.layer-row[data-id="' + idLayer + '"]')).find('.keyframe.selected');
         return el.data('index');
+    };
+
+    Timeline.prototype.buildBreadcrumb = function (scope) {
+        console.log('building breadcrumb');
+        $('.breadcrumb').remove();
+        var container = $('<div>').addClass('breadcrumb');
+        var currentLayer = this.getLayer(scope);
+        console.log(currentLayer);
+        if (currentLayer) {
+            container.append($('<span>').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));
+            this.getParent(currentLayer.parent, container);
+        }
+        container.prepend($('<span>').html('<a href="#" class="set-scope">Hlavní plátno</a>'));
+        this.keyframesFooterEl.append(container);
+    };
+
+    Timeline.prototype.getParent = function (parent, container) {
+        var layer = null;
+        layer = this.getLayer(parent);
+        if (layer) {
+            container.prepend($('<span>').html('<a href="#" class="set-scope" data-id=' + layer.id + '>' + layer.name + '</a>'));
+            this.getParent(layer.parent, container);
+        }
+        return layer;
     };
     return Timeline;
 })();
@@ -1033,10 +1121,7 @@ var Shape = (function () {
     };
 
     Shape.prototype.setBackground = function (c) {
-        this.parameters.backgroundR = c.r;
-        this.parameters.backgroundG = c.g;
-        this.parameters.backgroundB = c.b;
-        this.parameters.backgroundA = c.a;
+        this.parameters.background = c;
     };
 
     Shape.prototype.setOpacity = function (o) {
@@ -1068,46 +1153,47 @@ var Shape = (function () {
     };
 
     Shape.prototype.setRotateX = function (val) {
-        this._parameters.rotateX = val;
+        this._parameters.rotate.x = val;
     };
 
     Shape.prototype.setRotateY = function (val) {
-        this._parameters.rotateY = val;
+        this._parameters.rotate.y = val;
     };
 
     Shape.prototype.setRotateZ = function (val) {
-        this._parameters.rotateZ = val;
+        this._parameters.rotate.z = val;
     };
 
     Shape.prototype.setSkewX = function (val) {
-        this._parameters.skewX = val;
+        this._parameters.skew.x = val;
     };
 
     Shape.prototype.setSkewY = function (val) {
-        this._parameters.skewY = val;
+        this._parameters.skew.y = val;
     };
 
     Shape.prototype.setOriginX = function (val) {
-        this._parameters.originX = val;
+        this._parameters.origin.x = val;
     };
 
     Shape.prototype.setOriginY = function (val) {
-        this._parameters.originY = val;
+        this._parameters.origin.y = val;
     };
     return Shape;
 })();
 ///<reference path="Shape.ts" />
-
 var Workspace = (function () {
     function Workspace(app, workspaceContainer, workspaceWrapper) {
         var _this = this;
         this.createdLayer = false;
         this._workspaceSize = { width: 800, height: 360 };
+        this._scope = null;
         this.workspaceOverlay = $('<div>').addClass('workspace-overlay');
         this.uploadArea = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
         this.uploadBtn = $('<input type="file"></input>').addClass('pick-image');
         this.app = app;
         this.workspaceContainer = workspaceContainer;
+        this.workspaceContainerOriginal = workspaceContainer;
         this.workspaceWrapper = workspaceWrapper;
         this.uploadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.uploadBtn));
         this.workspaceOverlay.append(this.uploadArea);
@@ -1124,7 +1210,23 @@ var Workspace = (function () {
 
         this.workspaceWrapper.on('dblclick', function (event) {
             if (_this.app.controlPanel.Mode == 3 /* TEXT */) {
+                //if mode is TEXT, create text field
                 _this.onCreateText(event);
+            } else if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
+                //if mode is SELECT, check if dblclick is in container -> set scope
+                var layer = _this.app.timeline.getLayer($(event.target).data('id'));
+                if (layer instanceof RectangleLayer) {
+                    _this.setScope(layer.id);
+                }
+            }
+        });
+
+        this.workspaceWrapper.on('mousedown', function (e) {
+            //for deselect layer
+            if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
+                if (!$(e.target).hasClass('shape-helper') && !$(e.target).hasClass('origin-point')) {
+                    _this.app.timeline.selectLayer(null);
+                }
             }
         });
 
@@ -1132,8 +1234,16 @@ var Workspace = (function () {
             if (_this.createdLayer) {
                 var shape = new Rectangle(_this.shapeParams);
                 var layer = new RectangleLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), shape);
+                var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
+                layer.parent = parent;
+                if (layer.parent) {
+                    layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
+                }
                 var idLayer = _this.app.timeline.addLayer(layer);
-                _this.renderShapes();
+
+                //this.renderShapes();
+                _this.workspaceWrapper.find('.tmp-shape').remove();
+                _this.renderSingleShape(idLayer);
                 _this.transformShapes();
                 _this.highlightShape([idLayer]);
                 _this.createdLayer = false;
@@ -1150,13 +1260,13 @@ var Workspace = (function () {
         });
 
         //fix for draggable origin point
-        this.workspaceContainer.on('click', '.shape-helper', function (event) {
-            if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
-                var id = $(event.target).closest('.shape-helper').data('id');
-                _this.highlightShape([id]);
-            }
-        });
-
+        /*this.workspaceContainer.on('click', '.shape-helper', (event: JQueryEventObject) => {
+        if (this.app.controlPanel.Mode == Mode.SELECT) {
+        var id: number = $(event.target).closest('.shape-helper').data('id');
+        this.app.timeline.selectLayer(id);
+        this.app.timeline.scrollTo(id);
+        }
+        });*/
         this.workspaceContainer.on('mouseover', '.shape-helper', function (event) {
             if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
                 $(event.target).find('.helpername').show();
@@ -1168,13 +1278,31 @@ var Workspace = (function () {
                 $(event.target).find('.helpername').hide();
             }
         });
+
+        $(document).ready(function () {
+            $(document).on('click', '.breadcrumb span:last-child .set-scope', function (e) {
+                console.log('prevent');
+                e.preventDefault();
+                return false;
+            });
+            $(document).on('click', '.breadcrumb span:not(:last-child) .set-scope', function (e) {
+                var scope = null;
+                var layer = _this.app.timeline.getLayer($(e.target).data('id'));
+                if (layer) {
+                    scope = layer.id;
+                }
+                _this.setScope(scope);
+            });
+        });
     }
     Workspace.prototype.onDrawSquare = function (e) {
         var _this = this;
-        var new_object = $('<div>').addClass('shape-helper');
+        var new_object = $('<div>').addClass('shape-helper tmp-shape');
+        console.log(e);
         var click_y = e.pageY - this.workspaceContainer.offset().top;
         var click_x = e.pageX - this.workspaceContainer.offset().left;
-
+        console.log(this.workspaceContainer.offset().top);
+        console.log(this.workspaceContainer.offset().left);
         new_object.css({
             'top': click_y,
             'left': click_x,
@@ -1215,20 +1343,13 @@ var Workspace = (function () {
             left: new_x,
             width: width,
             height: height,
-            backgroundR: c.r,
-            backgroundG: c.g,
-            backgroundB: c.b,
-            backgroundA: c.a,
+            background: c,
             opacity: new_object.css('opacity'),
             zindex: this.app.timeline.layers.length,
             borderRadius: [0, 0, 0, 0],
-            rotateX: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            skewX: 0,
-            skewY: 0,
-            originX: 50,
-            originY: 50
+            rotate: { x: 0, y: 0, z: 0 },
+            skew: { x: 0, y: 0 },
+            origin: { x: 50, y: 50 }
         };
 
         new_object.css({
@@ -1301,10 +1422,12 @@ var Workspace = (function () {
                     left: this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
                     width: this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
                     height: this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
-                    backgroundR: this.computeParameter(interval['left'].shape.parameters.backgroundR, interval['right'].shape.parameters.backgroundR, bezier(p)),
-                    backgroundG: this.computeParameter(interval['left'].shape.parameters.backgroundG, interval['right'].shape.parameters.backgroundG, bezier(p)),
-                    backgroundB: this.computeParameter(interval['left'].shape.parameters.backgroundB, interval['right'].shape.parameters.backgroundB, bezier(p)),
-                    backgroundA: this.computeOpacity(interval['left'].shape.parameters.backgroundA, interval['right'].shape.parameters.backgroundA, bezier(p)),
+                    background: {
+                        r: this.computeParameter(interval['left'].shape.parameters.background.r, interval['right'].shape.parameters.background.r, bezier(p)),
+                        g: this.computeParameter(interval['left'].shape.parameters.background.g, interval['right'].shape.parameters.background.g, bezier(p)),
+                        b: this.computeParameter(interval['left'].shape.parameters.background.b, interval['right'].shape.parameters.background.b, bezier(p)),
+                        a: this.computeOpacity(interval['left'].shape.parameters.background.a, interval['right'].shape.parameters.background.a, bezier(p))
+                    },
                     opacity: this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
                     borderRadius: [
                         this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
@@ -1312,13 +1435,20 @@ var Workspace = (function () {
                         this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
                         this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
                     ],
-                    rotateX: this.computeParameter(interval['left'].shape.parameters.rotateX, interval['right'].shape.parameters.rotateX, bezier(p)),
-                    rotateY: this.computeParameter(interval['left'].shape.parameters.rotateY, interval['right'].shape.parameters.rotateY, bezier(p)),
-                    rotateZ: this.computeParameter(interval['left'].shape.parameters.rotateZ, interval['right'].shape.parameters.rotateZ, bezier(p)),
-                    skewX: this.computeParameter(interval['left'].shape.parameters.skewX, interval['right'].shape.parameters.skewX, bezier(p)),
-                    skewY: this.computeParameter(interval['left'].shape.parameters.skewY, interval['right'].shape.parameters.skewY, bezier(p)),
-                    originX: this.computeOpacity(interval['left'].shape.parameters.originX, interval['right'].shape.parameters.originX, bezier(p)),
-                    originY: this.computeOpacity(interval['left'].shape.parameters.originY, interval['right'].shape.parameters.originY, bezier(p))
+                    rotate: {
+                        x: this.computeParameter(interval['left'].shape.parameters.rotate.x, interval['right'].shape.parameters.rotate.x, bezier(p)),
+                        y: this.computeParameter(interval['left'].shape.parameters.rotate.y, interval['right'].shape.parameters.rotate.y, bezier(p)),
+                        z: this.computeParameter(interval['left'].shape.parameters.rotate.z, interval['right'].shape.parameters.rotate.z, bezier(p))
+                    },
+                    skew: {
+                        x: this.computeParameter(interval['left'].shape.parameters.skew.x, interval['right'].shape.parameters.skew.x, bezier(p)),
+                        y: this.computeParameter(interval['left'].shape.parameters.skew.y, interval['right'].shape.parameters.skew.y, bezier(p))
+                    },
+                    origin: {
+                        x: this.computeOpacity(interval['left'].shape.parameters.origin.x, interval['right'].shape.parameters.origin.x, bezier(p)),
+                        y: this.computeOpacity(interval['left'].shape.parameters.origin.y, interval['right'].shape.parameters.origin.y, bezier(p))
+                    },
+                    zindex: interval['left'].shape.parameters.zindex
                 };
             }
 
@@ -1333,9 +1463,9 @@ var Workspace = (function () {
         var currentTimestamp = this.app.timeline.pxToMilisec();
         var layers = this.app.timeline.layers;
         layers.forEach(function (layer, index) {
-            var shape = _this.workspaceContainer.find('.shape[data-id="' + layer.id + '"]');
-            var helper = _this.workspaceContainer.find('.shape-helper[data-id="' + layer.id + '"]');
-            var currentLayerId = _this.workspaceContainer.find('.shape-helper.highlight').first().data('id');
+            var shape = _this.workspaceWrapper.find('.shape[data-id="' + layer.id + '"]');
+            var helper = _this.workspaceWrapper.find('.shape-helper[data-id="' + layer.id + '"]');
+            var currentLayerId = _this.workspaceWrapper.find('.shape-helper.highlight').first().data('id');
 
             layer.transform(currentTimestamp, shape, helper, currentLayerId, _this.app.controlPanel);
         });
@@ -1363,7 +1493,70 @@ var Workspace = (function () {
         return (Number(value));
     };
 
-    Workspace.prototype.renderShapes = function () {
+    Workspace.prototype.renderShapes = function (scope) {
+        var _this = this;
+        if (typeof scope === "undefined") { scope = null; }
+        $('#workspace').empty();
+        var existing = false;
+        var scopedLayer = this.app.timeline.getLayer(scope);
+        var nesting = 0;
+        if (scopedLayer) {
+            nesting = scopedLayer.nesting;
+        }
+
+        for (var n = nesting; ; n++) {
+            existing = false;
+            var container;
+            if (n == 0) {
+                container = $('#workspace');
+            }
+            this.app.timeline.layers.forEach(function (layer, index) {
+                if (layer.nesting == n) {
+                    existing = true;
+                    var parentLayer = _this.app.timeline.getLayer(layer.parent);
+                    if (parentLayer) {
+                        container = _this.workspaceWrapper.find('.shape[data-id="' + parentLayer.id + '"]');
+                    }
+                    layer.renderShape(container, _this.app.timeline.pxToMilisec(), _this.scope);
+                }
+            });
+            if (!existing) {
+                break;
+            }
+        }
+        this.dragResize();
+        this.onChangeMode();
+        if (this.scope) {
+            this.workspaceContainer = this.workspaceWrapper.find('.square' + '[data-id="' + this.scope + '"]').addClass('scope');
+            this.workspaceContainer.parents('.square').addClass('scope');
+        } else {
+            this.workspaceContainer = $('#workspace');
+        }
+    };
+
+    Workspace.prototype.renderSingleShape = function (id) {
+        var shapeEl = $('#workspace').find('.shape[data-id="' + id + '"]');
+        var container = this.workspaceContainer;
+        if (shapeEl.length) {
+            container = shapeEl.parent();
+        }
+
+        var layer = this.app.timeline.getLayer(id);
+        if (layer) {
+            layer.renderShape(container, this.app.timeline.pxToMilisec(), this.scope);
+        }
+
+        this.dragResize();
+        this.onChangeMode();
+        if (this.scope) {
+            this.workspaceContainer = this.workspaceWrapper.find('.square' + '[data-id="' + this.scope + '"]').addClass('scope');
+            this.workspaceContainer.parents('.square').addClass('scope');
+        } else {
+            this.workspaceContainer = $('#workspace');
+        }
+    };
+
+    Workspace.prototype.renderShapesOld = function () {
         var _this = this;
         console.log('Rendering workspace..');
         var layers = this.app.timeline.layers;
@@ -1402,7 +1595,7 @@ var Workspace = (function () {
                     'left': params.left,
                     'width': params.width,
                     'height': params.height,
-                    'background': 'rgba(' + params.backgroundR + ',' + params.backgroundG + ',' + params.backgroundB + ',' + params.backgroundA + ')',
+                    'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
                     'border': params.border,
                     'z-index': params.zindex,
                     'opacity': params.opacity,
@@ -1457,12 +1650,6 @@ var Workspace = (function () {
         });
 
         this.dragResize();
-
-        /*if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
-        $('.shape-helper').draggable('disable');
-        //$('.origin-point').draggable('disable');
-        $('.shape-helper').removeClass('ui-state-disabled').resizable('disable');
-        }*/
         this.onChangeMode();
     };
 
@@ -1495,9 +1682,7 @@ var Workspace = (function () {
                     });
                 }
 
-                //this.renderShapes();
                 _this.transformShapes();
-                ;
                 _this.app.timeline.selectLayer(layer.id);
                 $('.workspace-wrapper').perfectScrollbar('update');
             }
@@ -1535,7 +1720,6 @@ var Workspace = (function () {
                     });
                 }
 
-                //this.renderShapes();
                 _this.transformShapes();
                 _this.app.timeline.selectLayer(layer.id);
             }
@@ -1547,58 +1731,63 @@ var Workspace = (function () {
         //var originPoint: JQuery = $('<div>').addClass('origin-point');
         this.workspaceContainer.find('.shape-helper').removeClass('highlight');
         this.workspaceContainer.find('.shape-helper').find('.origin-point').hide();
-        arrayID.forEach(function (id, index) {
-            _this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
+        if (arrayID != null) {
+            arrayID.forEach(function (id, index) {
+                _this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
 
-            //last selected shape(if selected more then one)
-            if (index == (arrayID.length - 1)) {
-                var shape = _this.getCurrentShape(id);
-                if (shape) {
-                    _this.app.controlPanel.updateDimensions({ width: shape.parameters.width, height: shape.parameters.height });
-                    _this.app.controlPanel.updateOpacity(shape.parameters.opacity);
-                    _this.app.controlPanel.updateColor({ r: shape.parameters.backgroundR, g: shape.parameters.backgroundG, b: shape.parameters.backgroundB }, shape.parameters.backgroundA);
-                    _this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
-                    _this.app.controlPanel.updateIdEl(_this.app.timeline.getLayer(id).idEl);
-                    _this.app.controlPanel.update3DRotate({ x: shape.parameters.rotateX, y: shape.parameters.rotateY, z: shape.parameters.rotateZ });
-                    _this.app.controlPanel.updateTransformOrigin(shape.parameters.originX, shape.parameters.originY);
+                //last selected shape(if selected more then one)
+                if (index == (arrayID.length - 1)) {
+                    var shape = _this.getCurrentShape(id);
+                    if (shape) {
+                        _this.app.controlPanel.updateDimensions({ width: shape.parameters.width, height: shape.parameters.height });
+                        _this.app.controlPanel.updateOpacity(shape.parameters.opacity);
+                        _this.app.controlPanel.updateColor({ r: shape.parameters.background.r, g: shape.parameters.background.g, b: shape.parameters.background.b }, shape.parameters.background.a);
+                        _this.app.controlPanel.updateBorderRadius(shape.parameters.borderRadius);
+                        _this.app.controlPanel.updateIdEl(_this.app.timeline.getLayer(id).idEl);
+                        _this.app.controlPanel.update3DRotate({ x: shape.parameters.rotate.x, y: shape.parameters.rotate.y, z: shape.parameters.rotate.z });
+                        _this.app.controlPanel.updateTransformOrigin(shape.parameters.origin.x, shape.parameters.origin.y);
 
-                    (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
-                        'left': shape.parameters.originX + '%',
-                        'top': shape.parameters.originY + '%'
-                    });
-
-                    if (shape instanceof TextField) {
-                        var text = shape;
-                        var layer = _this.app.timeline.getLayer(id);
-                        _this.app.controlPanel.updateFont(text.getColor(), text.getSize(), layer.globalShape.getFamily());
-                    }
-
-                    if (_this.app.controlPanel.originMode) {
-                        (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').show();
-                        console.log('is origin mode');
-                        $('.origin-point').draggable('option', {
-                            drag: function (event, ui) {
-                                var xPercent = ui.position.left / shape.parameters.width * 100;
-                                var yPercent = ui.position.top / shape.parameters.height * 100;
-                                xPercent = Math.round(xPercent * 100) / 100;
-                                yPercent = Math.round(yPercent * 100) / 100;
-
-                                _this.app.controlPanel.updateTransformOrigin(xPercent, yPercent);
-                            },
-                            stop: function (event, ui) {
-                                var xPercent = ui.position.left / shape.parameters.width * 100;
-                                var yPercent = ui.position.top / shape.parameters.height * 100;
-                                xPercent = Math.round(xPercent * 100) / 100;
-                                yPercent = Math.round(yPercent * 100) / 100;
-
-                                _this.setTransformOrigin('x', xPercent);
-                                _this.setTransformOrigin('y', yPercent);
-                            }
+                        (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
+                            'left': shape.parameters.origin.x + '%',
+                            'top': shape.parameters.origin.y + '%'
                         });
+
+                        if (shape instanceof TextField) {
+                            var text = shape;
+                            var layer = _this.app.timeline.getLayer(id);
+                            _this.app.controlPanel.updateFont(text.getColor(), text.getSize(), layer.globalShape.getFamily());
+                        }
+
+                        if (_this.app.controlPanel.originMode) {
+                            (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').show();
+                            console.log('is origin mode');
+                            $('.origin-point').draggable('option', {
+                                drag: function (event, ui) {
+                                    var xPercent = ui.position.left / shape.parameters.width * 100;
+                                    var yPercent = ui.position.top / shape.parameters.height * 100;
+                                    xPercent = Math.round(xPercent * 100) / 100;
+                                    yPercent = Math.round(yPercent * 100) / 100;
+
+                                    _this.app.controlPanel.updateTransformOrigin(xPercent, yPercent);
+                                },
+                                stop: function (event, ui) {
+                                    var xPercent = ui.position.left / shape.parameters.width * 100;
+                                    var yPercent = ui.position.top / shape.parameters.height * 100;
+                                    xPercent = Math.round(xPercent * 100) / 100;
+                                    yPercent = Math.round(yPercent * 100) / 100;
+
+                                    _this.setTransformOrigin('x', xPercent);
+                                    _this.setTransformOrigin('y', yPercent);
+                                }
+                            });
+                        }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            this.app.controlPanel.updateDimensions({ width: null, height: null });
+            this.app.controlPanel.updateIdEl(null);
+        }
     };
 
     Workspace.prototype.getCurrentShape = function (id) {
@@ -1617,10 +1806,7 @@ var Workspace = (function () {
                 left: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1,
                 width: shapeEl.width(),
                 height: shapeEl.height(),
-                backgroundR: c.r,
-                backgroundG: c.g,
-                backgroundB: c.b,
-                backgroundA: c.a,
+                background: c,
                 opacity: parseFloat(shapeEl.css('opacity')),
                 zindex: parseInt(shapeEl.css('z-index')),
                 borderRadius: [
@@ -1629,20 +1815,26 @@ var Workspace = (function () {
                     parseInt(shapeEl.css('border-bottom-right-radius')),
                     parseInt(shapeEl.css('border-bottom-left-radius'))
                 ],
-                rotateX: this.getTransformAttr(id, 'rotateX'),
-                rotateY: this.getTransformAttr(id, 'rotateY'),
-                rotateZ: this.getTransformAttr(id, 'rotateZ'),
-                skewX: this.getTransformAttr(id, 'skewX'),
-                skewY: this.getTransformAttr(id, 'skewY'),
-                originX: this.getTransformAttr(id, 'originX'),
-                originY: this.getTransformAttr(id, 'originY')
+                rotate: {
+                    x: this.getTransformAttr(id, 'rotate').x,
+                    y: this.getTransformAttr(id, 'rotate').y,
+                    z: this.getTransformAttr(id, 'rotate').z
+                },
+                skew: {
+                    x: this.getTransformAttr(id, 'skew').x,
+                    y: this.getTransformAttr(id, 'skew').y
+                },
+                origin: {
+                    x: this.getTransformAttr(id, 'origin').x,
+                    y: this.getTransformAttr(id, 'origin').y
+                }
             };
 
             //if background is transparent
             if (c.a == 0) {
-                params['backgroundR'] = this.color.r;
-                params['backgroundG'] = this.color.g;
-                params['backgroundB'] = this.color.b;
+                params['background']['r'] = this.color.r;
+                params['background']['g'] = this.color.g;
+                params['background']['b'] = this.color.b;
             }
 
             if (this.app.timeline.getLayer(id).globalShape instanceof Img) {
@@ -1758,7 +1950,6 @@ var Workspace = (function () {
             var l = layer;
             l.globalShape.setFamily(this.fontParameters.fontFamily);
 
-            //this.renderShapes();
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
@@ -1794,7 +1985,7 @@ var Workspace = (function () {
                 keyframe.shape.setY(dimension);
             }
 
-            this.renderShapes();
+            this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
     };
@@ -1818,7 +2009,6 @@ var Workspace = (function () {
                 keyframe.shape.setBorderRadiusBottomRight(value);
             }
 
-            //this.renderShapes();
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
@@ -1841,7 +2031,6 @@ var Workspace = (function () {
                 keyframe.shape.setRotateZ(value);
             }
 
-            //this.renderShapes();
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
@@ -1862,7 +2051,6 @@ var Workspace = (function () {
                 keyframe.shape.setOriginY(value);
             }
 
-            //this.renderShapes();
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
@@ -1884,7 +2072,6 @@ var Workspace = (function () {
                 keyframe.shape.setSkewY(value);
             }
 
-            //this.renderShapes();
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
         }
@@ -1937,7 +2124,9 @@ var Workspace = (function () {
             } else {
                 layer.idEl = null;
             }
-            this.renderShapes();
+
+            //this.renderShapes();
+            this.renderSingleShape(layer.id);
             this.transformShapes();
             this.app.timeline.renderLayers();
             this.app.timeline.selectLayer(layer.id);
@@ -1984,7 +2173,7 @@ var Workspace = (function () {
         }
 
         this._workspaceSize = newDimension;
-        this.workspaceContainer.css(this._workspaceSize);
+        $('#workspace').css(this._workspaceSize);
         $('.workspace-wrapper').perfectScrollbar('update');
     };
 
@@ -2014,6 +2203,12 @@ var Workspace = (function () {
                 'height': this.workspaceWrapper.outerHeight(),
                 'width': this.workspaceWrapper.outerWidth()
             });
+
+            $('.upload-area > p').on('dragenter', function (event) {
+                console.log('vp');
+                $('.upload-area').addClass('over');
+            });
+
             this.uploadArea.on('dragenter', function (event) {
                 console.log('enter');
                 $(event.target).addClass('over');
@@ -2060,27 +2255,29 @@ var Workspace = (function () {
                             left: 0,
                             width: img.width,
                             height: img.height,
-                            backgroundR: 255,
-                            backgroundG: 255,
-                            backgroundB: 255,
-                            backgroundA: 0,
+                            background: { r: 255, g: 255, b: 255, a: 0 },
                             opacity: 1,
                             borderRadius: [0, 0, 0, 0],
-                            rotateX: 0,
-                            rotateY: 0,
-                            rotateZ: 0,
-                            skewX: 0,
-                            skewY: 0,
-                            originX: 50,
-                            originY: 50,
+                            rotate: { x: 0, y: 0, z: 0 },
+                            skew: { x: 0, y: 0 },
+                            origin: { x: 50, y: 50 },
                             zindex: _this.app.timeline.layers.length
                         };
                         var image = new Img(p, e.target.result);
                         var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
+                        var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
+                        layer.parent = parent;
+                        if (layer.parent) {
+                            layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
+                        }
                         var idLayer = _this.app.timeline.addLayer(layer);
-                        _this.renderShapes();
+
+                        //this.renderShapes();
+                        _this.renderSingleShape(idLayer);
                         _this.transformShapes();
                         _this.highlightShape([idLayer]);
+
+                        _this.uploadBtn.val('');
 
                         _this.app.controlPanel.Mode = 0 /* SELECT */;
                         $('.tool-btn.select').addClass('active');
@@ -2106,26 +2303,26 @@ var Workspace = (function () {
             left: e.pageX - this.workspaceContainer.offset().left - 5,
             width: 150,
             height: 75,
-            backgroundR: 255,
-            backgroundG: 255,
-            backgroundB: 255,
-            backgroundA: 0,
+            background: { r: 255, g: 255, b: 255, a: 0 },
             opacity: 1,
             borderRadius: [0, 0, 0, 0],
-            rotateX: 0,
-            rotateY: 0,
-            rotateZ: 0,
-            skewX: 0,
-            skewY: 0,
-            originX: 50,
-            originY: 50,
+            rotate: { x: 0, y: 0, z: 0 },
+            skew: { x: 0, y: 0 },
+            origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length
         };
 
         var shape = new TextField(params, null, this.fontParameters.color, this.fontParameters.size, this.fontParameters.fontFamily);
         var layer = new TextLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), shape);
+        var parent = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
+        layer.parent = parent;
+        if (layer.parent) {
+            layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
+        }
         var idLayer = this.app.timeline.addLayer(layer);
-        this.renderShapes();
+
+        //this.renderShapes();
+        this.renderSingleShape(layer.id);
         this.transformShapes();
         this.highlightShape([idLayer]);
         this.onChangeMode();
@@ -2191,17 +2388,40 @@ var Workspace = (function () {
             }
         }
     };
+
+    Workspace.prototype.setScope = function (id) {
+        this._scope = id;
+        $('.overlay-scope').remove();
+
+        if (this.scope != null) {
+            var overlayEl = $('<div>').addClass('overlay-scope').css({
+                'top': this.workspaceWrapper.scrollTop()
+            });
+            this.workspaceWrapper.append(overlayEl);
+            $('.workspace-wrapper').perfectScrollbar('destroy');
+        } else {
+            this.workspaceContainer = this.workspaceContainerOriginal;
+            $('.workspace-wrapper').perfectScrollbar({ includePadding: true });
+        }
+        this.app.timeline.buildBreadcrumb(this.scope);
+
+        //this.dragResize(); <- nefunguje
+        this.app.timeline.renderLayers();
+        this.renderShapes();
+        this.transformShapes();
+        this.app.timeline.selectLayer(null);
+    };
+
+    Object.defineProperty(Workspace.prototype, "scope", {
+        get: function () {
+            return this._scope;
+        },
+        enumerable: true,
+        configurable: true
+    });
     return Workspace;
 })();
 ///<reference path="Workspace.ts" />
-var Mode;
-(function (Mode) {
-    Mode[Mode["SELECT"] = 0] = "SELECT";
-    Mode[Mode["CREATE_DIV"] = 1] = "CREATE_DIV";
-    Mode[Mode["IMAGE"] = 2] = "IMAGE";
-    Mode[Mode["TEXT"] = 3] = "TEXT";
-})(Mode || (Mode = {}));
-
 var ControlPanel = (function () {
     function ControlPanel(app, container) {
         var _this = this;
@@ -2722,8 +2942,8 @@ var ControlPanel = (function () {
         });
     }
     ControlPanel.prototype.updateDimensions = function (d) {
-        this.dimensionXEl.val(d.width.toString());
-        this.dimensionYEl.val(d.height.toString());
+        this.dimensionXEl.val(d.width ? d.width.toString() : null);
+        this.dimensionYEl.val(d.height ? d.height.toString() : null);
     };
 
     ControlPanel.prototype.updateOpacity = function (opacity) {
@@ -2917,6 +3137,13 @@ var Application = (function () {
         this.controlPanel.setHeight();
 
         this.topContainerEl.append(this.workspaceWrapperEl.append(this.workspaceEl));
+
+        var pole = new Array();
+        pole[0] = ['ahoj'];
+        pole[3] = ['zdar', 'hoy'];
+
+        //pole[0].push('jo');
+        pole[2] = ['nove'].concat(pole[2]);
     }
     return Application;
 })();
@@ -2991,6 +3218,11 @@ var GenerateCode = (function () {
             'margin': '0 auto'
         });
 
+        css += this.gCss({
+            'name': '.square',
+            'overflow': 'hidden'
+        });
+
         css += this.objectCss();
 
         return css;
@@ -3010,13 +3242,49 @@ var GenerateCode = (function () {
         return markup;
     };
 
+    /*generateObjects() {
+    var markup: string = '  <div id="workspace">\n';
+    this.layers.forEach((layer: Layer, index: number) => {
+    markup += layer.getObject();
+    });
+    markup += '  </div>';
+    return markup;
+    }*/
     GenerateCode.prototype.generateObjects = function () {
+        var _this = this;
         var markup = '  <div id="workspace">\n';
         this.layers.forEach(function (layer, index) {
-            markup += layer.getObject();
+            if (layer.nesting == 0) {
+                //if layer is root
+                markup += layer.getObject();
+                markup += _this.getChildsObject(layer.id);
+                if (layer instanceof RectangleLayer)
+                    markup += '    </div>\n';
+                else if (layer instanceof TextLayer)
+                    markup += '</span>\n';
+            }
         });
         markup += '  </div>';
         return markup;
+    };
+    GenerateCode.prototype.getChildsObject = function (parent) {
+        var _this = this;
+        var value = '';
+        this.layers.forEach(function (layer, index) {
+            if (layer.parent == parent) {
+                value += layer.getObject();
+
+                if (layer instanceof RectangleLayer) {
+                    value += _this.getChildsObject(layer.id);
+                    value += (Array(layer.nesting + 1).join('  ') + '    </div>\n');
+                } else if (layer instanceof TextLayer) {
+                    value += '</span>\n';
+                } else if (layer instanceof ImageLayer) {
+                }
+            }
+        });
+
+        return value;
     };
 
     GenerateCode.prototype.objectCss = function () {
@@ -3053,8 +3321,10 @@ var GenerateCode = (function () {
                 cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
                 cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
             } else {
-                cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
-                cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
+                if (duration != 0) {
+                    cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
+                    cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
+                }
             }
 
             css += _this.gCss(cssObject);
@@ -3162,6 +3432,64 @@ var GenerateCode = (function () {
     };
     return GenerateCode;
 })();
+var Mode;
+(function (Mode) {
+    Mode[Mode["SELECT"] = 0] = "SELECT";
+    Mode[Mode["CREATE_DIV"] = 1] = "CREATE_DIV";
+    Mode[Mode["IMAGE"] = 2] = "IMAGE";
+    Mode[Mode["TEXT"] = 3] = "TEXT";
+})(Mode || (Mode = {}));
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var ImageLayer = (function (_super) {
+    __extends(ImageLayer, _super);
+    function ImageLayer(name, fn, shape) {
+        if (typeof shape === "undefined") { shape = null; }
+        _super.call(this, name, fn, shape);
+    }
+    ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    };
+
+    ImageLayer.prototype.jsem = function () {
+        console.log('jsem obrázek');
+    };
+
+    ImageLayer.prototype.getInitStyles = function (nameElement) {
+        var cssObject = _super.prototype.getInitStyles.call(this, nameElement);
+
+        return cssObject;
+    };
+
+    ImageLayer.prototype.getKeyframeStyle = function (timestamp) {
+        return _super.prototype.getKeyframeStyle.call(this, timestamp);
+    };
+
+    ImageLayer.prototype.getObject = function () {
+        var g = this.globalShape;
+        var object = Array(this.nesting + 1).join('  ') + '    <img class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
+        if (this.idEl != null) {
+            object = Array(this.nesting + 1).join('  ') + '    <img id="' + this.idEl + '" class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
+        }
+        return object;
+    };
+
+    ImageLayer.prototype.renderShape = function (container, position, currentScope) {
+        var shape = $('<img>').addClass('shape image');
+
+        var imgShape = this.globalShape;
+        shape.attr('src', imgShape.getSrc());
+
+        shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope);
+
+        return shape;
+    };
+    return ImageLayer;
+})(Layer);
 var Img = (function (_super) {
     __extends(Img, _super);
     function Img(params, src) {
@@ -3226,6 +3554,53 @@ var Rectangle = (function (_super) {
     }
     return Rectangle;
 })(Shape);
+var RectangleLayer = (function (_super) {
+    __extends(RectangleLayer, _super);
+    function RectangleLayer(name, fn, shape) {
+        if (typeof shape === "undefined") { shape = null; }
+        _super.call(this, name, fn, shape);
+    }
+    RectangleLayer.prototype.jsem = function () {
+        console.log('jsem cverec');
+    };
+
+    RectangleLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    };
+
+    RectangleLayer.prototype.getInitStyles = function (nameElement) {
+        return _super.prototype.getInitStyles.call(this, nameElement);
+    };
+
+    RectangleLayer.prototype.getKeyframeStyle = function (timestamp) {
+        return _super.prototype.getKeyframeStyle.call(this, timestamp);
+    };
+
+    /*getObject(): string {
+    var object: string = '    <div class="square object' + this.id + '">\n';
+    if (this.idEl != null) {
+    object = '    <div id="' + this.idEl + '" class="square object' + this.id + '">\n';
+    }
+    object += this.getChildsObject(this.id, object);
+    object += '    </div>\n';
+    return object;
+    }*/
+    RectangleLayer.prototype.getObject = function () {
+        var object = Array(this.nesting + 1).join('  ') + '    <div class="square object' + this.id + '">\n';
+        if (this.idEl != null) {
+            object = Array(this.nesting + 1).join('  ') + '    <div id="' + this.idEl + '" class="square object' + this.id + '">\n';
+        }
+        return object;
+    };
+
+    RectangleLayer.prototype.renderShape = function (container, position, currentScope) {
+        var shape = $('<div>').addClass('shape square');
+        shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope);
+
+        return shape;
+    };
+    return RectangleLayer;
+})(Layer);
 var TextField = (function (_super) {
     __extends(TextField, _super);
     function TextField(params, content, color, size, family) {
@@ -3265,4 +3640,157 @@ var TextField = (function (_super) {
     };
     return TextField;
 })(Shape);
+var TextLayer = (function (_super) {
+    __extends(TextLayer, _super);
+    function TextLayer(name, fn, shape) {
+        if (typeof shape === "undefined") { shape = null; }
+        _super.call(this, name, fn, shape);
+    }
+    TextLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left = rangeData.left;
+        var right = rangeData.right;
+        var rng = rangeData.rng;
+
+        var fontParams = null;
+        var g = this.globalShape;
+
+        if (left != null) {
+            fontParams = {
+                color: rng['l'].shape.getColor(),
+                size: rng['l'].shape.getSize(),
+                fontFamily: g.getFamily()
+            };
+        }
+        if (right != null) {
+            fontParams = {
+                color: rng['r'].shape.getColor(),
+                size: rng['r'].shape.getSize(),
+                fontFamily: g.getFamily()
+            };
+        }
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p = (position - left) / (right - left);
+
+            fontParams = {
+                color: {
+                    r: Math.round(this.computeAttr(rng['l'].shape.getColor().r, rng['r'].shape.getColor().r, bezier(p))),
+                    g: Math.round(this.computeAttr(rng['l'].shape.getColor().g, rng['r'].shape.getColor().g, bezier(p))),
+                    b: Math.round(this.computeAttr(rng['l'].shape.getColor().b, rng['r'].shape.getColor().b, bezier(p)))
+                },
+                size: this.computeAttr(rng['l'].shape.getSize(), rng['r'].shape.getSize(), bezier(p)),
+                fontFamily: g.getFamily()
+            };
+        }
+
+        shape.css({
+            'color': 'rgb(' + fontParams.color.r + ',' + fontParams.color.g + ',' + fontParams.color.b + ')',
+            'font-size': fontParams.size,
+            'font-family': fontParams.fontFamily
+        });
+
+        if (currentLayerId == this.id) {
+            controlPanel.updateFont(fontParams.color, fontParams.size, fontParams.fontFamily);
+        }
+    };
+
+    TextLayer.prototype.jsem = function () {
+        console.log('jsem text');
+    };
+
+    TextLayer.prototype.getInitStyles = function (nameElement) {
+        var shape = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;
+
+        var cssObject = _super.prototype.getInitStyles.call(this, nameElement);
+        cssObject['display'] = 'inline';
+        cssObject['font-size'] = shape.getSize() + 'px';
+        cssObject['font-family'] = '"' + shape.getFamily() + '"';
+        cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
+
+        return cssObject;
+    };
+
+    TextLayer.prototype.getKeyframeStyle = function (timestamp) {
+        var shape = (this.getKeyframeByTimestamp(timestamp)).shape;
+
+        var cssObject = _super.prototype.getKeyframeStyle.call(this, timestamp);
+
+        //check if parameters is changing
+        var initShape = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;
+        var change = {
+            size: false,
+            color: false
+        };
+        this.getAllKeyframes().forEach(function (k, i) {
+            var s = k.shape;
+            if (initShape.getSize() != s.getSize())
+                change.size = true;
+            if (initShape.color.r != s.color.r)
+                change.color = true;
+            if (initShape.color.g != s.color.g)
+                change.color = true;
+            if (initShape.color.b != s.color.b)
+                change.color = true;
+        });
+        if (change.size)
+            cssObject['font-size'] = shape.getSize() + 'px';
+        if (change.color)
+            cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
+
+        return cssObject;
+    };
+
+    TextLayer.prototype.getObject = function () {
+        var g = this.globalShape;
+        var object = Array(this.nesting + 1).join('  ') + '    <span class="text object' + this.id + '">' + g.getContent();
+        if (this.idEl != null) {
+            object = Array(this.nesting + 1).join('  ') + '    <span id="' + this.idEl + '" class="text object' + this.id + '">' + g.getContent();
+        }
+        return object;
+    };
+
+    TextLayer.prototype.renderShape = function (container, position, currentScope) {
+        var _this = this;
+        var layer = this.globalShape;
+        var shape = $('<span>').addClass('shape froala text').html(layer.getContent());
+
+        var globalTextShape = this.globalShape;
+        var keyframe = this.getKeyframeByTimestamp(position);
+
+        //if no keyframe, get init keyframe
+        if (keyframe == null) {
+            keyframe = this.getKeyframe(0);
+        }
+        var textShape = keyframe.shape;
+        shape.css({
+            'color': 'rgba(' + textShape.getColor().r + ',' + textShape.getColor().g + ',' + textShape.getColor().b + ')',
+            'font-size': textShape.getSize(),
+            'font-family': globalTextShape.getFamily()
+        });
+        shape.froala({
+            inlineMode: true,
+            paragraphy: false,
+            allowedTags: [],
+            buttons: [],
+            placeholder: 'Zadejte text...'
+        });
+
+        shape.on('editable.contentChanged', function (e, editor) {
+            var globalTextShape = _this.globalShape;
+            globalTextShape.setContent(editor.trackHTML);
+        });
+
+        shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope);
+
+        return shape;
+    };
+    return TextLayer;
+})(Layer);
 //# sourceMappingURL=app.js.map

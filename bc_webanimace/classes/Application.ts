@@ -30,6 +30,12 @@ class Application {
         this.controlPanel.setHeight();
 
         this.topContainerEl.append(this.workspaceWrapperEl.append(this.workspaceEl));
+
+        var pole: Array<Array<string>> = new Array<Array<string>>();
+        pole[0] = ['ahoj'];
+        pole[3] = ['zdar', 'hoy'];
+        //pole[0].push('jo');
+        pole[2] = ['nove'].concat(pole[2]);
     }
 }
 

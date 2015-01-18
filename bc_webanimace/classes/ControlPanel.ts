@@ -1,22 +1,4 @@
 ﻿///<reference path="Workspace.ts" />
-enum Mode {
-    SELECT,
-    CREATE_DIV,
-    IMAGE,
-    TEXT,
-}
-
-interface Rotate {
-    x: number;
-    y: number;
-    z: number;
-}
-
-interface Skew {
-    x: number;
-    y: number;
-}
-
 class ControlPanel {
     private app: Application;
     private containerEl: JQuery;
@@ -557,8 +539,8 @@ class ControlPanel {
     }
 
     updateDimensions(d: Dimensions) {
-        this.dimensionXEl.val(d.width.toString());
-        this.dimensionYEl.val(d.height.toString());
+        this.dimensionXEl.val(d.width ? d.width.toString() : null);
+        this.dimensionYEl.val(d.height ? d.height.toString() : null);
     }
 
     updateOpacity(opacity: number) {
@@ -661,7 +643,7 @@ class ControlPanel {
         this.idEl.val(id);
     }
 
-    update3DRotate(rotate: Rotate) {
+    update3DRotate(rotate: _3d) {
         if (rotate.x != null) {
             this.rotateXSliderEl.slider('option', 'value', Number(rotate.x));
             this.rotateXEl.val(rotate.x.toString());
@@ -676,7 +658,7 @@ class ControlPanel {
         }
     }
 
-    updateSkew(skew: Skew) {
+    updateSkew(skew: _2d) {
         if (skew.x != null) {
             this.skewXSliderEl.slider('option', 'value', Number(skew.x));
             this.skewXEl.val(skew.x.toString());           

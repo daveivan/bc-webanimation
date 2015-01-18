@@ -62,7 +62,12 @@
             'overflow': 'hidden',
             'position': 'relative',
             'margin': '0 auto',
-    });
+        });
+
+        css += this.gCss({
+            'name': '.square',
+            'overflow': 'hidden',
+        });
 
         css += this.objectCss();
 
@@ -83,13 +88,48 @@
         return markup;
     }
 
-    generateObjects() {
+    /*generateObjects() {
         var markup: string = '  <div id="workspace">\n';
         this.layers.forEach((layer: Layer, index: number) => {
             markup += layer.getObject();
         });
         markup += '  </div>';
         return markup;
+    }*/
+
+    generateObjects() {
+        var markup: string = '  <div id="workspace">\n';
+        this.layers.forEach((layer: Layer, index: number) => {
+            if (layer.nesting == 0) {
+                //if layer is root
+                markup += layer.getObject();
+                markup += this.getChildsObject(layer.id);
+                if(layer instanceof RectangleLayer)
+                    markup += '    </div>\n';
+                else if (layer instanceof TextLayer)
+                    markup += '</span>\n';
+            }
+        });
+        markup += '  </div>';
+        return markup;
+    }
+    getChildsObject(parent: number): string {
+        var value: string = '';
+        this.layers.forEach((layer: Layer, index: number) => {
+            if (layer.parent == parent) {
+                value += layer.getObject();
+
+                if (layer instanceof RectangleLayer) {
+                    value += this.getChildsObject(layer.id);
+                    value += (Array(layer.nesting + 1).join('  ') + '    </div>\n');
+                } else if (layer instanceof TextLayer) {
+                    value += '</span>\n';
+                } else if (layer instanceof ImageLayer) {
+                }
+            }
+        });
+
+        return value;
     }
 
     objectCss() {
@@ -124,8 +164,10 @@
                 cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
                 cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
             } else {
-                cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
-                cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';   
+                if (duration != 0) {
+                    cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
+                    cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';  
+                }      
             }
 
             css += this.gCss(cssObject);
@@ -156,7 +198,7 @@
 
                     if (i != item.timestamps.length - 1) {
                         cssObject[percent]['-webkit-animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
-                            cssObject[percent]['animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
+                        cssObject[percent]['animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
                     }
                 });
 

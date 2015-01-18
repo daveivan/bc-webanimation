@@ -1,4 +1,4 @@
-﻿interface Parameters {
+﻿/*interface Parameters {
     top: number;
     left: number;
     width: number;
@@ -9,7 +9,7 @@
     backgroundA: number;
     opacity: number;
     border?: string;
-    zindex?: number;   
+    zindex: number;   
     borderRadius: Array<number>; 
     rotateX: number;
     rotateY: number;
@@ -18,16 +18,20 @@
     skewY: number;
     originX: number;
     originY: number;
-}
-
-interface Pos {
+}*/
+interface Parameters {
     top: number;
     left: number;
-}
-
-interface Dimensions {
     width: number;
     height: number;
+    background: rgba;
+    opacity: number;
+    border?: string;
+    zindex: number;
+    borderRadius: Array<number>;
+    rotate: _3d;
+    skew: _2d;
+    origin: _2d;
 }
 
 interface IShape {

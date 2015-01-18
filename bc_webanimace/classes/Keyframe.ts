@@ -1,11 +1,4 @@
-﻿interface Bezier_points {
-    p0: number;
-    p1: number;
-    p2: number;
-    p3: number;
-}
-
-class Keyframe {
+﻿class Keyframe {
     //private _id: number;
     private _shape: IShape;
     private _timestamp: number;  //ms

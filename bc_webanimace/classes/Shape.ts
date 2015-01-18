@@ -37,10 +37,7 @@
     }
 
     setBackground(c: rgba) {
-        this.parameters.backgroundR = c.r;
-        this.parameters.backgroundG = c.g;
-        this.parameters.backgroundB = c.b;
-        this.parameters.backgroundA = c.a;
+        this.parameters.background = c;
     }
 
     setOpacity(o: number) {
@@ -72,30 +69,30 @@
     }
 
     setRotateX(val: number) {
-        this._parameters.rotateX = val;
+        this._parameters.rotate.x = val;
     }
 
     setRotateY(val: number) {
-        this._parameters.rotateY = val;
+        this._parameters.rotate.y = val;
     }
 
     setRotateZ(val: number) {
-        this._parameters.rotateZ = val;
+        this._parameters.rotate.z = val;
     }
 
     setSkewX(val: number) {
-        this._parameters.skewX = val;
+        this._parameters.skew.x = val;
     }
 
     setSkewY(val: number) {
-        this._parameters.skewY = val;
+        this._parameters.skew.y = val;
     }
 
     setOriginX(val: number) {
-        this._parameters.originX = val;
+        this._parameters.origin.x = val;
     }
 
     setOriginY(val: number) {
-        this._parameters.originY = val;
+        this._parameters.origin.y = val;
     }
 }  

@@ -44,5 +44,6 @@ $(document).ready(() => {
     console.log('DOM Loaded');
     new Application();
     $('.tooltip').tooltipster({ position: 'right' });
+    $('.tooltip-top').tooltipster({ position: 'top' });
     $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });
 });

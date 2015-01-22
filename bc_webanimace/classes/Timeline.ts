@@ -15,10 +15,14 @@ class Timeline
     //convert frame to time
     miliSecPerFrame: number = 100;
     groupKeyframes: number = 5;
+    playInterval: any;
+    playMode: Animation_playing = Animation_playing.STOP;
 
     private _repeat: boolean = false;
 
     private app: Application;
+    start;
+    stop;
 
     deleteLayerEl: JQuery = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
     repeatEl: JQuery = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>')
@@ -33,6 +37,10 @@ class Timeline
     keyframesFooterEl: JQuery = $('<div class="keyframes-footer"></div>');
     keyframesTableEl: JQuery = $('<table><thead></thead><tbody></tbody>');
     pointerEl: JQuery = $('<div class="pointer"><div class="pointer-top"></div></div>');
+
+    playEl: JQuery = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
+    stopEl: JQuery = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
+    pauseEl: JQuery = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
 
     constructor(app: Application, timelineContainer: JQuery) {
         this.app = app;
@@ -64,6 +72,42 @@ class Timeline
 
         this.repeatEl.on('change', (event: JQueryEventObject) => {
             this._repeat = this.repeatEl.find('input').is(':checked');
+        });
+
+        this.playEl.on('click', (event: JQueryEventObject) => {
+            this.playMode = Animation_playing.PLAY;
+            this.showPause();
+            this.runTimeline();
+            console.log('play');
+            var int = this.miliSecPerFrame / (this.keyframeWidth / 2);
+            console.log(int);
+            /*clearTimeout(this.playInterval);*/
+            /*this.playInterval = setInterval(() => {
+                console.log((new Date()).getMilliseconds());
+                this.pointerPosition += 2;
+                this.pointerEl.css('left', this.pointerPosition - 1);
+                this.app.workspace.transformShapes();
+            }, (this.miliSecPerFrame / (this.keyframeWidth / 2)));*/
+        });
+
+        this.stopEl.on('click', (event: JQueryEventObject) => {
+            //clearTimeout(this.playInterval);
+            this.playMode = Animation_playing.STOP;
+            this.showPlay();
+            $('tr.first').removeClass('to-background');
+            cancelAnimationFrame(this.playInterval);
+            this.stop = new Date();
+            console.log(this.stop - this.start);
+            this.pointerPosition = 0;
+            this.pointerEl.css('left', this.pointerPosition - 1);
+            this.app.workspace.transformShapes();
+        });
+
+        this.pauseEl.on('click', (event: JQueryEventObject) => {
+            this.playMode = Animation_playing.PAUSE;
+            this.showPlay();
+            $('tr.first').removeClass('to-background');
+            cancelAnimationFrame(this.playInterval);
         });
 
         $(document).on('mousedown', 'td', (event: JQueryEventObject) => {
@@ -103,9 +147,66 @@ class Timeline
         });
     }
 
-    renderTimeline()
-    {
+    showPause() {
+        $('.play-animation').hide();
+        $('.pause-animation').show();
+        $('tr.first').removeClass('to-background');
+    }
+
+    showPlay() {
+        $('.pause-animation').hide();
+        $('.play-animation').show();  
+    }
+
+    runTimeline() {
+        if (this.playMode == Animation_playing.PAUSE) {
+            return false;
+        }
+        $('tr.first').addClass('to-background');
+        cancelAnimationFrame(this.playInterval);
+        //find absolute maximum
+        var arrayMax = Function.prototype.apply.bind(Math.max, null);
+        var absoluteMax: number = 0;
+        this.layers.forEach((item: Layer, index: number) => {
+            var tmp: number = arrayMax(item.timestamps);
+            if (tmp > absoluteMax) absoluteMax = tmp;
+        });
+        absoluteMax = this.milisecToPx(absoluteMax);
+        var time;
+        this.start = new Date();
+        var draw = () => {
+            this.playInterval = requestAnimationFrame(draw);
+            var now = new Date().getTime();
+            var dt = now - (time || now);
+
+            time = now;
+            this.pointerPosition += 2;
+            if (this.pointerPosition >= absoluteMax) {
+                cancelAnimationFrame(this.playInterval);
+                if (this.repeat) {
+                    this.pointerPosition = 0;
+                    this.pointerEl.css('left', this.pointerPosition - 1);
+                    this.app.workspace.transformShapes();
+                    draw();
+                } else {
+                    $('tr.first').removeClass('to-background');
+                    this.showPlay();   
+                }
+            }
+
+            this.pointerEl.css('left', this.pointerPosition - 1);
+            this.app.workspace.transformShapes();
+
+        }
+        draw();
+        return true;
+    }
+
+    renderTimeline() {
         $(this.timelineHeadEl).append(this.repeatEl);
+        $(this.timelineHeadEl).append(this.playEl);
+        $(this.timelineHeadEl).append(this.pauseEl);
+        $(this.timelineHeadEl).append(this.stopEl);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
@@ -448,6 +549,8 @@ class Timeline
                 this.app.workspace.transformShapes();
             },
         });
+
+        this.showPlay();
     }
 
     private onClickTable(e: JQueryEventObject) {

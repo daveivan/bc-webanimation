@@ -5,6 +5,12 @@
     TEXT,
 }
 
+enum Animation_playing {
+    PLAY,
+    STOP,
+    PAUSE,
+}
+
 interface _2d {
     x: number;
     y: number;

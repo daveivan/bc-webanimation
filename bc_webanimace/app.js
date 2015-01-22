@@ -528,6 +528,7 @@ var Timeline = (function () {
         //convert frame to time
         this.miliSecPerFrame = 100;
         this.groupKeyframes = 5;
+        this.playMode = 1 /* STOP */;
         this._repeat = false;
         this.deleteLayerEl = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
         this.repeatEl = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>');
@@ -542,6 +543,9 @@ var Timeline = (function () {
         this.keyframesFooterEl = $('<div class="keyframes-footer"></div>');
         this.keyframesTableEl = $('<table><thead></thead><tbody></tbody>');
         this.pointerEl = $('<div class="pointer"><div class="pointer-top"></div></div>');
+        this.playEl = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
+        this.stopEl = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
+        this.pauseEl = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
         this.app = app;
         this.timelineContainer = timelineContainer;
         this.layers = new Array();
@@ -571,6 +575,42 @@ var Timeline = (function () {
 
         this.repeatEl.on('change', function (event) {
             _this._repeat = _this.repeatEl.find('input').is(':checked');
+        });
+
+        this.playEl.on('click', function (event) {
+            _this.playMode = 0 /* PLAY */;
+            _this.showPause();
+            _this.runTimeline();
+            console.log('play');
+            var int = _this.miliSecPerFrame / (_this.keyframeWidth / 2);
+            console.log(int);
+            /*clearTimeout(this.playInterval);*/
+            /*this.playInterval = setInterval(() => {
+            console.log((new Date()).getMilliseconds());
+            this.pointerPosition += 2;
+            this.pointerEl.css('left', this.pointerPosition - 1);
+            this.app.workspace.transformShapes();
+            }, (this.miliSecPerFrame / (this.keyframeWidth / 2)));*/
+        });
+
+        this.stopEl.on('click', function (event) {
+            //clearTimeout(this.playInterval);
+            _this.playMode = 1 /* STOP */;
+            _this.showPlay();
+            $('tr.first').removeClass('to-background');
+            cancelAnimationFrame(_this.playInterval);
+            _this.stop = new Date();
+            console.log(_this.stop - _this.start);
+            _this.pointerPosition = 0;
+            _this.pointerEl.css('left', _this.pointerPosition - 1);
+            _this.app.workspace.transformShapes();
+        });
+
+        this.pauseEl.on('click', function (event) {
+            _this.playMode = 2 /* PAUSE */;
+            _this.showPlay();
+            $('tr.first').removeClass('to-background');
+            cancelAnimationFrame(_this.playInterval);
         });
 
         $(document).on('mousedown', 'td', function (event) {
@@ -608,8 +648,68 @@ var Timeline = (function () {
             _this.onReady(event);
         });
     }
+    Timeline.prototype.showPause = function () {
+        $('.play-animation').hide();
+        $('.pause-animation').show();
+        $('tr.first').removeClass('to-background');
+    };
+
+    Timeline.prototype.showPlay = function () {
+        $('.pause-animation').hide();
+        $('.play-animation').show();
+    };
+
+    Timeline.prototype.runTimeline = function () {
+        var _this = this;
+        if (this.playMode == 2 /* PAUSE */) {
+            return false;
+        }
+        $('tr.first').addClass('to-background');
+        cancelAnimationFrame(this.playInterval);
+
+        //find absolute maximum
+        var arrayMax = Function.prototype.apply.bind(Math.max, null);
+        var absoluteMax = 0;
+        this.layers.forEach(function (item, index) {
+            var tmp = arrayMax(item.timestamps);
+            if (tmp > absoluteMax)
+                absoluteMax = tmp;
+        });
+        absoluteMax = this.milisecToPx(absoluteMax);
+        var time;
+        this.start = new Date();
+        var draw = function () {
+            _this.playInterval = requestAnimationFrame(draw);
+            var now = new Date().getTime();
+            var dt = now - (time || now);
+
+            time = now;
+            _this.pointerPosition += 2;
+            if (_this.pointerPosition >= absoluteMax) {
+                cancelAnimationFrame(_this.playInterval);
+                if (_this.repeat) {
+                    _this.pointerPosition = 0;
+                    _this.pointerEl.css('left', _this.pointerPosition - 1);
+                    _this.app.workspace.transformShapes();
+                    draw();
+                } else {
+                    $('tr.first').removeClass('to-background');
+                    _this.showPlay();
+                }
+            }
+
+            _this.pointerEl.css('left', _this.pointerPosition - 1);
+            _this.app.workspace.transformShapes();
+        };
+        draw();
+        return true;
+    };
+
     Timeline.prototype.renderTimeline = function () {
         $(this.timelineHeadEl).append(this.repeatEl);
+        $(this.timelineHeadEl).append(this.playEl);
+        $(this.timelineHeadEl).append(this.pauseEl);
+        $(this.timelineHeadEl).append(this.stopEl);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
@@ -956,6 +1056,8 @@ var Timeline = (function () {
                 _this.app.workspace.transformShapes();
             }
         });
+
+        this.showPlay();
     };
 
     Timeline.prototype.onClickTable = function (e) {
@@ -3152,17 +3254,27 @@ $(document).ready(function () {
     console.log('DOM Loaded');
     new Application();
     $('.tooltip').tooltipster({ position: 'right' });
+    $('.tooltip-top').tooltipster({ position: 'top' });
     $('.workspace-wrapper').perfectScrollbar({ includePadding: true });
 });
 var GenerateCode = (function () {
     function GenerateCode(app, l) {
         var _this = this;
+        this.tabsEl = $('<div>').attr('id', 'tabs');
+        this.codeTab = $('<did>').attr('id', 'code');
+        this.previewTab = $('<div>').attr('id', 'preview');
         this.dialogEl = $('<div>').attr('id', 'dialog').html('<p></p>').attr('title', 'Výsledný kód animace');
+        this.previewEl = $('<iframe>').attr('id', 'previewFrame').attr('src', 'about:blank');
         this.codeWrapperEl = $('<div>').attr('id', 'code');
+        this.runEl = $('<a>').attr('href', '#').addClass('run-preview').html('Znovu spustit animaci');
         this.arrayMax = Function.prototype.apply.bind(Math.max, null);
         this.arrayMin = Function.prototype.apply.bind(Math.min, null);
         this.app = app;
         this.layers = l;
+
+        this.tabsEl.append('<ul><li><a href="#code">Kód</a></li><li><a href="#preview">Náhled animace</a></li></ul>');
+        this.tabsEl.append(this.codeTab);
+        this.tabsEl.append(this.previewTab);
 
         $('body').find(this.dialogEl).remove();
         $('body').append(this.dialogEl);
@@ -3177,6 +3289,14 @@ var GenerateCode = (function () {
             close: function (event, ui) {
                 _this.dialogEl.remove();
             }
+        });
+
+        this.dialogEl.append(this.tabsEl);
+        this.tabsEl.tabs();
+
+        this.runEl.on('click', function (event) {
+            _this.previewEl.remove();
+            _this.previewTab.append(_this.previewEl);
         });
     }
     GenerateCode.prototype.generate = function () {
@@ -3193,11 +3313,16 @@ var GenerateCode = (function () {
         html += '\n</body>\n</html>';
         console.log(html);
 
+        var encodehtml = html;
         html = html.replace(/[<>]/g, function (m) {
             return { '<': '&lt;', '>': '&gt;' }[m];
         });
         var pre = $('<pre>').addClass('prettyprint').attr('id', 'code');
-        this.dialogEl.append(pre.html(html));
+        this.codeTab.append(pre.html(html));
+
+        this.previewTab.append(this.runEl);
+        this.previewTab.append(this.previewEl);
+        this.previewEl.attr('src', 'data:text/html,' + encodehtml);
 
         prettyPrint();
 
@@ -3439,6 +3564,13 @@ var Mode;
     Mode[Mode["IMAGE"] = 2] = "IMAGE";
     Mode[Mode["TEXT"] = 3] = "TEXT";
 })(Mode || (Mode = {}));
+
+var Animation_playing;
+(function (Animation_playing) {
+    Animation_playing[Animation_playing["PLAY"] = 0] = "PLAY";
+    Animation_playing[Animation_playing["STOP"] = 1] = "STOP";
+    Animation_playing[Animation_playing["PAUSE"] = 2] = "PAUSE";
+})(Animation_playing || (Animation_playing = {}));
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }

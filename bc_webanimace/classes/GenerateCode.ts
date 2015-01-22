@@ -1,6 +1,11 @@
 ﻿class GenerateCode {
+    private tabsEl: JQuery = $('<div>').attr('id', 'tabs');
+    private codeTab: JQuery = $('<did>').attr('id', 'code');
+    private previewTab: JQuery = $('<div>').attr('id', 'preview');
     private dialogEl: JQuery = $('<div>').attr('id', 'dialog').html('<p></p>').attr('title', 'Výsledný kód animace');
+    private previewEl: JQuery = $('<iframe>').attr('id', 'previewFrame').attr('src', 'about:blank');
     private codeWrapperEl: JQuery = $('<div>').attr('id', 'code');
+    private runEl: JQuery = $('<a>').attr('href', '#').addClass('run-preview').html('Znovu spustit animaci');
 
     private layers: Array<Layer>;
     private app: Application;
@@ -11,6 +16,10 @@
     constructor(app: Application, l: Array<Layer>) {
         this.app = app;
         this.layers = l;
+
+        this.tabsEl.append('<ul><li><a href="#code">Kód</a></li><li><a href="#preview">Náhled animace</a></li></ul>');
+        this.tabsEl.append(this.codeTab);
+        this.tabsEl.append(this.previewTab);
 
         $('body').find(this.dialogEl).remove();
         $('body').append(this.dialogEl);
@@ -25,6 +34,14 @@
             close: (event, ui) => {
                 this.dialogEl.remove();
             },
+        });
+
+        this.dialogEl.append(this.tabsEl);
+        this.tabsEl.tabs();
+
+        this.runEl.on('click', (event: JQueryEventObject) => {
+            this.previewEl.remove();
+            this.previewTab.append(this.previewEl);
         });
     }
 
@@ -41,9 +58,14 @@
         html += '\n</body>\n</html>';
         console.log(html);
 
+        var encodehtml = html;
         html = html.replace(/[<>]/g, (m) => { return { '<': '&lt;', '>': '&gt;' }[m]; });
         var pre: JQuery = $('<pre>').addClass('prettyprint').attr('id', 'code');
-        this.dialogEl.append(pre.html(html));
+        this.codeTab.append(pre.html(html));
+
+        this.previewTab.append(this.runEl);
+        this.previewTab.append(this.previewEl);
+        this.previewEl.attr('src', 'data:text/html,' + encodehtml);
 
         prettyPrint();
 

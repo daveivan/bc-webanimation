@@ -836,6 +836,7 @@ pointer-events: none
     left: 50%;
     margin-top: -2.5px;
     margin-left: -2.5px;
+    z-index: 100;
 }
 
 .workspace-wrapper.text-mode {
@@ -1037,4 +1038,53 @@ a.run-preview {
 
 a.run-preview:hover {
     color: #4bb8c8;
+}
+
+.ui-resizable-w, .ui-resizable-e {
+    width: 3px;
+}
+
+.ui-resizable-n, .ui-resizable-s {
+    height: 3px;
+}
+
+.ui-resizable-w { 
+    left: -2px;
+}
+
+.ui-resizable-e { 
+    right: -2px;
+}
+
+.ui-resizable-n { 
+    top: -2px;
+}
+
+.ui-resizable-s { 
+    bottom: -2px;
+}
+
+.ui-resizable-se, .ui-resizable-sw, .ui-resizable-ne, .ui-resizable-nw {
+    width: 7px !important;
+    height: 7px !important;
+}
+
+.ui-resizable-se {
+    right: -2px;
+    bottom: -2px;
+}
+
+.ui-resizable-sw {
+    left: -2px;
+    bottom: -2px;
+}
+
+.ui-resizable-ne {
+    top: -2px;
+    right: -2px;
+}
+
+.ui-resizable-nw {
+    left: -2px;
+    top: -2px;
 }

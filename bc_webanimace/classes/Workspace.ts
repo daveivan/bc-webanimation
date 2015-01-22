@@ -52,7 +52,7 @@ class Workspace {
         this.workspaceWrapper.on('mousedown', (e: JQueryEventObject) => {
             //for deselect layer
             if (this.app.controlPanel.Mode == Mode.SELECT) {
-                if (!$(e.target).hasClass('shape-helper') && !$(e.target).hasClass('origin-point')) {
+                if (!$(e.target).hasClass('shape-helper') && !$(e.target).hasClass('origin-point') && !$(e.target).hasClass('ui-resizable-handle')) {
                     this.app.timeline.selectLayer(null);
                 }
             } 
@@ -95,15 +95,15 @@ class Workspace {
             } 
         });*/
 
-        this.workspaceContainer.on('mouseover', '.shape-helper', (event: JQueryEventObject) => {
+        this.workspaceContainer.on('mouseover', '.shape-helper, .ui-resizable-handle', (event: JQueryEventObject) => {
             if (this.app.controlPanel.Mode == Mode.SELECT) {
-                $(event.target).find('.helpername').show();   
+                $(event.target).closest('.shape-helper').find('.helpername').show();   
             }
         });
 
-        this.workspaceContainer.on('mouseout', '.shape-helper', (event: JQueryEventObject) => {
+        this.workspaceContainer.on('mouseout', '.shape-helper, .ui-resizable-handle', (event: JQueryEventObject) => {
             if (this.app.controlPanel.Mode == Mode.SELECT) {
-                $(event.target).find('.helpername').hide();   
+                $(event.target).closest('.shape-helper').find('.helpername').hide();   
             }
         });
 

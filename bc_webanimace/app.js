@@ -694,6 +694,8 @@ var Timeline = (function () {
                     draw();
                 } else {
                     $('tr.first').removeClass('to-background');
+                    _this.pointerPosition = 0;
+                    _this.pointerEl.css('left', _this.pointerPosition - 1);
                     _this.showPlay();
                 }
             }

@@ -190,6 +190,8 @@ class Timeline
                     draw();
                 } else {
                     $('tr.first').removeClass('to-background');
+                    this.pointerPosition = 0;
+                    this.pointerEl.css('left', this.pointerPosition - 1);
                     this.showPlay();   
                 }
             }

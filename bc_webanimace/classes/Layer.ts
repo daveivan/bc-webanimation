@@ -175,7 +175,8 @@
                     x: this.computeAttr(rng['l'].shape.parameters.origin.x, rng['r'].shape.parameters.origin.x, bezier(p)),
                     y: this.computeAttr(rng['l'].shape.parameters.origin.y, rng['r'].shape.parameters.origin.y, bezier(p)),
                 },
-                zindex: rng['l'].shape.parameters.zindex,
+                //zindex: rng['l'].shape.parameters.zindex,
+                zindex: this.globalShape.parameters.zindex,
             }
         }
 
@@ -242,10 +243,17 @@
             }
         }
 
+        //fix if position == right and left is null
         if (left === null && right === position && this.timestamps.length >= 2) {
             left = right;
             right = this.timestamps[index + 1];
         }
+
+        //for animatable z-index
+        /*if (right === position) {
+            left = right;
+            right = null;
+        }*/
 
         var rng: Array<Keyframe> = new Array<Keyframe>();   //range
         if (left != null) {
@@ -271,16 +279,18 @@
         return (Number(value));
     }
 
-    getInitStyles(nameElement: string) {
+    getInitStyles(nameElement: string, workspaceSize: Dimensions) {
         var p: Parameters = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
         var cssObject: any = {
             'name': '.' + nameElement,
             'position': 'absolute',
-            'width': p.width + 'px',
-            'height': p.height + 'px',
-            'top': p.top + 'px',
-            'left': p.left + 'px',
+            'width': (p.width / workspaceSize.width) * 100 + '%',
+            'height': (p.height / workspaceSize.height) * 100 + '%',
+            'top': (p.top / workspaceSize.height) * 100 + '%',
+            'left': (p.left / workspaceSize.width) * 100 + '%',
             'background': 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')',
+            //'z-index': p.zindex,
+            'z-index': this.globalShape.parameters.zindex,
         };
 
         if (p.opacity != 1) {
@@ -291,13 +301,14 @@
         (p.borderRadius[0] == p.borderRadius[2]) &&
         (p.borderRadius[0] == p.borderRadius[3])) {
             if (p.borderRadius[0] != 0) {
-                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+                //cssObject['border-radius'] = p.borderRadius[0] + 'px';
+                cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
             }
         } else {
-            cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
-            cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
-            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
-            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
+            cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+            cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
+            cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
+            cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';
         }
 
         if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0) {
@@ -317,7 +328,7 @@
         return cssObject;
     }
 
-    getKeyframeStyle(timestamp: number) {
+    getKeyframeStyle(timestamp: number, workspaceSize: Dimensions) {
         //check, if parameters ís changing
         var change: repeatParams = {
             width: false,
@@ -359,22 +370,22 @@
         var p: Parameters = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
         var cssObject = {};
 
-        if (change.width) cssObject['width'] = p.width + 'px';
-        if (change.height) cssObject['height'] = p.height + 'px';
-        if (change.top) cssObject['top'] = p.top + 'px';
-        if (change.left) cssObject['left'] = p.left + 'px';
+        if (change.width) cssObject['width'] = (p.width / workspaceSize.width) * 100 + '%';
+        if (change.height) cssObject['height'] = (p.height / workspaceSize.height) * 100 + '%';
+        if (change.top) cssObject['top'] = (p.top / workspaceSize.height) * 100 + '%';
+        if (change.left) cssObject['left'] = (p.left / workspaceSize.width) * 100 + '%';
         if (change.bg) cssObject['background'] = 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')';
         if (change.opacity) cssObject['opacity'] = p.opacity;
         if (change.radius) {
             if ((p.borderRadius[0] == p.borderRadius[1]) &&
             (p.borderRadius[0] == p.borderRadius[2]) &&
             (p.borderRadius[0] == p.borderRadius[3])) {
-                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+                cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
             } else {
-                cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
-                cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
-                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
-                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';               
+                cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+                cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
+                cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
+                cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';              
             }
         }
         if (change.rotate && change.skew) {
@@ -418,7 +429,8 @@
                 'height': params.height,
                 'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.a + ',' + params.background.a + ')',
                 'border': params.border,
-                'z-index': params.zindex,
+                //'z-index': params.zindex,
+                'z-index': this.globalShape.parameters.zindex,
                 'opacity': params.opacity,
                 'border-top-left-radius': params.borderRadius[0],
                 'border-top-right-radius': params.borderRadius[1],
@@ -453,7 +465,8 @@
                     'left': params.left - 1,
                     'width': params.width + 2,
                     'height': params.height + 2,
-                    'z-index': params.zindex + 1000,
+                    //'z-index': params.zindex + 1000,
+                    'z-index': this.globalShape.parameters.zindex + 1000,
                 });
 
                 helper.attr('data-id', keyframe.shape.id);

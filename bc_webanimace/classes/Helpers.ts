@@ -3,6 +3,7 @@
     CREATE_DIV,
     IMAGE,
     TEXT,
+    SVG,
 }
 
 enum Animation_playing {

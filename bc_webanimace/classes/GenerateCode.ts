@@ -28,7 +28,7 @@
             draggable: false,
             height: 600,
             width: 900,
-            resizable: false,
+            resizable: true,
             modal: true,
             closeOnEscape: true,
             close: (event, ui) => {
@@ -65,8 +65,8 @@
 
         this.previewTab.append(this.runEl);
         this.previewTab.append(this.previewEl);
-        this.previewEl.attr('src', 'data:text/html,' + encodehtml);
-
+        this.previewEl.attr('src', 'data:text/html;charset=utf-8,' + encodehtml);
+        this.previewEl.attr('srcdoc', encodehtml);
         prettyPrint();
 
         $(pre).on('dblclick', () => {
@@ -78,17 +78,13 @@
         var css: string = '';
         css += this.gCss({
             'name': '#workspace',
-            'width': this.app.workspace.workspaceSize.width + 'px',
+            'max-width': this.app.workspace.workspaceSize.width + 'px',
             'height': this.app.workspace.workspaceSize.height + 'px',
+            'width': '100%',
             'border': '1px dotted #ededed',
             'overflow': 'hidden',
             'position': 'relative',
             'margin': '0 auto',
-        });
-
-        css += this.gCss({
-            'name': '.square',
-            'overflow': 'hidden',
         });
 
         css += this.objectCss();
@@ -109,15 +105,6 @@
         markup += '  </div>';
         return markup;
     }
-
-    /*generateObjects() {
-        var markup: string = '  <div id="workspace">\n';
-        this.layers.forEach((layer: Layer, index: number) => {
-            markup += layer.getObject();
-        });
-        markup += '  </div>';
-        return markup;
-    }*/
 
     generateObjects() {
         var markup: string = '  <div id="workspace">\n';
@@ -146,6 +133,8 @@
                     value += (Array(layer.nesting + 1).join('  ') + '    </div>\n');
                 } else if (layer instanceof TextLayer) {
                     value += '</span>\n';
+                } else if (layer instanceof SvgLayer) {
+                    value += (Array(layer.nesting + 1).join('  ') + '    </div>\n');
                 } else if (layer instanceof ImageLayer) {
                 }
             }
@@ -168,6 +157,7 @@
         }
 
         this.layers.forEach((item: Layer, index: number) => {
+            var parentSize: Dimensions = this.app.workspace.workspaceSize;
             var percents = new Array<String>();
             var min: number = this.arrayMin(item.timestamps);
             var max: number = this.arrayMax(item.timestamps);
@@ -180,7 +170,12 @@
             var nameElement = 'object' + item.id;
 
             //1. init style for object
-            var cssObject = item.getInitStyles(nameElement);
+            parentSize = this.app.workspace.workspaceSize;
+            if (item.parent != null) {
+                var k: Keyframe = this.app.timeline.getLayer(item.parent).getKeyframe(0);
+                parentSize = { width: k.shape.parameters.width, height: k.shape.parameters.height };
+            }
+            var cssObject = item.getInitStyles(nameElement, parentSize);
 
             if (this.app.timeline.repeat) {
                 cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
@@ -216,7 +211,21 @@
                         percent += ', 0%';
                     }
                     percents.push(percent);
-                    cssObject[percent] = item.getKeyframeStyle(timestamp);
+
+                    parentSize = this.app.workspace.workspaceSize;
+                    if (item.parent != null) {
+                        var k: Keyframe = this.app.timeline.getLayer(item.parent).getKeyframeByTimestamp(timestamp);
+                        if (k == null) {
+                            //compute dimensions
+                            parentSize = {
+                                width: this.app.workspace.getTransformAttr(item.parent, 'width', timestamp),
+                                height: this.app.workspace.getTransformAttr(item.parent, 'height', timestamp),
+                        }
+                        } else {
+                            parentSize = { width: k.shape.parameters.width, height: k.shape.parameters.height };   
+                        }
+                    }
+                    cssObject[percent] = item.getKeyframeStyle(timestamp, parentSize);
 
                     if (i != item.timestamps.length - 1) {
                         cssObject[percent]['-webkit-animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';

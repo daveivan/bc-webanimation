@@ -15,8 +15,16 @@ class Workspace {
     private _scope = null;
 
     private workspaceOverlay: JQuery = $('<div>').addClass('workspace-overlay');
+    private scopeOverlay: JQuery = $('<div>').addClass('overlay-scope overlay-clickable');
     private uploadArea: JQuery = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
     private uploadBtn: JQuery = $('<input type="file"></input>').addClass('pick-image');
+    private svgTextArea: JQuery = $('<div>').addClass('svg-area');
+    private svgInsertBtn: JQuery = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit');
+    private svgText: JQuery = $('<textarea>');
+    private contextMenuEl: JQuery = $('<div>').addClass('context-menu');
+    private menuItemDelete: JQuery = $('<a>').addClass('menu-item menu-delete').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat objekt');
+    private menuItemToBackground: JQuery = $('<a>').addClass('menu-item menu-tobackground').attr('href', '#').html('<i class="fa fa-long-arrow-down"></i> Níže do pozadí');
+    private menuItemToForeground: JQuery = $('<a>').addClass('menu-item menu-toforeground').attr('href', '#').html('<i class="fa fa-long-arrow-up"></i> Výše do popředí');
 
     constructor(app: Application, workspaceContainer: JQuery, workspaceWrapper: JQuery) {
         this.app = app;
@@ -24,9 +32,19 @@ class Workspace {
         this.workspaceContainerOriginal = workspaceContainer;
         this.workspaceWrapper = workspaceWrapper;
         this.uploadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.uploadBtn));
-        this.workspaceOverlay.append(this.uploadArea);
+        this.svgTextArea.append('Vložte XML kód');
+        this.svgTextArea.append(this.svgText);
+        this.svgTextArea.append(this.svgInsertBtn);
 
         this.workspaceContainer.css(this._workspaceSize);
+
+        $(document).on('mousedown', (e: JQueryEventObject) => {
+            //hide context menu
+            if (!$(e.target).parents().hasClass('context-menu')) {
+                this.contextMenuEl.removeClass('active');
+                this.contextMenuEl.remove();
+            }
+        });
 
         this.workspaceWrapper.on('mousedown', (event: JQueryEventObject) => {
             //if ($(event.target).is('#workspace')) {
@@ -36,6 +54,14 @@ class Workspace {
             //}   
         });
 
+        $('html').on('keyup', (e: JQueryEventObject) => {
+            if (e.keyCode == 46) {
+                if (e.target.nodeName === 'BODY') {
+                    this.app.timeline.deleteLayers(e);
+                }
+            }
+        });
+
         this.workspaceWrapper.on('dblclick', (event: JQueryEventObject) => {
             if (this.app.controlPanel.Mode == Mode.TEXT) {
                 //if mode is TEXT, create text field
@@ -43,7 +69,7 @@ class Workspace {
             } else if (this.app.controlPanel.Mode == Mode.SELECT) {
                 //if mode is SELECT, check if dblclick is in container -> set scope
                 var layer: any = this.app.timeline.getLayer($(event.target).data('id'));
-                if (layer instanceof RectangleLayer) {
+                if (layer instanceof RectangleLayer && $(event.target).hasClass('shape-helper')) {
                     this.setScope(layer.id);
                 }
             }
@@ -52,10 +78,131 @@ class Workspace {
         this.workspaceWrapper.on('mousedown', (e: JQueryEventObject) => {
             //for deselect layer
             if (this.app.controlPanel.Mode == Mode.SELECT) {
-                if (!$(e.target).hasClass('shape-helper') && !$(e.target).hasClass('origin-point') && !$(e.target).hasClass('ui-resizable-handle')) {
+                if (!$(e.target).parents().hasClass('context-menu') && !$(e.target).hasClass('shape-helper') && !$(e.target).hasClass('origin-point') && !$(e.target).hasClass('ui-resizable-handle')) {
                     this.app.timeline.selectLayer(null);
                 }
             } 
+
+            /*if ($(e.target).hasClass('shape-helper')) {
+                if (e.button == 2) {
+                    console.log('right click');
+
+                    return false;
+                }
+            }*/
+        });
+
+        this.workspaceWrapper.on('contextmenu', '.shape-helper', (event: JQueryEventObject) => {
+            console.log('contextmenu');
+            this.contextMenuEl.empty();
+            
+            var scopedLayers: Array<Layer> = new Array<Layer>();
+            var outOfScopeLayers: Array<Layer> = new Array<Layer>();
+            this.app.timeline.layers.forEach((layer: Layer, index: number) => {
+                if (layer.parent == this.scope) {
+                    scopedLayers.push(layer);
+                } else {
+                    outOfScopeLayers.push(layer);
+                }
+            });
+            if (parseInt($(event.target).closest('.shape-helper').data('id')) === scopedLayers[0].id) {
+                this.menuItemToBackground.addClass('disabled');
+            } else {
+                this.menuItemToBackground.removeClass('disabled');
+            }
+
+            if (parseInt($(event.target).closest('.shape-helper').data('id')) === scopedLayers[scopedLayers.length-1].id) {
+                this.menuItemToForeground.addClass('disabled');
+            } else {
+                this.menuItemToForeground.removeClass('disabled');
+            }
+
+            //context menu items
+            
+            this.contextMenuEl.append('<ul></ul>');
+            this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemToForeground.attr('data-id', $(event.target).data('id'))));
+            this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemToBackground.attr('data-id', $(event.target).data('id'))));
+            this.contextMenuEl.find('ul').append($('<li class="separator"></li>'));
+            this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemDelete.attr('data-id', $(event.target).data('id'))));
+
+            this.contextMenuEl.appendTo(this.workspaceContainer);
+            this.contextMenuEl.css({
+                'top': event.pageY - this.workspaceContainer.offset().top,
+                'left': event.pageX - this.workspaceContainer.offset().left,
+            });
+            this.contextMenuEl.focus();
+
+            this.contextMenuEl.addClass('active');
+
+            this.menuItemDelete.on('click', (e: JQueryEventObject) => {
+                var id: number = parseInt($(e.target).data('id'));
+                var index: number = this.app.timeline.getLayerIndex(id);
+                this.app.timeline.deleteOneLayer(index);
+
+                this.contextMenuEl.removeClass('active');
+                this.contextMenuEl.remove();
+            });
+
+            this.menuItemToBackground.on('click', (e: JQueryEventObject) => {
+                if ($(e.target).hasClass('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                var id: number = parseInt($(e.target).data('id'));
+                var layer: Layer = this.app.timeline.getLayer(id);
+
+                scopedLayers.forEach((layer: Layer, index: number) => {
+                    if (layer.id == id && index > 0) {
+                        var tmp: Layer = scopedLayers[index - 1];
+                        scopedLayers[index - 1] = layer;
+                        scopedLayers[index] = tmp;
+                        scopedLayers[index - 1].globalShape.setZindex(index - 1);
+                        scopedLayers[index].globalShape.setZindex(index);
+                    } else {
+                        layer.globalShape.setZindex(index);
+                    }
+                });
+
+                this.app.timeline.layers = outOfScopeLayers.concat(scopedLayers);
+                //render layers
+                this.app.timeline.renderLayers();
+                //render shapes
+                this.renderShapes();
+                this.transformShapes();
+                this.app.timeline.selectLayer(id);
+            });
+
+            this.menuItemToForeground.on('click', (e: JQueryEventObject) => {
+                if ($(e.target).hasClass('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                var id: number = parseInt($(e.target).data('id'));
+                var layer: Layer = this.app.timeline.getLayer(id);
+
+                scopedLayers.forEach((layer: Layer, index: number) => {
+                    if (layer.id == id && index < (scopedLayers.length-1)) {
+                        var tmp: Layer = scopedLayers[index + 1];
+                        scopedLayers[index + 1] = layer;
+                        scopedLayers[index] = tmp;
+                        scopedLayers[index + 1].globalShape.setZindex(index + 1);
+                        scopedLayers[index].globalShape.setZindex(index);
+                    } else {
+                        layer.globalShape.setZindex(index);
+                    }
+                });
+
+                this.app.timeline.layers = outOfScopeLayers.concat(scopedLayers);
+                //render layers
+                this.app.timeline.renderLayers();
+                //render shapes
+                this.renderShapes();
+                this.transformShapes();
+                this.app.timeline.selectLayer(id);
+            });
+
+            event.preventDefault();
+            return false;
         });
 
         this.workspaceWrapper.on('mouseup', (event: JQueryEventObject) => {
@@ -74,6 +221,10 @@ class Workspace {
                 this.transformShapes();
                 this.highlightShape([idLayer]);
                 this.createdLayer = false;
+                this.app.controlPanel.Mode = Mode.SELECT;
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+                this.onChangeMode();
             }
         });
 
@@ -121,6 +272,17 @@ class Workspace {
                 }
                 this.setScope(scope);
             });
+
+            /*$(document).on('mousedown', '.shape-helper', (e: JQueryEventObject) => {
+                console.log('click helper');
+                if (e.button == 2) {
+                    console.log('right click');
+
+                    return false;
+                }
+
+                return true;
+            });*/
         });
     }
 
@@ -200,8 +362,12 @@ class Workspace {
         }
     }
 
-    getTransformAttr(idLayer: number, attr: string): any {
-        var currentTimestamp: number = this.app.timeline.pxToMilisec();
+    getTransformAttr(idLayer: number, attr: string, timestamp: number = null): any {
+        if (timestamp == null) {
+            var currentTimestamp: number = this.app.timeline.pxToMilisec();
+        } else {
+            var currentTimestamp: number = timestamp;
+        }
         var layer: Layer = this.app.timeline.getLayer(idLayer);
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(currentTimestamp);
@@ -356,6 +522,27 @@ class Workspace {
         this.onChangeMode();
         if (this.scope) {
             this.workspaceContainer = this.workspaceWrapper.find('.square' + '[data-id="' + this.scope + '"]').addClass('scope');
+            /*this.workspaceContainer.parent().prepend($('<div>').css({
+                'background-color': '#fff',
+                'width': this.workspaceContainer.width(),
+                'height': this.workspaceContainer.height(),
+                'position': 'absolute',
+                'top': this.workspaceContainer.position().top,
+                'left': this.workspaceContainer.position().left,
+                'z-index': '10002',
+            }));*/
+
+            this.workspaceContainer.parents('.square').append($('<div>').addClass('overlay-clickable').css({
+                'background-color': 'rgba(255, 255, 255, 0.6)',
+                'position': 'absolute',
+                'z-index': '10001',
+                'width': '100%',
+                'height': '100%',
+            }));
+            this.workspaceContainer.closest('.square').css({
+                'border': '2px solid #f08080',
+            });
+
             this.workspaceContainer.parents('.square').addClass('scope');
         } else {
             this.workspaceContainer = $('#workspace');
@@ -556,6 +743,7 @@ class Workspace {
         //var originPoint: JQuery = $('<div>').addClass('origin-point');
         this.workspaceContainer.find('.shape-helper').removeClass('highlight');
         this.workspaceContainer.find('.shape-helper').find('.origin-point').hide();
+
         if (arrayID != null) {
             arrayID.forEach((id: number, index: number) => {
                 this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
@@ -1013,8 +1201,73 @@ class Workspace {
         }
     }
 
+    svgMode(active: boolean = true) {
+        if (active) {
+            this.workspaceOverlay.empty();
+            this.workspaceOverlay.append(this.svgTextArea);
+            this.workspaceWrapper.append(this.workspaceOverlay);
+            this.workspaceOverlay.css({
+                'height': this.workspaceWrapper.outerHeight(),
+                'width': this.workspaceWrapper.outerWidth(),
+            });
+
+            this.svgText.on('keyup', (e: JQueryEventObject) => {
+                if (e.which == 13) {
+                    this.svgInsertBtn.trigger('click');
+                }
+            });
+
+            this.svgInsertBtn.on('click', (e: JQueryEventObject) => {
+                console.log('Inserting SVG');
+                var p: Parameters = {
+                    top: 0,
+                    left: 0,
+                    width: 100,
+                    height: 100,
+                    background: { r: 255, g: 255, b: 255, a: 0 },
+                    opacity: 1,
+                    borderRadius: [0, 0, 0, 0],
+                    rotate: { x: 0, y: 0, z: 0 },
+                    skew: { x: 0, y: 0 },
+                    origin: { x: 50, y: 50 },
+                    zindex: this.app.timeline.layers.length,
+                };
+
+                var xmlString = this.svgText.val();
+                var parser: DOMParser = new DOMParser();
+                var doc: XMLDocument = parser.parseFromString(xmlString, "image/svg+xml");
+                if (this.isParseError(doc)) {
+
+                } else {
+                    var svg: IShape = new Svg(p, doc);
+                    var layer: Layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), svg);
+                    var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
+                    layer.parent = parent;
+                    if (layer.parent) {
+                        layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
+                    }
+                    var idLayer: number = this.app.timeline.addLayer(layer);
+                    this.renderSingleShape(idLayer);
+                    this.transformShapes();
+                    this.highlightShape([idLayer]);   
+                }
+
+                this.app.controlPanel.Mode = Mode.SELECT;
+                this.svgText.val('');
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+                this.onChangeMode();
+
+            });
+        } else {
+            this.workspaceOverlay.remove();
+        }
+    }
+
     insertMode(active: boolean = true) {
         if (active) {
+            this.workspaceOverlay.empty();
+            this.workspaceOverlay.append(this.uploadArea);
             this.workspaceWrapper.append(this.workspaceOverlay);
             this.workspaceOverlay.css({
                 'height': this.workspaceWrapper.outerHeight(),
@@ -1162,10 +1415,15 @@ class Workspace {
             $('.shape-helper').resizable('disable');
         }
 
-        if (mode == Mode.IMAGE) {
-            this.insertMode(true);
+        if (mode == Mode.IMAGE || mode == Mode.SVG) {
+            if (mode == Mode.IMAGE) {
+                this.insertMode(true);   
+            } else if (mode == Mode.SVG) {
+                this.svgMode(true);
+            }
         } else {
             this.insertMode(false);
+            this.svgMode(false);
         }
 
         if (mode == Mode.TEXT) {
@@ -1205,13 +1463,19 @@ class Workspace {
 
     setScope(id: number) {
         this._scope = id;
-        $('.overlay-scope').remove();
+        this.scopeOverlay.remove();
 
         if (this.scope != null) {
-            var overlayEl: JQuery = $('<div>').addClass('overlay-scope').css({
+            this.scopeOverlay.css({
                 'top': this.workspaceWrapper.scrollTop(),
             });
-            this.workspaceWrapper.append(overlayEl);
+            this.workspaceWrapper.prepend(this.scopeOverlay);
+
+            this.workspaceWrapper.on('dblclick', '.overlay-clickable', (e: JQueryEventObject) => {
+                var scopedLayer: Layer = this.app.timeline.getLayer(id);
+                this.setScope(scopedLayer.parent);
+            });
+
             $('.workspace-wrapper').perfectScrollbar('destroy');
         } else {
             this.workspaceContainer = this.workspaceContainerOriginal;
@@ -1227,5 +1491,18 @@ class Workspace {
 
     get scope() {
         return this._scope;
+    }
+
+    isParseError(parsedDocument: XMLDocument) {
+        // parser and parsererrorNS could be cached on startup for efficiency
+        var parser = new DOMParser(),
+            errorneousParse = parser.parseFromString('<', 'text/xml'),
+            parsererrorNS = errorneousParse.getElementsByTagName("parsererror")[0].namespaceURI;
+
+        if (parsererrorNS === 'http://www.w3.org/1999/xhtml') {
+            return parsedDocument.getElementsByTagName("parsererror").length > 0;
+        }
+
+        return parsedDocument.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0;
     }
 } 

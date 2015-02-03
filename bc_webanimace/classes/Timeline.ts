@@ -37,6 +37,7 @@ class Timeline
     keyframesFooterEl: JQuery = $('<div class="keyframes-footer"></div>');
     keyframesTableEl: JQuery = $('<table><thead></thead><tbody></tbody>');
     pointerEl: JQuery = $('<div class="pointer"><div class="pointer-top"></div></div>');
+    deleteConfirmEl: JQuery = $('<div>').attr('id', 'delete-confirm').attr('title', 'Vymazat vybrané vrstvy?').css({'display': 'none'}).html('Opravu chcete vymazat vybrané vrstvy. Objekty v těchto vrstvách budou smazány také!');
 
     playEl: JQuery = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
     stopEl: JQuery = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
@@ -205,6 +206,7 @@ class Timeline
     }
 
     renderTimeline() {
+        $('body').append(this.deleteConfirmEl);
         $(this.timelineHeadEl).append(this.repeatEl);
         $(this.timelineHeadEl).append(this.playEl);
         $(this.timelineHeadEl).append(this.pauseEl);
@@ -426,29 +428,72 @@ class Timeline
         }
     }
 
-    private deleteLayers(e: JQueryEventObject) {
+    deleteOneLayer(index: number) {
+        this.deleteConfirmEl.dialog({
+            dialogClass: 'delete-confirm',
+            resizable: false,
+            buttons: {
+                "Smazat": () => {
+                    this.deleteLayer(index);
+
+                    //render layers
+                    this.renderLayers();
+
+                    //render workspace
+                    this.app.workspace.renderShapes();
+                    this.app.workspace.transformShapes();
+
+                    //scroll to last layer
+                    this.selectLayer(this.layersEl.find('.layer').last().data('id'));
+                    this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight()));
+                    this.layersWrapperEl.perfectScrollbar('update');
+                    //this.scrollTo(this.layersEl.find('.layer').last().data('id'));   
+                    this.deleteConfirmEl.dialog("destroy");
+                },
+                Cancel: function () {
+                    $(this).dialog("destroy");
+                }
+            }
+        });
+    }
+
+    deleteLayers(e: JQueryEventObject) {
         console.log('Deleting layers...');
 
         //iteration from end of array of selected layers
         var selectedLayers: Array<JQueryEventObject> = this.layersEl.find('div.layer.selected').get();
-        for (var i: number = selectedLayers.length - 1; i >= 0; i--) {
-            //this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
-            this.deleteLayer(parseInt($(selectedLayers[i]).attr('id')));
+
+        if (selectedLayers.length) {
+            this.deleteConfirmEl.dialog({
+                dialogClass: 'delete-confirm',
+                resizable: false,
+                buttons: {
+                    "Smazat": () => {
+                        for (var i: number = selectedLayers.length - 1; i >= 0; i--) {
+                            //this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
+                            this.deleteLayer(parseInt($(selectedLayers[i]).attr('id')));
+                        }
+
+                        //render layers
+                        this.renderLayers();
+
+                        //render workspace
+                        this.app.workspace.renderShapes();
+                        this.app.workspace.transformShapes();
+
+                        //scroll to last layer
+                        this.selectLayer(this.layersEl.find('.layer').last().data('id'));
+                        this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
+                        this.layersWrapperEl.perfectScrollbar('update');
+                        //this.scrollTo(this.layersEl.find('.layer').last().data('id'));   
+                        this.deleteConfirmEl.dialog("destroy");
+                    },
+                    Cancel: function () {
+                        $(this).dialog("destroy");
+                    }
+                }
+            });
         }
-
-        //render layers
-        this.renderLayers();
-
-        //render workspace
-        this.app.workspace.renderShapes();
-        this.app.workspace.transformShapes();
-
-        //scroll to last layer
-        this.selectLayer(this.layersEl.find('.layer').last().data('id'));
-        this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
-        this.layersWrapperEl.perfectScrollbar('update');
-        //this.scrollTo(this.layersEl.find('.layer').last().data('id'));
-
     }
 
     private sort(e: JQueryEventObject, ui)
@@ -464,16 +509,19 @@ class Timeline
         });
 
         var tmpLayers: Array<Layer> = new Array<Layer>();
+        
         order.forEach((value: string, index: number) => {
             var layer: Layer = this.layers[parseInt(value)];
+            console.log(parseInt(value));
             tmpLayers.push(layer);
             //TODO - update z-index podle poradi (brat v potaz keyframe nebo aktualizace do global shape?)
-            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            /*var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 keyframe = layer.addKeyframe(this.app.workspace.getCurrentShape(layer.id), this.pxToMilisec(), this.app.workspace.bezier);
                 this.renderKeyframes(layer.id);
             }
-            keyframe.shape.setZindex(index);
+            keyframe.shape.setZindex(index);*/
+            layer.globalShape.setZindex(index);
         });
 
         this.layers = outOfScopeLayers.concat(tmpLayers);
@@ -590,6 +638,18 @@ class Timeline
         return layer;
     }
 
+    getLayerIndex(id: number) {
+        var index: number = null;
+
+        this.layers.forEach((item: Layer, i: number) => {
+            if (item.id == id) {
+                index = i;
+            }
+        });
+
+        return index;
+    }
+
     onCreateKeyframe(e: JQueryEventObject) {
         console.log('Creating keyframe...');
         //nejblizsi tr -> vytanout data-id -> najit layer podle id ->vlozit novy keyframe (pouzit  position, nejprve prevest na ms, pouzit shape z workspace)
@@ -666,6 +726,10 @@ class Timeline
             this.getParent(layer.parent, container);            
         }
         return layer; 
+    }
+
+    getSortedArray() {
+        return this.layersEl.sortable('toArray');
     }
 }
 

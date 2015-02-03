@@ -11,12 +11,12 @@
         super.transform(position, shape, helper, currentLayerId, controlPanel);
     }
 
-    getInitStyles(nameElement: string) {
-        return super.getInitStyles(nameElement);
+    getInitStyles(nameElement: string, workspaceSize: Dimensions) {
+        return super.getInitStyles(nameElement, workspaceSize);
     }
 
-    getKeyframeStyle(timestamp: number) {
-        return super.getKeyframeStyle(timestamp);
+    getKeyframeStyle(timestamp: number, workspaceSize: Dimensions) {
+        return super.getKeyframeStyle(timestamp, workspaceSize);
     }
 
     /*getObject(): string {

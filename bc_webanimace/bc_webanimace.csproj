@@ -101,6 +101,8 @@
     <TypeScriptCompile Include="classes\IShape.ts" />
     <TypeScriptCompile Include="classes\RectangleLayer.ts" />
     <TypeScriptCompile Include="classes\Shape.ts" />
+    <TypeScriptCompile Include="classes\Svg.ts" />
+    <TypeScriptCompile Include="classes\SvgLayer.ts" />
     <TypeScriptCompile Include="classes\TextField.ts" />
     <TypeScriptCompile Include="classes\TextLayer.ts" />
     <TypeScriptCompile Include="classes\Timeline.ts" />

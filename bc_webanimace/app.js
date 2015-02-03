@@ -193,7 +193,8 @@
                     x: this.computeAttr(rng['l'].shape.parameters.origin.x, rng['r'].shape.parameters.origin.x, bezier(p)),
                     y: this.computeAttr(rng['l'].shape.parameters.origin.y, rng['r'].shape.parameters.origin.y, bezier(p))
                 },
-                zindex: rng['l'].shape.parameters.zindex
+                //zindex: rng['l'].shape.parameters.zindex,
+                zindex: this.globalShape.parameters.zindex
             };
         }
 
@@ -260,11 +261,17 @@
             }
         }
 
+        //fix if position == right and left is null
         if (left === null && right === position && this.timestamps.length >= 2) {
             left = right;
             right = this.timestamps[index + 1];
         }
 
+        //for animatable z-index
+        /*if (right === position) {
+        left = right;
+        right = null;
+        }*/
         var rng = new Array();
         if (left != null) {
             rng['l'] = this.getKeyframeByTimestamp(left);
@@ -289,16 +296,18 @@
         return (Number(value));
     };
 
-    Layer.prototype.getInitStyles = function (nameElement) {
+    Layer.prototype.getInitStyles = function (nameElement, workspaceSize) {
         var p = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
         var cssObject = {
             'name': '.' + nameElement,
             'position': 'absolute',
-            'width': p.width + 'px',
-            'height': p.height + 'px',
-            'top': p.top + 'px',
-            'left': p.left + 'px',
-            'background': 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')'
+            'width': (p.width / workspaceSize.width) * 100 + '%',
+            'height': (p.height / workspaceSize.height) * 100 + '%',
+            'top': (p.top / workspaceSize.height) * 100 + '%',
+            'left': (p.left / workspaceSize.width) * 100 + '%',
+            'background': 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')',
+            //'z-index': p.zindex,
+            'z-index': this.globalShape.parameters.zindex
         };
 
         if (p.opacity != 1) {
@@ -307,13 +316,14 @@
 
         if ((p.borderRadius[0] == p.borderRadius[1]) && (p.borderRadius[0] == p.borderRadius[2]) && (p.borderRadius[0] == p.borderRadius[3])) {
             if (p.borderRadius[0] != 0) {
-                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+                //cssObject['border-radius'] = p.borderRadius[0] + 'px';
+                cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
             }
         } else {
-            cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
-            cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
-            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
-            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
+            cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+            cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
+            cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
+            cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';
         }
 
         if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0) {
@@ -333,7 +343,7 @@
         return cssObject;
     };
 
-    Layer.prototype.getKeyframeStyle = function (timestamp) {
+    Layer.prototype.getKeyframeStyle = function (timestamp, workspaceSize) {
         //check, if parameters ís changing
         var change = {
             width: false,
@@ -396,25 +406,25 @@
         var cssObject = {};
 
         if (change.width)
-            cssObject['width'] = p.width + 'px';
+            cssObject['width'] = (p.width / workspaceSize.width) * 100 + '%';
         if (change.height)
-            cssObject['height'] = p.height + 'px';
+            cssObject['height'] = (p.height / workspaceSize.height) * 100 + '%';
         if (change.top)
-            cssObject['top'] = p.top + 'px';
+            cssObject['top'] = (p.top / workspaceSize.height) * 100 + '%';
         if (change.left)
-            cssObject['left'] = p.left + 'px';
+            cssObject['left'] = (p.left / workspaceSize.width) * 100 + '%';
         if (change.bg)
             cssObject['background'] = 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')';
         if (change.opacity)
             cssObject['opacity'] = p.opacity;
         if (change.radius) {
             if ((p.borderRadius[0] == p.borderRadius[1]) && (p.borderRadius[0] == p.borderRadius[2]) && (p.borderRadius[0] == p.borderRadius[3])) {
-                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+                cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
             } else {
-                cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
-                cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
-                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
-                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
+                cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+                cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
+                cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
+                cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';
             }
         }
         if (change.rotate && change.skew) {
@@ -458,7 +468,8 @@
                 'height': params.height,
                 'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.a + ',' + params.background.a + ')',
                 'border': params.border,
-                'z-index': params.zindex,
+                //'z-index': params.zindex,
+                'z-index': this.globalShape.parameters.zindex,
                 'opacity': params.opacity,
                 'border-top-left-radius': params.borderRadius[0],
                 'border-top-right-radius': params.borderRadius[1],
@@ -493,7 +504,8 @@
                     'left': params.left - 1,
                     'width': params.width + 2,
                     'height': params.height + 2,
-                    'z-index': params.zindex + 1000
+                    //'z-index': params.zindex + 1000,
+                    'z-index': this.globalShape.parameters.zindex + 1000
                 });
 
                 helper.attr('data-id', keyframe.shape.id);
@@ -543,6 +555,7 @@ var Timeline = (function () {
         this.keyframesFooterEl = $('<div class="keyframes-footer"></div>');
         this.keyframesTableEl = $('<table><thead></thead><tbody></tbody>');
         this.pointerEl = $('<div class="pointer"><div class="pointer-top"></div></div>');
+        this.deleteConfirmEl = $('<div>').attr('id', 'delete-confirm').attr('title', 'Vymazat vybrané vrstvy?').css({ 'display': 'none' }).html('Opravu chcete vymazat vybrané vrstvy. Objekty v těchto vrstvách budou smazány také!');
         this.playEl = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
         this.stopEl = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
         this.pauseEl = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
@@ -708,6 +721,7 @@ var Timeline = (function () {
     };
 
     Timeline.prototype.renderTimeline = function () {
+        $('body').append(this.deleteConfirmEl);
         $(this.timelineHeadEl).append(this.repeatEl);
         $(this.timelineHeadEl).append(this.playEl);
         $(this.timelineHeadEl).append(this.pauseEl);
@@ -931,28 +945,76 @@ var Timeline = (function () {
         }
     };
 
+    Timeline.prototype.deleteOneLayer = function (index) {
+        var _this = this;
+        this.deleteConfirmEl.dialog({
+            dialogClass: 'delete-confirm',
+            resizable: false,
+            buttons: {
+                "Smazat": function () {
+                    _this.deleteLayer(index);
+
+                    //render layers
+                    _this.renderLayers();
+
+                    //render workspace
+                    _this.app.workspace.renderShapes();
+                    _this.app.workspace.transformShapes();
+
+                    //scroll to last layer
+                    _this.selectLayer(_this.layersEl.find('.layer').last().data('id'));
+                    _this.layersWrapperEl.scrollTop(_this.layersWrapperEl.scrollTop() - (_this.layersEl.find('.layer').outerHeight()));
+                    _this.layersWrapperEl.perfectScrollbar('update');
+
+                    //this.scrollTo(this.layersEl.find('.layer').last().data('id'));
+                    _this.deleteConfirmEl.dialog("destroy");
+                },
+                Cancel: function () {
+                    $(this).dialog("destroy");
+                }
+            }
+        });
+    };
+
     Timeline.prototype.deleteLayers = function (e) {
+        var _this = this;
         console.log('Deleting layers...');
 
         //iteration from end of array of selected layers
         var selectedLayers = this.layersEl.find('div.layer.selected').get();
-        for (var i = selectedLayers.length - 1; i >= 0; i--) {
-            //this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
-            this.deleteLayer(parseInt($(selectedLayers[i]).attr('id')));
+
+        if (selectedLayers.length) {
+            this.deleteConfirmEl.dialog({
+                dialogClass: 'delete-confirm',
+                resizable: false,
+                buttons: {
+                    "Smazat": function () {
+                        for (var i = selectedLayers.length - 1; i >= 0; i--) {
+                            //this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
+                            _this.deleteLayer(parseInt($(selectedLayers[i]).attr('id')));
+                        }
+
+                        //render layers
+                        _this.renderLayers();
+
+                        //render workspace
+                        _this.app.workspace.renderShapes();
+                        _this.app.workspace.transformShapes();
+
+                        //scroll to last layer
+                        _this.selectLayer(_this.layersEl.find('.layer').last().data('id'));
+                        _this.layersWrapperEl.scrollTop(_this.layersWrapperEl.scrollTop() - (_this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
+                        _this.layersWrapperEl.perfectScrollbar('update');
+
+                        //this.scrollTo(this.layersEl.find('.layer').last().data('id'));
+                        _this.deleteConfirmEl.dialog("destroy");
+                    },
+                    Cancel: function () {
+                        $(this).dialog("destroy");
+                    }
+                }
+            });
         }
-
-        //render layers
-        this.renderLayers();
-
-        //render workspace
-        this.app.workspace.renderShapes();
-        this.app.workspace.transformShapes();
-
-        //scroll to last layer
-        this.selectLayer(this.layersEl.find('.layer').last().data('id'));
-        this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
-        this.layersWrapperEl.perfectScrollbar('update');
-        //this.scrollTo(this.layersEl.find('.layer').last().data('id'));
     };
 
     Timeline.prototype.sort = function (e, ui) {
@@ -968,17 +1030,20 @@ var Timeline = (function () {
         });
 
         var tmpLayers = new Array();
+
         order.forEach(function (value, index) {
             var layer = _this.layers[parseInt(value)];
+            console.log(parseInt(value));
             tmpLayers.push(layer);
 
             //TODO - update z-index podle poradi (brat v potaz keyframe nebo aktualizace do global shape?)
-            var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
+            /*var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(_this.app.workspace.getCurrentShape(layer.id), _this.pxToMilisec(), _this.app.workspace.bezier);
-                _this.renderKeyframes(layer.id);
+            keyframe = layer.addKeyframe(this.app.workspace.getCurrentShape(layer.id), this.pxToMilisec(), this.app.workspace.bezier);
+            this.renderKeyframes(layer.id);
             }
-            keyframe.shape.setZindex(index);
+            keyframe.shape.setZindex(index);*/
+            layer.globalShape.setZindex(index);
         });
 
         this.layers = outOfScopeLayers.concat(tmpLayers);
@@ -1097,6 +1162,18 @@ var Timeline = (function () {
         return layer;
     };
 
+    Timeline.prototype.getLayerIndex = function (id) {
+        var index = null;
+
+        this.layers.forEach(function (item, i) {
+            if (item.id == id) {
+                index = i;
+            }
+        });
+
+        return index;
+    };
+
     Timeline.prototype.onCreateKeyframe = function (e) {
         console.log('Creating keyframe...');
 
@@ -1179,6 +1256,10 @@ var Timeline = (function () {
             this.getParent(layer.parent, container);
         }
         return layer;
+    };
+
+    Timeline.prototype.getSortedArray = function () {
+        return this.layersEl.sortable('toArray');
     };
     return Timeline;
 })();
@@ -1293,16 +1374,34 @@ var Workspace = (function () {
         this._workspaceSize = { width: 800, height: 360 };
         this._scope = null;
         this.workspaceOverlay = $('<div>').addClass('workspace-overlay');
+        this.scopeOverlay = $('<div>').addClass('overlay-scope overlay-clickable');
         this.uploadArea = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
         this.uploadBtn = $('<input type="file"></input>').addClass('pick-image');
+        this.svgTextArea = $('<div>').addClass('svg-area');
+        this.svgInsertBtn = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit');
+        this.svgText = $('<textarea>');
+        this.contextMenuEl = $('<div>').addClass('context-menu');
+        this.menuItemDelete = $('<a>').addClass('menu-item menu-delete').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat objekt');
+        this.menuItemToBackground = $('<a>').addClass('menu-item menu-tobackground').attr('href', '#').html('<i class="fa fa-long-arrow-down"></i> Níže do pozadí');
+        this.menuItemToForeground = $('<a>').addClass('menu-item menu-toforeground').attr('href', '#').html('<i class="fa fa-long-arrow-up"></i> Výše do popředí');
         this.app = app;
         this.workspaceContainer = workspaceContainer;
         this.workspaceContainerOriginal = workspaceContainer;
         this.workspaceWrapper = workspaceWrapper;
         this.uploadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.uploadBtn));
-        this.workspaceOverlay.append(this.uploadArea);
+        this.svgTextArea.append('Vložte XML kód');
+        this.svgTextArea.append(this.svgText);
+        this.svgTextArea.append(this.svgInsertBtn);
 
         this.workspaceContainer.css(this._workspaceSize);
+
+        $(document).on('mousedown', function (e) {
+            //hide context menu
+            if (!$(e.target).parents().hasClass('context-menu')) {
+                _this.contextMenuEl.removeClass('active');
+                _this.contextMenuEl.remove();
+            }
+        });
 
         this.workspaceWrapper.on('mousedown', function (event) {
             //if ($(event.target).is('#workspace')) {
@@ -1312,6 +1411,14 @@ var Workspace = (function () {
             //}
         });
 
+        $('html').on('keyup', function (e) {
+            if (e.keyCode == 46) {
+                if (e.target.nodeName === 'BODY') {
+                    _this.app.timeline.deleteLayers(e);
+                }
+            }
+        });
+
         this.workspaceWrapper.on('dblclick', function (event) {
             if (_this.app.controlPanel.Mode == 3 /* TEXT */) {
                 //if mode is TEXT, create text field
@@ -1319,7 +1426,7 @@ var Workspace = (function () {
             } else if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
                 //if mode is SELECT, check if dblclick is in container -> set scope
                 var layer = _this.app.timeline.getLayer($(event.target).data('id'));
-                if (layer instanceof RectangleLayer) {
+                if (layer instanceof RectangleLayer && $(event.target).hasClass('shape-helper')) {
                     _this.setScope(layer.id);
                 }
             }
@@ -1328,10 +1435,133 @@ var Workspace = (function () {
         this.workspaceWrapper.on('mousedown', function (e) {
             //for deselect layer
             if (_this.app.controlPanel.Mode == 0 /* SELECT */) {
-                if (!$(e.target).hasClass('shape-helper') && !$(e.target).hasClass('origin-point') && !$(e.target).hasClass('ui-resizable-handle')) {
+                if (!$(e.target).parents().hasClass('context-menu') && !$(e.target).hasClass('shape-helper') && !$(e.target).hasClass('origin-point') && !$(e.target).hasClass('ui-resizable-handle')) {
                     _this.app.timeline.selectLayer(null);
                 }
             }
+            /*if ($(e.target).hasClass('shape-helper')) {
+            if (e.button == 2) {
+            console.log('right click');
+            
+            return false;
+            }
+            }*/
+        });
+
+        this.workspaceWrapper.on('contextmenu', '.shape-helper', function (event) {
+            console.log('contextmenu');
+            _this.contextMenuEl.empty();
+
+            var scopedLayers = new Array();
+            var outOfScopeLayers = new Array();
+            _this.app.timeline.layers.forEach(function (layer, index) {
+                if (layer.parent == _this.scope) {
+                    scopedLayers.push(layer);
+                } else {
+                    outOfScopeLayers.push(layer);
+                }
+            });
+            if (parseInt($(event.target).closest('.shape-helper').data('id')) === scopedLayers[0].id) {
+                _this.menuItemToBackground.addClass('disabled');
+            } else {
+                _this.menuItemToBackground.removeClass('disabled');
+            }
+
+            if (parseInt($(event.target).closest('.shape-helper').data('id')) === scopedLayers[scopedLayers.length - 1].id) {
+                _this.menuItemToForeground.addClass('disabled');
+            } else {
+                _this.menuItemToForeground.removeClass('disabled');
+            }
+
+            //context menu items
+            _this.contextMenuEl.append('<ul></ul>');
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemToForeground.attr('data-id', $(event.target).data('id'))));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemToBackground.attr('data-id', $(event.target).data('id'))));
+            _this.contextMenuEl.find('ul').append($('<li class="separator"></li>'));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemDelete.attr('data-id', $(event.target).data('id'))));
+
+            _this.contextMenuEl.appendTo(_this.workspaceContainer);
+            _this.contextMenuEl.css({
+                'top': event.pageY - _this.workspaceContainer.offset().top,
+                'left': event.pageX - _this.workspaceContainer.offset().left
+            });
+            _this.contextMenuEl.focus();
+
+            _this.contextMenuEl.addClass('active');
+
+            _this.menuItemDelete.on('click', function (e) {
+                var id = parseInt($(e.target).data('id'));
+                var index = _this.app.timeline.getLayerIndex(id);
+                _this.app.timeline.deleteOneLayer(index);
+
+                _this.contextMenuEl.removeClass('active');
+                _this.contextMenuEl.remove();
+            });
+
+            _this.menuItemToBackground.on('click', function (e) {
+                if ($(e.target).hasClass('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                var id = parseInt($(e.target).data('id'));
+                var layer = _this.app.timeline.getLayer(id);
+
+                scopedLayers.forEach(function (layer, index) {
+                    if (layer.id == id && index > 0) {
+                        var tmp = scopedLayers[index - 1];
+                        scopedLayers[index - 1] = layer;
+                        scopedLayers[index] = tmp;
+                        scopedLayers[index - 1].globalShape.setZindex(index - 1);
+                        scopedLayers[index].globalShape.setZindex(index);
+                    } else {
+                        layer.globalShape.setZindex(index);
+                    }
+                });
+
+                _this.app.timeline.layers = outOfScopeLayers.concat(scopedLayers);
+
+                //render layers
+                _this.app.timeline.renderLayers();
+
+                //render shapes
+                _this.renderShapes();
+                _this.transformShapes();
+                _this.app.timeline.selectLayer(id);
+            });
+
+            _this.menuItemToForeground.on('click', function (e) {
+                if ($(e.target).hasClass('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                var id = parseInt($(e.target).data('id'));
+                var layer = _this.app.timeline.getLayer(id);
+
+                scopedLayers.forEach(function (layer, index) {
+                    if (layer.id == id && index < (scopedLayers.length - 1)) {
+                        var tmp = scopedLayers[index + 1];
+                        scopedLayers[index + 1] = layer;
+                        scopedLayers[index] = tmp;
+                        scopedLayers[index + 1].globalShape.setZindex(index + 1);
+                        scopedLayers[index].globalShape.setZindex(index);
+                    } else {
+                        layer.globalShape.setZindex(index);
+                    }
+                });
+
+                _this.app.timeline.layers = outOfScopeLayers.concat(scopedLayers);
+
+                //render layers
+                _this.app.timeline.renderLayers();
+
+                //render shapes
+                _this.renderShapes();
+                _this.transformShapes();
+                _this.app.timeline.selectLayer(id);
+            });
+
+            event.preventDefault();
+            return false;
         });
 
         this.workspaceWrapper.on('mouseup', function (event) {
@@ -1351,6 +1581,10 @@ var Workspace = (function () {
                 _this.transformShapes();
                 _this.highlightShape([idLayer]);
                 _this.createdLayer = false;
+                _this.app.controlPanel.Mode = 0 /* SELECT */;
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+                _this.onChangeMode();
             }
         });
 
@@ -1397,6 +1631,16 @@ var Workspace = (function () {
                 }
                 _this.setScope(scope);
             });
+            /*$(document).on('mousedown', '.shape-helper', (e: JQueryEventObject) => {
+            console.log('click helper');
+            if (e.button == 2) {
+            console.log('right click');
+            
+            return false;
+            }
+            
+            return true;
+            });*/
         });
     }
     Workspace.prototype.onDrawSquare = function (e) {
@@ -1475,8 +1719,13 @@ var Workspace = (function () {
         }
     };
 
-    Workspace.prototype.getTransformAttr = function (idLayer, attr) {
-        var currentTimestamp = this.app.timeline.pxToMilisec();
+    Workspace.prototype.getTransformAttr = function (idLayer, attr, timestamp) {
+        if (typeof timestamp === "undefined") { timestamp = null; }
+        if (timestamp == null) {
+            var currentTimestamp = this.app.timeline.pxToMilisec();
+        } else {
+            var currentTimestamp = timestamp;
+        }
         var layer = this.app.timeline.getLayer(idLayer);
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(currentTimestamp);
@@ -1632,6 +1881,27 @@ var Workspace = (function () {
         this.onChangeMode();
         if (this.scope) {
             this.workspaceContainer = this.workspaceWrapper.find('.square' + '[data-id="' + this.scope + '"]').addClass('scope');
+
+            /*this.workspaceContainer.parent().prepend($('<div>').css({
+            'background-color': '#fff',
+            'width': this.workspaceContainer.width(),
+            'height': this.workspaceContainer.height(),
+            'position': 'absolute',
+            'top': this.workspaceContainer.position().top,
+            'left': this.workspaceContainer.position().left,
+            'z-index': '10002',
+            }));*/
+            this.workspaceContainer.parents('.square').append($('<div>').addClass('overlay-clickable').css({
+                'background-color': 'rgba(255, 255, 255, 0.6)',
+                'position': 'absolute',
+                'z-index': '10001',
+                'width': '100%',
+                'height': '100%'
+            }));
+            this.workspaceContainer.closest('.square').css({
+                'border': '2px solid #f08080'
+            });
+
             this.workspaceContainer.parents('.square').addClass('scope');
         } else {
             this.workspaceContainer = $('#workspace');
@@ -1835,6 +2105,7 @@ var Workspace = (function () {
         //var originPoint: JQuery = $('<div>').addClass('origin-point');
         this.workspaceContainer.find('.shape-helper').removeClass('highlight');
         this.workspaceContainer.find('.shape-helper').find('.origin-point').hide();
+
         if (arrayID != null) {
             arrayID.forEach(function (id, index) {
                 _this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
@@ -2298,10 +2569,75 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.svgMode = function (active) {
+        var _this = this;
+        if (typeof active === "undefined") { active = true; }
+        if (active) {
+            this.workspaceOverlay.empty();
+            this.workspaceOverlay.append(this.svgTextArea);
+            this.workspaceWrapper.append(this.workspaceOverlay);
+            this.workspaceOverlay.css({
+                'height': this.workspaceWrapper.outerHeight(),
+                'width': this.workspaceWrapper.outerWidth()
+            });
+
+            this.svgText.on('keyup', function (e) {
+                if (e.which == 13) {
+                    _this.svgInsertBtn.trigger('click');
+                }
+            });
+
+            this.svgInsertBtn.on('click', function (e) {
+                console.log('Inserting SVG');
+                var p = {
+                    top: 0,
+                    left: 0,
+                    width: 100,
+                    height: 100,
+                    background: { r: 255, g: 255, b: 255, a: 0 },
+                    opacity: 1,
+                    borderRadius: [0, 0, 0, 0],
+                    rotate: { x: 0, y: 0, z: 0 },
+                    skew: { x: 0, y: 0 },
+                    origin: { x: 50, y: 50 },
+                    zindex: _this.app.timeline.layers.length
+                };
+
+                var xmlString = _this.svgText.val();
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(xmlString, "image/svg+xml");
+                if (_this.isParseError(doc)) {
+                } else {
+                    var svg = new Svg(p, doc);
+                    var layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), svg);
+                    var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
+                    layer.parent = parent;
+                    if (layer.parent) {
+                        layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
+                    }
+                    var idLayer = _this.app.timeline.addLayer(layer);
+                    _this.renderSingleShape(idLayer);
+                    _this.transformShapes();
+                    _this.highlightShape([idLayer]);
+                }
+
+                _this.app.controlPanel.Mode = 0 /* SELECT */;
+                _this.svgText.val('');
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+                _this.onChangeMode();
+            });
+        } else {
+            this.workspaceOverlay.remove();
+        }
+    };
+
     Workspace.prototype.insertMode = function (active) {
         var _this = this;
         if (typeof active === "undefined") { active = true; }
         if (active) {
+            this.workspaceOverlay.empty();
+            this.workspaceOverlay.append(this.uploadArea);
             this.workspaceWrapper.append(this.workspaceOverlay);
             this.workspaceOverlay.css({
                 'height': this.workspaceWrapper.outerHeight(),
@@ -2452,10 +2788,15 @@ var Workspace = (function () {
             $('.shape-helper').resizable('disable');
         }
 
-        if (mode == 2 /* IMAGE */) {
-            this.insertMode(true);
+        if (mode == 2 /* IMAGE */ || mode == 4 /* SVG */) {
+            if (mode == 2 /* IMAGE */) {
+                this.insertMode(true);
+            } else if (mode == 4 /* SVG */) {
+                this.svgMode(true);
+            }
         } else {
             this.insertMode(false);
+            this.svgMode(false);
         }
 
         if (mode == 3 /* TEXT */) {
@@ -2494,14 +2835,21 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.setScope = function (id) {
+        var _this = this;
         this._scope = id;
-        $('.overlay-scope').remove();
+        this.scopeOverlay.remove();
 
         if (this.scope != null) {
-            var overlayEl = $('<div>').addClass('overlay-scope').css({
+            this.scopeOverlay.css({
                 'top': this.workspaceWrapper.scrollTop()
             });
-            this.workspaceWrapper.append(overlayEl);
+            this.workspaceWrapper.prepend(this.scopeOverlay);
+
+            this.workspaceWrapper.on('dblclick', '.overlay-clickable', function (e) {
+                var scopedLayer = _this.app.timeline.getLayer(id);
+                _this.setScope(scopedLayer.parent);
+            });
+
             $('.workspace-wrapper').perfectScrollbar('destroy');
         } else {
             this.workspaceContainer = this.workspaceContainerOriginal;
@@ -2523,6 +2871,17 @@ var Workspace = (function () {
         enumerable: true,
         configurable: true
     });
+
+    Workspace.prototype.isParseError = function (parsedDocument) {
+        // parser and parsererrorNS could be cached on startup for efficiency
+        var parser = new DOMParser(), errorneousParse = parser.parseFromString('<', 'text/xml'), parsererrorNS = errorneousParse.getElementsByTagName("parsererror")[0].namespaceURI;
+
+        if (parsererrorNS === 'http://www.w3.org/1999/xhtml') {
+            return parsedDocument.getElementsByTagName("parsererror").length > 0;
+        }
+
+        return parsedDocument.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0;
+    };
     return Workspace;
 })();
 ///<reference path="Workspace.ts" />
@@ -2542,6 +2901,7 @@ var ControlPanel = (function () {
         this.generateCodeEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-code"></i>').attr('title', 'Vygenerovat kód');
         this.insertImageEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
         this.insertTextEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
+        this.insertSVGEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-circle-o"></i>').attr('title', 'Vložit SVG');
         this.controlPanelEl = $('<div>').addClass('control-panel');
         this.bgPickerEl = $('<input type="text" id="picker"></input>');
         this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
@@ -2588,6 +2948,7 @@ var ControlPanel = (function () {
         this.toolPanelEl.append(this.createDivToolEl);
         this.toolPanelEl.append(this.insertImageEl);
         this.toolPanelEl.append(this.insertTextEl);
+        this.toolPanelEl.append(this.insertSVGEl);
         this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
 
@@ -2988,7 +3349,6 @@ var ControlPanel = (function () {
         });
 
         this.insertImageEl.on('click', function (event) {
-            $('.workspace-wrapper').removeClass('text-mode');
             if ($(event.target).closest('a').hasClass('active')) {
                 $(event.target).closest('a').removeClass('active');
                 _this.selectToolEl.trigger('click');
@@ -3004,6 +3364,18 @@ var ControlPanel = (function () {
             _this._mode = 3 /* TEXT */;
             $('.tool-btn').removeClass('active');
             $(event.target).closest('a').addClass('active');
+            _this.app.workspace.onChangeMode();
+        });
+
+        this.insertSVGEl.on('click', function (event) {
+            if ($(event.target).closest('a').hasClass('active')) {
+                $(event.target).closest('a').removeClass('active');
+                _this.selectToolEl.trigger('click');
+            } else {
+                _this._mode = 4 /* SVG */;
+                $('.tool-btn').removeClass('active');
+                $(event.target).closest('a').addClass('active');
+            }
             _this.app.workspace.onChangeMode();
         });
 
@@ -3285,7 +3657,7 @@ var GenerateCode = (function () {
             draggable: false,
             height: 600,
             width: 900,
-            resizable: false,
+            resizable: true,
             modal: true,
             closeOnEscape: true,
             close: function (event, ui) {
@@ -3324,8 +3696,8 @@ var GenerateCode = (function () {
 
         this.previewTab.append(this.runEl);
         this.previewTab.append(this.previewEl);
-        this.previewEl.attr('src', 'data:text/html,' + encodehtml);
-
+        this.previewEl.attr('src', 'data:text/html;charset=utf-8,' + encodehtml);
+        this.previewEl.attr('srcdoc', encodehtml);
         prettyPrint();
 
         $(pre).on('dblclick', function () {
@@ -3337,17 +3709,13 @@ var GenerateCode = (function () {
         var css = '';
         css += this.gCss({
             'name': '#workspace',
-            'width': this.app.workspace.workspaceSize.width + 'px',
+            'max-width': this.app.workspace.workspaceSize.width + 'px',
             'height': this.app.workspace.workspaceSize.height + 'px',
+            'width': '100%',
             'border': '1px dotted #ededed',
             'overflow': 'hidden',
             'position': 'relative',
             'margin': '0 auto'
-        });
-
-        css += this.gCss({
-            'name': '.square',
-            'overflow': 'hidden'
         });
 
         css += this.objectCss();
@@ -3369,14 +3737,6 @@ var GenerateCode = (function () {
         return markup;
     };
 
-    /*generateObjects() {
-    var markup: string = '  <div id="workspace">\n';
-    this.layers.forEach((layer: Layer, index: number) => {
-    markup += layer.getObject();
-    });
-    markup += '  </div>';
-    return markup;
-    }*/
     GenerateCode.prototype.generateObjects = function () {
         var _this = this;
         var markup = '  <div id="workspace">\n';
@@ -3406,6 +3766,8 @@ var GenerateCode = (function () {
                     value += (Array(layer.nesting + 1).join('  ') + '    </div>\n');
                 } else if (layer instanceof TextLayer) {
                     value += '</span>\n';
+                } else if (layer instanceof SvgLayer) {
+                    value += (Array(layer.nesting + 1).join('  ') + '    </div>\n');
                 } else if (layer instanceof ImageLayer) {
                 }
             }
@@ -3430,6 +3792,7 @@ var GenerateCode = (function () {
         }
 
         this.layers.forEach(function (item, index) {
+            var parentSize = _this.app.workspace.workspaceSize;
             var percents = new Array();
             var min = _this.arrayMin(item.timestamps);
             var max = _this.arrayMax(item.timestamps);
@@ -3442,7 +3805,12 @@ var GenerateCode = (function () {
             var nameElement = 'object' + item.id;
 
             //1. init style for object
-            var cssObject = item.getInitStyles(nameElement);
+            parentSize = _this.app.workspace.workspaceSize;
+            if (item.parent != null) {
+                var k = _this.app.timeline.getLayer(item.parent).getKeyframe(0);
+                parentSize = { width: k.shape.parameters.width, height: k.shape.parameters.height };
+            }
+            var cssObject = item.getInitStyles(nameElement, parentSize);
 
             if (_this.app.timeline.repeat) {
                 cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
@@ -3480,7 +3848,21 @@ var GenerateCode = (function () {
                         percent += ', 0%';
                     }
                     percents.push(percent);
-                    cssObject[percent] = item.getKeyframeStyle(timestamp);
+
+                    parentSize = _this.app.workspace.workspaceSize;
+                    if (item.parent != null) {
+                        var k = _this.app.timeline.getLayer(item.parent).getKeyframeByTimestamp(timestamp);
+                        if (k == null) {
+                            //compute dimensions
+                            parentSize = {
+                                width: _this.app.workspace.getTransformAttr(item.parent, 'width', timestamp),
+                                height: _this.app.workspace.getTransformAttr(item.parent, 'height', timestamp)
+                            };
+                        } else {
+                            parentSize = { width: k.shape.parameters.width, height: k.shape.parameters.height };
+                        }
+                    }
+                    cssObject[percent] = item.getKeyframeStyle(timestamp, parentSize);
 
                     if (i != item.timestamps.length - 1) {
                         cssObject[percent]['-webkit-animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
@@ -3565,6 +3947,7 @@ var Mode;
     Mode[Mode["CREATE_DIV"] = 1] = "CREATE_DIV";
     Mode[Mode["IMAGE"] = 2] = "IMAGE";
     Mode[Mode["TEXT"] = 3] = "TEXT";
+    Mode[Mode["SVG"] = 4] = "SVG";
 })(Mode || (Mode = {}));
 
 var Animation_playing;
@@ -3593,14 +3976,14 @@ var ImageLayer = (function (_super) {
         console.log('jsem obrázek');
     };
 
-    ImageLayer.prototype.getInitStyles = function (nameElement) {
-        var cssObject = _super.prototype.getInitStyles.call(this, nameElement);
+    ImageLayer.prototype.getInitStyles = function (nameElement, workspaceSize) {
+        var cssObject = _super.prototype.getInitStyles.call(this, nameElement, workspaceSize);
 
         return cssObject;
     };
 
-    ImageLayer.prototype.getKeyframeStyle = function (timestamp) {
-        return _super.prototype.getKeyframeStyle.call(this, timestamp);
+    ImageLayer.prototype.getKeyframeStyle = function (timestamp, workspaceSize) {
+        return _super.prototype.getKeyframeStyle.call(this, timestamp, workspaceSize);
     };
 
     ImageLayer.prototype.getObject = function () {
@@ -3702,12 +4085,12 @@ var RectangleLayer = (function (_super) {
         _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
     };
 
-    RectangleLayer.prototype.getInitStyles = function (nameElement) {
-        return _super.prototype.getInitStyles.call(this, nameElement);
+    RectangleLayer.prototype.getInitStyles = function (nameElement, workspaceSize) {
+        return _super.prototype.getInitStyles.call(this, nameElement, workspaceSize);
     };
 
-    RectangleLayer.prototype.getKeyframeStyle = function (timestamp) {
-        return _super.prototype.getKeyframeStyle.call(this, timestamp);
+    RectangleLayer.prototype.getKeyframeStyle = function (timestamp, workspaceSize) {
+        return _super.prototype.getKeyframeStyle.call(this, timestamp, workspaceSize);
     };
 
     /*getObject(): string {
@@ -3734,6 +4117,66 @@ var RectangleLayer = (function (_super) {
         return shape;
     };
     return RectangleLayer;
+})(Layer);
+var Svg = (function (_super) {
+    __extends(Svg, _super);
+    function Svg(params, src) {
+        _super.call(this, params);
+        this._src = src;
+    }
+    Svg.prototype.getSrc = function () {
+        return new XMLSerializer().serializeToString(this._src.documentElement);
+        //return this._src.documentElement.innerText;
+    };
+    return Svg;
+})(Shape);
+var SvgLayer = (function (_super) {
+    __extends(SvgLayer, _super);
+    function SvgLayer(name, fn, shape) {
+        if (typeof shape === "undefined") { shape = null; }
+        _super.call(this, name, fn, shape);
+    }
+    SvgLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    };
+
+    SvgLayer.prototype.jsem = function () {
+        console.log('jsem svg');
+    };
+
+    SvgLayer.prototype.getInitStyles = function (nameElement, workspaceSize) {
+        var cssObject = _super.prototype.getInitStyles.call(this, nameElement, workspaceSize);
+
+        return cssObject;
+    };
+
+    SvgLayer.prototype.getKeyframeStyle = function (timestamp, workspaceSize) {
+        return _super.prototype.getKeyframeStyle.call(this, timestamp, workspaceSize);
+    };
+
+    SvgLayer.prototype.getObject = function () {
+        var g = this.globalShape;
+        var object = Array(this.nesting + 1).join('  ') + '    <div class="svg object' + this.id + '">\n' + g.getSrc() + '\n';
+        if (this.idEl != null) {
+            object = Array(this.nesting + 1).join('  ') + '    <div id="' + this.idEl + '" class="svg object' + this.id + '">\n' + g.getSrc() + '\n';
+        }
+        return object;
+    };
+
+    SvgLayer.prototype.renderShape = function (container, position, currentScope) {
+        /*var shape = $('<img>').addClass('shape svg');
+        
+        var svgShape: any = this.globalShape;
+        shape.attr('src', 'data:image/svg+xml;charset=utf-8,' + svgShape.getSrc());*/
+        var shape = $('<div>').addClass('shape svg');
+        var svgShape = this.globalShape;
+        shape.append(svgShape.getSrc());
+
+        shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope);
+
+        return shape;
+    };
+    return SvgLayer;
 })(Layer);
 var TextField = (function (_super) {
     __extends(TextField, _super);
@@ -3839,10 +4282,10 @@ var TextLayer = (function (_super) {
         console.log('jsem text');
     };
 
-    TextLayer.prototype.getInitStyles = function (nameElement) {
+    TextLayer.prototype.getInitStyles = function (nameElement, workspaceSize) {
         var shape = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;
 
-        var cssObject = _super.prototype.getInitStyles.call(this, nameElement);
+        var cssObject = _super.prototype.getInitStyles.call(this, nameElement, workspaceSize);
         cssObject['display'] = 'inline';
         cssObject['font-size'] = shape.getSize() + 'px';
         cssObject['font-family'] = '"' + shape.getFamily() + '"';
@@ -3851,10 +4294,10 @@ var TextLayer = (function (_super) {
         return cssObject;
     };
 
-    TextLayer.prototype.getKeyframeStyle = function (timestamp) {
+    TextLayer.prototype.getKeyframeStyle = function (timestamp, workspaceSize) {
         var shape = (this.getKeyframeByTimestamp(timestamp)).shape;
 
-        var cssObject = _super.prototype.getKeyframeStyle.call(this, timestamp);
+        var cssObject = _super.prototype.getKeyframeStyle.call(this, timestamp, workspaceSize);
 
         //check if parameters is changing
         var initShape = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;

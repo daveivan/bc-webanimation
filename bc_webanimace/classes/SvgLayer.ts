@@ -1,4 +1,4 @@
-﻿class ImageLayer extends Layer {
+﻿class SvgLayer extends Layer {
     constructor(name: string, fn: Bezier_points, shape: IShape = null) {
         super(name, fn, shape);
     }
@@ -8,7 +8,7 @@
     }
 
     jsem() {
-        console.log('jsem obrázek');
+        console.log('jsem svg');
     }
 
     getInitStyles(nameElement: string, workspaceSize: Dimensions) {
@@ -23,21 +23,24 @@
 
     getObject(): string {
         var g: any = this.globalShape;
-        var object: string = Array(this.nesting + 1).join('  ') + '    <img class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
+        var object: string = Array(this.nesting + 1).join('  ') + '    <div class="svg object' + this.id + '">\n' + g.getSrc() + '\n';
         if (this.idEl != null) {
-            object = Array(this.nesting + 1).join('  ') + '    <img id="' + this.idEl + '" class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
+            object = Array(this.nesting + 1).join('  ') + '    <div id="' + this.idEl + '" class="svg object' + this.id + '">\n' + g.getSrc() + '\n';
         }
         return object;
     }
 
     renderShape(container: JQuery, position: number, currentScope: number): JQuery {
-        var shape = $('<img>').addClass('shape image');
+        /*var shape = $('<img>').addClass('shape svg');
 
-        var imgShape: any = this.globalShape;
-        shape.attr('src', imgShape.getSrc());
+        var svgShape: any = this.globalShape;
+        shape.attr('src', 'data:image/svg+xml;charset=utf-8,' + svgShape.getSrc());*/
+        var shape = $('<div>').addClass('shape svg');
+        var svgShape: any = this.globalShape;
+        shape.append(svgShape.getSrc());
 
         shape = super.renderShapeCore(shape, container, position, currentScope);
 
         return shape;
     }
-} 
+}  

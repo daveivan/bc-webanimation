@@ -62,10 +62,10 @@
         console.log('jsem text');
     }
 
-    getInitStyles(nameElement: string) {
+    getInitStyles(nameElement: string, workspaceSize: Dimensions) {
         var shape: any = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;
 
-        var cssObject = super.getInitStyles(nameElement);
+        var cssObject = super.getInitStyles(nameElement, workspaceSize);
         cssObject['display'] = 'inline';
         cssObject['font-size'] = shape.getSize() + 'px';
         cssObject['font-family'] = '"' + shape.getFamily() + '"';
@@ -74,10 +74,10 @@
         return cssObject;
     }
 
-    getKeyframeStyle(timestamp: number) {
+    getKeyframeStyle(timestamp: number, workspaceSize: Dimensions) {
         var shape: any = (this.getKeyframeByTimestamp(timestamp)).shape;
 
-        var cssObject = super.getKeyframeStyle(timestamp);
+        var cssObject = super.getKeyframeStyle(timestamp, workspaceSize);
 
         //check if parameters is changing
         var initShape: any = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;

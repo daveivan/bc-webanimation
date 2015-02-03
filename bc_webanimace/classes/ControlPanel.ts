@@ -18,6 +18,7 @@ class ControlPanel {
     private generateCodeEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-code"></i>').attr('title', 'Vygenerovat kód');
     private insertImageEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
     private insertTextEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
+    private insertSVGEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-circle-o"></i>').attr('title', 'Vložit SVG');
 
     private controlPanelEl: JQuery = $('<div>').addClass('control-panel');
 
@@ -80,6 +81,7 @@ class ControlPanel {
         this.toolPanelEl.append(this.createDivToolEl);
         this.toolPanelEl.append(this.insertImageEl);
         this.toolPanelEl.append(this.insertTextEl);
+        this.toolPanelEl.append(this.insertSVGEl);
         this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
 
@@ -479,7 +481,6 @@ class ControlPanel {
         });
 
         this.insertImageEl.on('click', (event: JQueryEventObject) => {
-            $('.workspace-wrapper').removeClass('text-mode');
             if ($(event.target).closest('a').hasClass('active')) {
                 $(event.target).closest('a').removeClass('active');
                 this.selectToolEl.trigger('click');
@@ -495,6 +496,18 @@ class ControlPanel {
             this._mode = Mode.TEXT;
             $('.tool-btn').removeClass('active');
             $(event.target).closest('a').addClass('active'); 
+            this.app.workspace.onChangeMode();
+        });
+
+        this.insertSVGEl.on('click', (event: JQueryEventObject) => {
+            if ($(event.target).closest('a').hasClass('active')) {
+                $(event.target).closest('a').removeClass('active');
+                this.selectToolEl.trigger('click');
+            } else {
+                this._mode = Mode.SVG;
+                $('.tool-btn').removeClass('active');
+                $(event.target).closest('a').addClass('active');
+            }
             this.app.workspace.onChangeMode();
         });
 

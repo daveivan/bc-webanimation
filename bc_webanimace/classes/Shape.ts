@@ -31,9 +31,19 @@
         this._parameters.left = pos.left;
     }
 
+    setRelativePosition(pos: Pos) {
+        this._parameters.relativePosition.top = pos.top;
+        this._parameters.relativePosition.left = pos.left;
+    }
+
     setDimensions(d: Dimensions) {
         this._parameters.width = d.width;
         this._parameters.height = d.height;
+    }
+
+    setRelativeDimensions(d: Dimensions) {
+        this._parameters.relativeSize.width = d.width;
+        this._parameters.relativeSize.height = d.height;
     }
 
     setBackground(c: rgba) {
@@ -46,6 +56,14 @@
 
     setX(x: number) {
         this._parameters.width = x;
+    }
+
+    setRelativeX(x: number) {
+        this._parameters.relativeSize.width = x;
+    }
+
+    setRelativeY(y: number) {
+        this._parameters.relativeSize.height = y;
     }
 
     setY(y: number) {

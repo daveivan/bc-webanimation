@@ -56,7 +56,6 @@
         html += '<body>\n';
         html += this.generateObjects();
         html += '\n</body>\n</html>';
-        console.log(html);
 
         var encodehtml = html;
         html = html.replace(/[<>]/g, (m) => { return { '<': '&lt;', '>': '&gt;' }[m]; });
@@ -147,25 +146,19 @@
         var css: string = '';
         var keyframesCss: string = '';
 
-        //if infinite animation, find absolute maximum
-        if (this.app.timeline.repeat) {
-            var absoluteMax: number = 0;
-            this.layers.forEach((item: Layer, index: number) => {
-                var tmp: number = this.arrayMax(item.timestamps);
-                if (tmp > absoluteMax) absoluteMax = tmp;
-            });
-        }
+        //find absolute maximum
+        var absoluteMax: number = 0;
+        this.layers.forEach((item: Layer, index: number) => {
+            var tmp: number = this.arrayMax(item.timestamps);
+            if (tmp > absoluteMax) absoluteMax = tmp;
+        });
 
         this.layers.forEach((item: Layer, index: number) => {
             var parentSize: Dimensions = this.app.workspace.workspaceSize;
             var percents = new Array<String>();
             var min: number = this.arrayMin(item.timestamps);
             var max: number = this.arrayMax(item.timestamps);
-            if (this.app.timeline.repeat) {
-                var duration: number = absoluteMax;
-            } else {
-                var duration: number = max - min;   
-            }
+            var duration: number = absoluteMax;
 
             var nameElement = 'object' + item.id;
 
@@ -182,8 +175,8 @@
                 cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
             } else {
                 if (duration != 0) {
-                    cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
-                    cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';  
+                    cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's forwards';
+                    cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's forwards';  
                 }      
             }
 
@@ -196,19 +189,22 @@
 
                 item.timestamps.forEach((timestamp: number, i: number) => {
                     var keyframe: Keyframe = item.getKeyframeByTimestamp(timestamp);
-                    if (this.app.timeline.repeat) {
-                        var part: number = ((keyframe.timestamp) / duration);
-                    } else {
-                        var part: number = ((keyframe.timestamp - min) / duration);   
-                    }
+
+                    var part: number = ((keyframe.timestamp) / duration);
+
                     var percent: string = (part * 100).toString() + '%';
                     //if infinite animation and not 100% append it to last keyframe
-                    if (this.app.timeline.repeat && i == item.timestamps.length-1 && part != 1) {
+                    /*if (this.app.timeline.repeat && i == item.timestamps.length-1 && part != 1) {
                         percent += ' ,100%';
                     }
                     //if infinite animation and set delay, append delay to first keyframe
                     if (this.app.timeline.repeat && i == 0 && part != 0) {
                         percent += ', 0%';
+                    }*/
+
+                    //if first keyframe and not 0, make object invisible
+                    if (i == 0 && part != 0) {
+                        cssObject['0%'] = { 'visibility': 'hidden'};
                     }
                     percents.push(percent);
 
@@ -226,6 +222,21 @@
                         }
                     }
                     cssObject[percent] = item.getKeyframeStyle(timestamp, parentSize);
+
+                    //if last keyframe and not 100%, make object invisible
+                    if (i == item.timestamps.length - 1 && part != 1) {
+                        cssObject[percent]['visibility'] = 'hidden';
+                        cssObject['100%'] = cssObject[percent];
+                    }
+
+                    //if first keyframe and not 0, make object invisible
+                    if (i == 0 && part != 0) {
+                        cssObject[percent]['visibility'] = 'hidden';
+                        //fix, if only 2 keyframes
+                        if (item.timestamps.length == 2 && ((item.timestamps[item.timestamps.length-1] / duration) != 1) ) {
+                            cssObject[((part * 100) + 0.1).toString() + '%'] = { 'visibility': 'visible' };
+                        }
+                    }
 
                     if (i != item.timestamps.length - 1) {
                         cssObject[percent]['-webkit-animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';

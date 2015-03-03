@@ -1,6 +1,6 @@
 ﻿class RectangleLayer extends Layer {
     constructor(name: string, fn: Bezier_points, shape: IShape = null) {
-        super(name, fn, shape);
+        super(name, fn, Type.DIV, shape);
     }
 
     jsem() {
@@ -42,5 +42,33 @@
         shape = super.renderShapeCore(shape, container, position, currentScope);
 
         return shape;
+    }
+
+    static parseJson(obj: any): Layer {
+
+        var name: string = obj.name;
+        var fn: Bezier_points = obj._keyframes[0]._timing_function;
+        var params: Parameters = obj._globalShape._parameters;
+        var rect: IShape = new Rectangle(params);
+        var newLayer: Layer = new RectangleLayer(name, fn, rect);
+        newLayer.id = obj.id;
+        newLayer.order = obj._order;
+        newLayer.idEl = obj._idEl;
+        newLayer.globalShape.id = obj.id;
+        newLayer.parent = obj._parent;
+        newLayer.nesting = obj.nesting;
+
+        obj._keyframes.forEach((k: any, i: number) => {
+            if (k._timestamp != 0) {
+                var p: Parameters = k._shape._parameters;
+                var s: IShape = new Rectangle(p);
+                var f: Bezier_points = k._timing_function;
+                var t: number = k._timestamp;
+                s.id = newLayer.id;
+                newLayer.addKeyframe(s, t, f);
+            }
+        });
+   
+        return newLayer;
     }
 } 

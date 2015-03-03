@@ -1,29 +1,10 @@
-﻿/*interface Parameters {
+﻿interface Parameters {
     top: number;
     left: number;
     width: number;
     height: number;
-    backgroundR: number;
-    backgroundG: number;
-    backgroundB: number;
-    backgroundA: number;
-    opacity: number;
-    border?: string;
-    zindex: number;   
-    borderRadius: Array<number>; 
-    rotateX: number;
-    rotateY: number;
-    rotateZ: number;
-    skewX: number;
-    skewY: number;
-    originX: number;
-    originY: number;
-}*/
-interface Parameters {
-    top: number;
-    left: number;
-    width: number;
-    height: number;
+    relativePosition: Pos;
+    relativeSize: Dimensions;
     background: rgba;
     opacity: number;
     border?: string;
@@ -44,7 +25,11 @@ interface IShape {
 
     setPosition(pos: Pos);
 
+    setRelativePosition(pos: Pos);
+
     setDimensions(d: Dimensions);
+
+    setRelativeDimensions(d: Dimensions);
 
     setBackground(c: rgba);
 
@@ -52,7 +37,11 @@ interface IShape {
 
     setX(x: number);
 
+    setRelativeX(x: number);
+
     setY(y: number);
+
+    setRelativeY(y: number);
 
     setBorderRadiusTopLeft(val: number);
 

@@ -19,6 +19,8 @@ class ControlPanel {
     private insertImageEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
     private insertTextEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
     private insertSVGEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-circle-o"></i>').attr('title', 'Vložit SVG');
+    private saveEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip save').html('<i class="fa fa-floppy-o"></i>').attr('title', 'Uložit');
+    private loadEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip load').html('<i class="fa fa-file-text-o"></i>').attr('title', 'Načíst ze souboru');
 
     private controlPanelEl: JQuery = $('<div>').addClass('control-panel');
 
@@ -27,7 +29,7 @@ class ControlPanel {
     private bgOpacitySliderEl: JQuery = $('<div>').addClass('bgopacity-slider'); 
     private colorPicker: any;
 
-
+    private mainPanel: JQuery = $('<div>').addClass('main-panel');
     private itemControlEl: JQuery = $('<div>').addClass('control-item');
     private opacityEl: JQuery = $('<input>').attr('id', 'opacity-input');
     private opacitySliderEl: JQuery = $('<div>').addClass('opacity-slider');
@@ -73,10 +75,15 @@ class ControlPanel {
     private fontFamilyEl: JQuery = $('<select>').attr('id', 'text-family').addClass('font-attr');
     private textColorPicker: any;
 
+    private curve: JQuery;
+
     constructor(app: Application, container: JQuery) {
         this.app = app;
         this.containerEl = container;
 
+        this.toolPanelEl.append(this.loadEl);
+        this.toolPanelEl.append(this.saveEl);
+        this.toolPanelEl.append($('<div>').addClass('deliminer'));
         this.toolPanelEl.append(this.selectToolEl);
         this.toolPanelEl.append(this.createDivToolEl);
         this.toolPanelEl.append(this.insertImageEl);
@@ -84,6 +91,9 @@ class ControlPanel {
         this.toolPanelEl.append(this.insertSVGEl);
         this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
+
+        this.controlPanelEl.append(this.mainPanel);
+        this.controlPanelEl.append($('<div>').addClass('clearfix'));
 
         //Workspace dimensions
         var workspaceXY: JQuery = this.itemControlEl.clone();
@@ -119,7 +129,10 @@ class ControlPanel {
         this.graph.append(this.canvas);
         curve.append(this.graph);
         curve.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
-        this.controlPanelEl.append(curve);
+        this.curve = curve;
+        //this.displayMainPanel(true, 'bezier');
+        this.mainPanel.append(curve);
+        //this.controlPanelEl.append(curve);
 
         //background
         var newItem: JQuery = this.itemControlEl.clone();
@@ -352,7 +365,6 @@ class ControlPanel {
         });
 
         this.bgOpacityEl.on('change', (e: JQueryEventObject) => {
-            console.log('alhpa');
             this.bgOpacitySliderEl.slider('value', $(e.target).val());
             this.app.workspace.setColor($.colpick.hexToRgb(this.bgPickerEl.val()), parseFloat(this.bgOpacityEl.val()));
         });
@@ -409,7 +421,7 @@ class ControlPanel {
         });
 
         this.transformOriginVisibleEl.on('change', (event: JQueryEventObject) => {
-            console.log($(event.target).is(':checked'));
+          
             if ($(event.target).is(':checked')) {
                 this.isOriginVisible = true;
             } else {
@@ -492,6 +504,18 @@ class ControlPanel {
             this.app.workspace.onChangeMode();
         });
 
+        this.loadEl.on('click', (event: JQueryEventObject) => {
+            if ($(event.target).closest('a').hasClass('active')) {
+                $(event.target).closest('a').removeClass('active');
+                this.selectToolEl.trigger('click');
+            } else {
+                this._mode = Mode.LOAD;
+                $('.tool-btn').removeClass('active');
+                $(event.target).closest('a').addClass('active');
+            }
+            this.app.workspace.onChangeMode();
+        });
+
         this.insertTextEl.on('click', (event: JQueryEventObject) => {
             this._mode = Mode.TEXT;
             $('.tool-btn').removeClass('active');
@@ -517,12 +541,29 @@ class ControlPanel {
             generator.generate();
         });
 
+        this.saveEl.on('click', (event: JQueryEventObject) => {
+            
+
+            var toSave = JSON.stringify(this.app.timeline.layers);
+
+            if (this.app.timeline.layers.length > 0) {
+                var blob = new Blob([toSave], { type: "application/json;charset=utf-8" });
+                var now: Date = new Date();
+                var datetime: string = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                datetime += '_' + now.getHours() + '.' + now.getMinutes();
+
+                saveAs(blob, "animation_" + datetime + ".json");   
+            }
+        });
+
         $(document).ready(() => {
             this.selectToolEl.trigger('click');
+            this.displayMainPanel(true, 'bezier');
             this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
             this.renderWrap(this.ctx);
             this.controlPanelEl.perfectScrollbar();
             this.app.workspace.setBezier(this.renderWrap(this.ctx));
+            this.displayMainPanel(false, 'bezier');
 
             $('.rotate-slider').slider({
                 min: -180,
@@ -685,6 +726,23 @@ class ControlPanel {
     updateTransformOrigin(top: number, left: number) {
         this.transformOriginXEl.val(top.toString());
         this.transformOriginYEl.val(left.toString());
+    }
+
+    displayMainPanel(visible: boolean, type: string) {
+        var object: JQuery;
+        if (type === 'bezier') {
+            object = this.curve;
+        }
+
+        if (visible) {
+            this.mainPanel.show();
+            $('.clearfix').show();
+            $('.clearfix').css({ 'margin-top': this.mainPanel.height() });
+        } else {
+            this.mainPanel.hide();
+            $('.clearfix').hide();
+        }
+
     }
 
     /*get Mode (){

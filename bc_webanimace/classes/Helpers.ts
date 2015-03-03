@@ -4,6 +4,14 @@
     IMAGE,
     TEXT,
     SVG,
+    LOAD,
+}
+
+enum Type {
+    DIV,
+    TEXT,
+    SVG,
+    IMAGE
 }
 
 enum Animation_playing {

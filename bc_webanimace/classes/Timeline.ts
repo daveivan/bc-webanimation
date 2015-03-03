@@ -19,13 +19,15 @@ class Timeline
     playMode: Animation_playing = Animation_playing.STOP;
 
     private _repeat: boolean = false;
+    private absoluteMax: number = 0;
 
     private app: Application;
     start;
     stop;
 
     deleteLayerEl: JQuery = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
-    repeatEl: JQuery = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>')
+    repeatEl: JQuery = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>');
+    repeatIconEl: JQuery = $('<div>').addClass('repeat-icon').html('<i class="fa fa-undo"></i>');
     deleteKeyframeEl: JQuery = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
     layersEl: JQuery = $('<div id="layers"></div>');
     timelineHeadEl: JQuery = $('<div class="layers-head"></div>');
@@ -73,15 +75,14 @@ class Timeline
 
         this.repeatEl.on('change', (event: JQueryEventObject) => {
             this._repeat = this.repeatEl.find('input').is(':checked');
+            this.renderAnimationRange();
         });
 
         this.playEl.on('click', (event: JQueryEventObject) => {
             this.playMode = Animation_playing.PLAY;
             this.showPause();
             this.runTimeline();
-            console.log('play');
             var int = this.miliSecPerFrame / (this.keyframeWidth / 2);
-            console.log(int);
             /*clearTimeout(this.playInterval);*/
             /*this.playInterval = setInterval(() => {
                 console.log((new Date()).getMilliseconds());
@@ -98,7 +99,6 @@ class Timeline
             $('tr.first').removeClass('to-background');
             cancelAnimationFrame(this.playInterval);
             this.stop = new Date();
-            console.log(this.stop - this.start);
             this.pointerPosition = 0;
             this.pointerEl.css('left', this.pointerPosition - 1);
             this.app.workspace.transformShapes();
@@ -252,18 +252,55 @@ class Timeline
         this.keyframesTableEl.find('tbody').append(trEl);
     }
 
-    renderKeyframes(id: number) {
+    renderAnimationRange() {
+        this.keyframesTableEl.find('.range').remove();
+        if (this.repeat) {
+            //if repeat animation, find absolute maximum
+            var absMax: number = 0;
+            var arrayMax = Function.prototype.apply.bind(Math.max, null);
+            this.layers.forEach((item: Layer, index: number) => {
+                var tmp: number = arrayMax(item.timestamps);
+                if (tmp > absMax) absMax = tmp;
+            });
+            this.layers.forEach((item: Layer, index: number) => {
+                item.sortKeyframes();
+                var keyframes: Array<Keyframe> = item.getAllKeyframes();
+                if (keyframes.length > 1) {
+                    var minValue: number = keyframes[0].timestamp, maxValue: number = keyframes[0].timestamp;
+
+                    keyframes.forEach((keyframe: Keyframe, i: number) => {
+                        if (keyframe.timestamp < minValue)
+                            minValue = keyframe.timestamp;
+                        if (keyframe.timestamp > maxValue)
+                            maxValue = keyframe.timestamp;
+                    });
+
+                    if (maxValue != absMax) {
+                        var keyframesTdEl: JQuery = this.keyframesTableEl.find('tbody tr' + '[data-id="' + item.id + '"] > .keyframes-list');
+                        keyframesTdEl.prepend($('<div>').addClass('range').css({
+                            'left': this.milisecToPx(minValue),
+                            'width': this.milisecToPx(absMax - minValue) + 3,
+                        }));
+                    }
+                }
+            });
+
+            $('tr.first').append(this.repeatIconEl);
+            this.repeatIconEl.css({ 'left': this.milisecToPx(absMax) - 5 });
+
+        } else {
+            this.repeatIconEl.remove();
+        }
+    }
+
+    renderKeyframes(id: number, isAll: boolean = false) {
         var rowEl: JQuery = this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]');
         rowEl.find('td.keyframes-list').remove();
-        rowEl.find('.range').remove();
         var keyframesTdEl: JQuery = $('<td>').addClass('keyframes-list');
 
         this.getLayer(id).sortKeyframes();
         var keyframes: Array<Keyframe> = this.getLayer(id).getAllKeyframes();
         if (keyframes.length > 1) {
-
-            var minValue: number = keyframes[0].timestamp, maxValue: number = keyframes[0].timestamp;
-
             keyframes.forEach((keyframe: Keyframe, index: number) => {
                 keyframesTdEl.append($('<div>').addClass('keyframe').attr('data-layer', id).attr('data-index', index).css({
                     'left': this.milisecToPx(keyframe.timestamp) - 5,
@@ -275,18 +312,12 @@ class Timeline
                         'width': this.milisecToPx(keyframes[index+1].timestamp - keyframe.timestamp) - 10,
                     }));   
                 }
-                if (keyframe.timestamp < minValue)
-                    minValue = keyframe.timestamp;
-                if (keyframe.timestamp > maxValue)
-                    maxValue = keyframe.timestamp;
             }); 
-
-            keyframesTdEl.append($('<div>').addClass('range').css({
-                'left': this.milisecToPx(minValue),
-                'width': this.milisecToPx(maxValue - minValue),
-            }));
             
             rowEl.prepend(keyframesTdEl);  
+        }
+        if (!isAll) {
+            this.renderAnimationRange();   
         }
 
         $('.keyframe').draggable({
@@ -301,7 +332,6 @@ class Timeline
 
                 this.getLayer(layerID).updatePosition(keyframeID, ms);
 
-                console.log(this.getLayer(layerID).timestamps);
                 this.renderKeyframes(layerID);
             },
             drag: (event, ui) => {
@@ -335,10 +365,12 @@ class Timeline
                 //and render frames fot this layer
                 this.renderRow(item.id);
                 //render keyframes
-                this.renderKeyframes(item.id);
+                this.renderKeyframes(item.id, true);
                 isEmpty = false;
             }
         });
+
+        this.renderAnimationRange();
 
         //if array layers is empty, insert default layer
         if (this.layers.length == 0 || isEmpty) {
@@ -512,7 +544,6 @@ class Timeline
         
         order.forEach((value: string, index: number) => {
             var layer: Layer = this.layers[parseInt(value)];
-            console.log(parseInt(value));
             tmpLayers.push(layer);
             //TODO - update z-index podle poradi (brat v potaz keyframe nebo aktualizace do global shape?)
             /*var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
@@ -604,6 +635,7 @@ class Timeline
     }
 
     private onClickTable(e: JQueryEventObject) {
+        this.app.controlPanel.displayMainPanel(false, 'bezier');
         if (!$(e.target).hasClass('pointer')) {
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
             this.keyframesTableEl.find('.timing-function').removeClass('selected');
@@ -666,7 +698,7 @@ class Timeline
                 });
                 //for check
 
-                this.renderKeyframes(id);   
+                this.renderKeyframes(id); 
             }
         }
     }
@@ -705,11 +737,9 @@ class Timeline
     }
 
     buildBreadcrumb(scope: number) {
-        console.log('building breadcrumb');
         $('.breadcrumb').remove();
         var container: JQuery = $('<div>').addClass('breadcrumb');
         var currentLayer: Layer = this.getLayer(scope);
-        console.log(currentLayer);
         if (currentLayer) {
             container.append($('<span>').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));   
             this.getParent(currentLayer.parent, container);

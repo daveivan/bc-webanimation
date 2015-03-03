@@ -403,9 +403,10 @@ td.keyframes-list {
     height: 17px;
     top: 3px;
     position: absolute;
-    background-color: #b4cde4;
+    background-color: #c3c3c3;
     opacity: 0.8;
-    z-index: -1;
+    z-index: 0;
+    border-right: 6px solid #727373;
 }
 
 #top-container {
@@ -628,7 +629,7 @@ text-align: center;
 }
 
 .tool-btn.active {
-    background-color: #a4a5a5;
+    background-color: #b4cde4;
 }
 
 .generate-code {
@@ -1113,7 +1114,7 @@ a.run-preview:hover {
 -moz-box-shadow:    1px 1px 6px 0px rgba(50, 50, 50, 0.42);
 box-shadow:         1px 1px 6px 0px rgba(50, 50, 50, 0.42);
     color: #ffffff;
-    font-size: 12px;
+    font-size: 11px;
     z-index: 9999;
     -webkit-border-radius: 5px;
 -moz-border-radius: 5px;
@@ -1141,7 +1142,7 @@ border-radius: 5px;
 .context-menu ul li a {
     display: inline-block;
     width: 100%;
-    padding: 7px 10px 7px 10px;
+    padding: 5px 10px 5px 10px;
     color: #fff;
 }
 
@@ -1156,6 +1157,7 @@ border-radius: 5px;
 
 a.menu-item.disabled {
     color: #6c6c6c;
+    cursor: default;
 }
 
 a.menu-item.disabled:hover {
@@ -1191,4 +1193,82 @@ a.menu-item.disabled:hover {
   background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
   background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
   text-decoration: none;
+}
+
+.repeat-icon {
+    position: absolute;
+    z-index: 2;
+    top: 5px;
+}
+
+.main-panel {
+    min-height: 150px;
+    background-color: #bfc0c0;
+    z-index: 20;
+    position: fixed;
+    width: 250px;
+    border-right: 5px solid #a0a1a1;
+}
+
+.main-panel .control-item {
+    border: none;
+    margin: 10px;
+    padding-bottom: 0px;
+    margin-bottom: 5px;
+    width: 215px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #323232;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 1);   
+}
+
+.main-panel .control-item h2 {
+    color: #323232;
+    margin-bottom: 5px;  
+}
+
+.deliminer {
+    width: 100%;
+    height: 5px;
+    background-color: #a0a1a1;
+}
+
+.load-area {
+    border: 5px dashed #d8d8d8;
+    width: 500px;
+    height: 200px;
+    margin: 0 auto;
+    margin-top: 4em;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.load-area.over {
+    z-index: 10;
+}
+
+.load-area p{
+    color: #d8d8d8;
+    font-size: 20px;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 3em;
+    cursor: default;
+}
+
+.load-area p.perex {
+    margin: 0;
+    font-size: 14px;
+    text-align: center;
+}
+
+.load-area input[type="file"] {
+    width: 200px;
+}
+
+.load-area.over {
+    border: 5px dashed #c3c3c3;
+}
+
+.load-area.over p {
+    color: #c3c3c3;
 }

@@ -8,9 +8,10 @@
     private _idEl: string;
     private _globalShape: IShape;
     private _parent: number = null;
+    private _type: Type = null;
     nesting: number = 0;
 
-    constructor(name: string, fn: Bezier_points, shape: IShape = null) {
+    constructor(name: string, fn: Bezier_points, type: Type, shape: IShape = null) {
         this.name = name;
         this.id = ++Layer.counter;
         this._keyframes = new Array<Keyframe>();
@@ -22,6 +23,7 @@
 
         this.idEl = null;
         this.globalShape = shape;
+        this._type = type;
     }
 
     get order(): number {
@@ -177,15 +179,38 @@
                 },
                 //zindex: rng['l'].shape.parameters.zindex,
                 zindex: this.globalShape.parameters.zindex,
+                relativeSize: {
+                    width: this.computeAttr(rng['l'].shape.parameters.relativeSize.width, rng['r'].shape.parameters.relativeSize.width, bezier(p)),
+                    height: this.computeAttr(rng['l'].shape.parameters.relativeSize.height, rng['r'].shape.parameters.relativeSize.height, bezier(p)),
+                },
+                relativePosition: {
+                    top: this.computeAttr(rng['l'].shape.parameters.relativePosition.top, rng['r'].shape.parameters.relativePosition.top, bezier(p)),
+                    left: this.computeAttr(rng['l'].shape.parameters.relativePosition.left, rng['r'].shape.parameters.relativePosition.left, bezier(p)),
+                },
+            }
+            shape.css("visibility", "visible");  
+        } else {
+            if (this._keyframes.length == 1) {
+                shape.css("visibility", "visible");  
+            } else {
+                //shape.hide(); 
+                shape.css("visibility", "hidden");  
             }
         }
 
         //set new attributes to object
+        var parentWidth: number = shape.parent().width();
+        var parentHeight: number = shape.parent().height();
+
         shape.css({
-            'top': params.top,
-            'left': params.left,
-            'width': params.width,
-            'height': params.height,
+            /*'top': (params.top / parentHeight) * 100 + '%',
+            'left': (params.left / parentWidth) * 100 + '%',
+            'width': (params.width / parentWidth) * 100 + '%',
+            'height': (params.height / parentHeight) * 100 + '%',*/
+            'left': params.relativePosition.left + '%',
+            'top': params.relativePosition.top + '%',
+            'width': params.relativeSize.width + '%',
+            'height': params.relativeSize.height + '%',
             'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
             'border': params.border,
             'z-index': params.zindex,
@@ -194,17 +219,32 @@
             'border-top-right-radius': params.borderRadius[1],
             'border-bottom-right-radius': params.borderRadius[2],
             'border-bottom-left-radius': params.borderRadius[3],
+            /*'border-top-left-radius': (params.borderRadius[0] / rng['r'].shape.parameters.width) * 100 + '%',
+            'border-top-right-radius': (params.borderRadius[1] / rng['r'].shape.parameters.width) * 100 + '%',
+            'border-bottom-right-radius': (params.borderRadius[2] / rng['r'].shape.parameters.width) * 100 + '%',
+            'border-bottom-left-radius': (params.borderRadius[3] / rng['r'].shape.parameters.width) * 100 + '%',*/
             'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
         });
 
+        /*helper.css({
+            'top': ((params.top - 1) / parentHeight) * 100 + '%',
+            'left': ((params.left - 1) / parentWidth) * 100 + '%',
+            'width': ((params.width + 2) / parentWidth) * 100 + '%',
+            'height': ((params.height + 2) / parentHeight) * 100 + '%',
+            'z-index': helper.css('z-index'),
+        });*/
         helper.css({
-            'top': params.top - 1,
-            'left': params.left - 1,
-            'width': params.width + 2,
-            'height': params.height + 2,
+            'left': params.relativePosition.left + '%',
+            'top': params.relativePosition.top + '%',
+            'width': params.relativeSize.width + '%',
+            'height': params.relativeSize.height + '%',
             'z-index': helper.css('z-index'),
         });
+        helper.css("left", "-=1");
+        helper.css("top", "-=1");
+        helper.css("width", "+=2");
+        helper.css("height", "+=2");
 
         if (this.idEl != null) {
             shape.attr('id', this.idEl);
@@ -284,14 +324,18 @@
         var cssObject: any = {
             'name': '.' + nameElement,
             'position': 'absolute',
-            'width': (p.width / workspaceSize.width) * 100 + '%',
+            /*'width': (p.width / workspaceSize.width) * 100 + '%',
             'height': (p.height / workspaceSize.height) * 100 + '%',
             'top': (p.top / workspaceSize.height) * 100 + '%',
-            'left': (p.left / workspaceSize.width) * 100 + '%',
+            'left': (p.left / workspaceSize.width) * 100 + '%',*/
+            'width': p.relativeSize.width + '%',
+            'height': p.relativeSize.height + '%',
+            'top': p.relativePosition.top + '%',
+            'left': p.relativePosition.left + '%',
             'background': 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')',
             //'z-index': p.zindex,
             'z-index': this.globalShape.parameters.zindex,
-        };
+    };
 
         if (p.opacity != 1) {
             cssObject['opacity'] = p.opacity;
@@ -301,14 +345,18 @@
         (p.borderRadius[0] == p.borderRadius[2]) &&
         (p.borderRadius[0] == p.borderRadius[3])) {
             if (p.borderRadius[0] != 0) {
-                //cssObject['border-radius'] = p.borderRadius[0] + 'px';
-                cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+                //cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
             }
         } else {
-            cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+            /*cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
             cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
             cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
-            cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';
+            cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';*/
+            cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
+            cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
+            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
+            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
         }
 
         if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0) {
@@ -370,13 +418,17 @@
         var p: Parameters = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
         var cssObject = {};
 
-        if (change.width) cssObject['width'] = (p.width / workspaceSize.width) * 100 + '%';
+        /*if (change.width) cssObject['width'] = (p.width / workspaceSize.width) * 100 + '%';
         if (change.height) cssObject['height'] = (p.height / workspaceSize.height) * 100 + '%';
         if (change.top) cssObject['top'] = (p.top / workspaceSize.height) * 100 + '%';
-        if (change.left) cssObject['left'] = (p.left / workspaceSize.width) * 100 + '%';
+        if (change.left) cssObject['left'] = (p.left / workspaceSize.width) * 100 + '%';*/
+        if (change.width) cssObject['width'] = p.relativeSize.width + '%';
+        if (change.height) cssObject['height'] = p.relativeSize.height + '%';
+        if (change.top) cssObject['top'] = p.relativePosition.top + '%';
+        if (change.left) cssObject['left'] = p.relativePosition.left + '%';
         if (change.bg) cssObject['background'] = 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')';
         if (change.opacity) cssObject['opacity'] = p.opacity;
-        if (change.radius) {
+        /*if (change.radius) {
             if ((p.borderRadius[0] == p.borderRadius[1]) &&
             (p.borderRadius[0] == p.borderRadius[2]) &&
             (p.borderRadius[0] == p.borderRadius[3])) {
@@ -386,6 +438,18 @@
                 cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
                 cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
                 cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';              
+            }
+        }*/
+        if (change.radius) {
+            if ((p.borderRadius[0] == p.borderRadius[1]) &&
+            (p.borderRadius[0] == p.borderRadius[2]) &&
+            (p.borderRadius[0] == p.borderRadius[3])) {
+                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+            } else {
+                cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
+                cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
+                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
+                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';        
             }
         }
         if (change.rotate && change.skew) {
@@ -400,7 +464,7 @@
             if (change.origin) cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
 
-
+        cssObject["visibility"] = 'visible';
         return cssObject;
     }
 
@@ -422,11 +486,17 @@
         }
         if (keyframe != null) {
             var params: Parameters = keyframe.shape.parameters;
+
+            var relativeTop: number = (params.top / container.height()) * 100;
+            var relativeLeft: number = (params.left / container.width()) * 100;
+            var relativeWidth: number = (params.width / container.width()) * 100;
+            var relativeHeight: number = (params.height / container.height()) * 100;
+
             var css = {
-                'top': params.top,
-                'left': params.left,
-                'width': params.width,
-                'height': params.height,
+                'top': relativeTop + '%',
+                'left': relativeLeft + '%',
+                'width': relativeWidth + '%',
+                'height': relativeHeight + '%',
                 'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.a + ',' + params.background.a + ')',
                 'border': params.border,
                 //'z-index': params.zindex,
@@ -461,10 +531,10 @@
                     var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + this.name + '</p>');
                 }
                 helper.css({
-                    'top': params.top - 1,
-                    'left': params.left - 1,
-                    'width': params.width + 2,
-                    'height': params.height + 2,
+                    'top': ((params.top-1) / container.height()) * 100 + '%',
+                    'left': ((params.left - 1) / container.width()) * 100 + '%',
+                    'width': ((params.width + 2) / container.width()) * 100 + '%',
+                    'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
                 });

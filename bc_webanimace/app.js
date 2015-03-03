@@ -1,8 +1,9 @@
 ﻿var Layer = (function () {
-    function Layer(name, fn, shape) {
+    function Layer(name, fn, type, shape) {
         if (typeof shape === "undefined") { shape = null; }
         this._order = 0;
         this._parent = null;
+        this._type = null;
         this.nesting = 0;
         this.name = name;
         this.id = ++Layer.counter;
@@ -15,6 +16,7 @@
 
         this.idEl = null;
         this.globalShape = shape;
+        this._type = type;
     }
     Object.defineProperty(Layer.prototype, "order", {
         get: function () {
@@ -194,16 +196,39 @@
                     y: this.computeAttr(rng['l'].shape.parameters.origin.y, rng['r'].shape.parameters.origin.y, bezier(p))
                 },
                 //zindex: rng['l'].shape.parameters.zindex,
-                zindex: this.globalShape.parameters.zindex
+                zindex: this.globalShape.parameters.zindex,
+                relativeSize: {
+                    width: this.computeAttr(rng['l'].shape.parameters.relativeSize.width, rng['r'].shape.parameters.relativeSize.width, bezier(p)),
+                    height: this.computeAttr(rng['l'].shape.parameters.relativeSize.height, rng['r'].shape.parameters.relativeSize.height, bezier(p))
+                },
+                relativePosition: {
+                    top: this.computeAttr(rng['l'].shape.parameters.relativePosition.top, rng['r'].shape.parameters.relativePosition.top, bezier(p)),
+                    left: this.computeAttr(rng['l'].shape.parameters.relativePosition.left, rng['r'].shape.parameters.relativePosition.left, bezier(p))
+                }
             };
+            shape.css("visibility", "visible");
+        } else {
+            if (this._keyframes.length == 1) {
+                shape.css("visibility", "visible");
+            } else {
+                //shape.hide();
+                shape.css("visibility", "hidden");
+            }
         }
 
         //set new attributes to object
+        var parentWidth = shape.parent().width();
+        var parentHeight = shape.parent().height();
+
         shape.css({
-            'top': params.top,
-            'left': params.left,
-            'width': params.width,
-            'height': params.height,
+            /*'top': (params.top / parentHeight) * 100 + '%',
+            'left': (params.left / parentWidth) * 100 + '%',
+            'width': (params.width / parentWidth) * 100 + '%',
+            'height': (params.height / parentHeight) * 100 + '%',*/
+            'left': params.relativePosition.left + '%',
+            'top': params.relativePosition.top + '%',
+            'width': params.relativeSize.width + '%',
+            'height': params.relativeSize.height + '%',
             'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
             'border': params.border,
             'z-index': params.zindex,
@@ -212,17 +237,32 @@
             'border-top-right-radius': params.borderRadius[1],
             'border-bottom-right-radius': params.borderRadius[2],
             'border-bottom-left-radius': params.borderRadius[3],
+            /*'border-top-left-radius': (params.borderRadius[0] / rng['r'].shape.parameters.width) * 100 + '%',
+            'border-top-right-radius': (params.borderRadius[1] / rng['r'].shape.parameters.width) * 100 + '%',
+            'border-bottom-right-radius': (params.borderRadius[2] / rng['r'].shape.parameters.width) * 100 + '%',
+            'border-bottom-left-radius': (params.borderRadius[3] / rng['r'].shape.parameters.width) * 100 + '%',*/
             'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
         });
 
+        /*helper.css({
+        'top': ((params.top - 1) / parentHeight) * 100 + '%',
+        'left': ((params.left - 1) / parentWidth) * 100 + '%',
+        'width': ((params.width + 2) / parentWidth) * 100 + '%',
+        'height': ((params.height + 2) / parentHeight) * 100 + '%',
+        'z-index': helper.css('z-index'),
+        });*/
         helper.css({
-            'top': params.top - 1,
-            'left': params.left - 1,
-            'width': params.width + 2,
-            'height': params.height + 2,
+            'left': params.relativePosition.left + '%',
+            'top': params.relativePosition.top + '%',
+            'width': params.relativeSize.width + '%',
+            'height': params.relativeSize.height + '%',
             'z-index': helper.css('z-index')
         });
+        helper.css("left", "-=1");
+        helper.css("top", "-=1");
+        helper.css("width", "+=2");
+        helper.css("height", "+=2");
 
         if (this.idEl != null) {
             shape.attr('id', this.idEl);
@@ -301,10 +341,14 @@
         var cssObject = {
             'name': '.' + nameElement,
             'position': 'absolute',
-            'width': (p.width / workspaceSize.width) * 100 + '%',
+            /*'width': (p.width / workspaceSize.width) * 100 + '%',
             'height': (p.height / workspaceSize.height) * 100 + '%',
             'top': (p.top / workspaceSize.height) * 100 + '%',
-            'left': (p.left / workspaceSize.width) * 100 + '%',
+            'left': (p.left / workspaceSize.width) * 100 + '%',*/
+            'width': p.relativeSize.width + '%',
+            'height': p.relativeSize.height + '%',
+            'top': p.relativePosition.top + '%',
+            'left': p.relativePosition.left + '%',
             'background': 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')',
             //'z-index': p.zindex,
             'z-index': this.globalShape.parameters.zindex
@@ -316,14 +360,18 @@
 
         if ((p.borderRadius[0] == p.borderRadius[1]) && (p.borderRadius[0] == p.borderRadius[2]) && (p.borderRadius[0] == p.borderRadius[3])) {
             if (p.borderRadius[0] != 0) {
-                //cssObject['border-radius'] = p.borderRadius[0] + 'px';
-                cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+                cssObject['border-radius'] = p.borderRadius[0] + 'px';
+                //cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
             }
         } else {
-            cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+            /*cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
             cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
             cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
-            cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';
+            cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';*/
+            cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
+            cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
+            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
+            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
         }
 
         if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0) {
@@ -405,26 +453,43 @@
         var p = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
         var cssObject = {};
 
+        /*if (change.width) cssObject['width'] = (p.width / workspaceSize.width) * 100 + '%';
+        if (change.height) cssObject['height'] = (p.height / workspaceSize.height) * 100 + '%';
+        if (change.top) cssObject['top'] = (p.top / workspaceSize.height) * 100 + '%';
+        if (change.left) cssObject['left'] = (p.left / workspaceSize.width) * 100 + '%';*/
         if (change.width)
-            cssObject['width'] = (p.width / workspaceSize.width) * 100 + '%';
+            cssObject['width'] = p.relativeSize.width + '%';
         if (change.height)
-            cssObject['height'] = (p.height / workspaceSize.height) * 100 + '%';
+            cssObject['height'] = p.relativeSize.height + '%';
         if (change.top)
-            cssObject['top'] = (p.top / workspaceSize.height) * 100 + '%';
+            cssObject['top'] = p.relativePosition.top + '%';
         if (change.left)
-            cssObject['left'] = (p.left / workspaceSize.width) * 100 + '%';
+            cssObject['left'] = p.relativePosition.left + '%';
         if (change.bg)
             cssObject['background'] = 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')';
         if (change.opacity)
             cssObject['opacity'] = p.opacity;
+
+        /*if (change.radius) {
+        if ((p.borderRadius[0] == p.borderRadius[1]) &&
+        (p.borderRadius[0] == p.borderRadius[2]) &&
+        (p.borderRadius[0] == p.borderRadius[3])) {
+        cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+        } else {
+        cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+        cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
+        cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
+        cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';
+        }
+        }*/
         if (change.radius) {
             if ((p.borderRadius[0] == p.borderRadius[1]) && (p.borderRadius[0] == p.borderRadius[2]) && (p.borderRadius[0] == p.borderRadius[3])) {
-                cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+                cssObject['border-radius'] = p.borderRadius[0] + 'px';
             } else {
-                cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
-                cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
-                cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
-                cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';
+                cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
+                cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
+                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
+                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
             }
         }
         if (change.rotate && change.skew) {
@@ -440,6 +505,7 @@
                 cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
 
+        cssObject["visibility"] = 'visible';
         return cssObject;
     };
 
@@ -461,11 +527,17 @@
         }
         if (keyframe != null) {
             var params = keyframe.shape.parameters;
+
+            var relativeTop = (params.top / container.height()) * 100;
+            var relativeLeft = (params.left / container.width()) * 100;
+            var relativeWidth = (params.width / container.width()) * 100;
+            var relativeHeight = (params.height / container.height()) * 100;
+
             var css = {
-                'top': params.top,
-                'left': params.left,
-                'width': params.width,
-                'height': params.height,
+                'top': relativeTop + '%',
+                'left': relativeLeft + '%',
+                'width': relativeWidth + '%',
+                'height': relativeHeight + '%',
                 'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.a + ',' + params.background.a + ')',
                 'border': params.border,
                 //'z-index': params.zindex,
@@ -500,10 +572,10 @@
                     var helpername = $('<div>').addClass('helpername').html('<p>' + this.name + '</p>');
                 }
                 helper.css({
-                    'top': params.top - 1,
-                    'left': params.left - 1,
-                    'width': params.width + 2,
-                    'height': params.height + 2,
+                    'top': ((params.top - 1) / container.height()) * 100 + '%',
+                    'left': ((params.left - 1) / container.width()) * 100 + '%',
+                    'width': ((params.width + 2) / container.width()) * 100 + '%',
+                    'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000
                 });
@@ -542,8 +614,10 @@ var Timeline = (function () {
         this.groupKeyframes = 5;
         this.playMode = 1 /* STOP */;
         this._repeat = false;
+        this.absoluteMax = 0;
         this.deleteLayerEl = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
         this.repeatEl = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>');
+        this.repeatIconEl = $('<div>').addClass('repeat-icon').html('<i class="fa fa-undo"></i>');
         this.deleteKeyframeEl = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
         this.layersEl = $('<div id="layers"></div>');
         this.timelineHeadEl = $('<div class="layers-head"></div>');
@@ -588,15 +662,14 @@ var Timeline = (function () {
 
         this.repeatEl.on('change', function (event) {
             _this._repeat = _this.repeatEl.find('input').is(':checked');
+            _this.renderAnimationRange();
         });
 
         this.playEl.on('click', function (event) {
             _this.playMode = 0 /* PLAY */;
             _this.showPause();
             _this.runTimeline();
-            console.log('play');
             var int = _this.miliSecPerFrame / (_this.keyframeWidth / 2);
-            console.log(int);
             /*clearTimeout(this.playInterval);*/
             /*this.playInterval = setInterval(() => {
             console.log((new Date()).getMilliseconds());
@@ -613,7 +686,6 @@ var Timeline = (function () {
             $('tr.first').removeClass('to-background');
             cancelAnimationFrame(_this.playInterval);
             _this.stop = new Date();
-            console.log(_this.stop - _this.start);
             _this.pointerPosition = 0;
             _this.pointerEl.css('left', _this.pointerPosition - 1);
             _this.app.workspace.transformShapes();
@@ -767,18 +839,58 @@ var Timeline = (function () {
         this.keyframesTableEl.find('tbody').append(trEl);
     };
 
-    Timeline.prototype.renderKeyframes = function (id) {
+    Timeline.prototype.renderAnimationRange = function () {
         var _this = this;
+        this.keyframesTableEl.find('.range').remove();
+        if (this.repeat) {
+            //if repeat animation, find absolute maximum
+            var absMax = 0;
+            var arrayMax = Function.prototype.apply.bind(Math.max, null);
+            this.layers.forEach(function (item, index) {
+                var tmp = arrayMax(item.timestamps);
+                if (tmp > absMax)
+                    absMax = tmp;
+            });
+            this.layers.forEach(function (item, index) {
+                item.sortKeyframes();
+                var keyframes = item.getAllKeyframes();
+                if (keyframes.length > 1) {
+                    var minValue = keyframes[0].timestamp, maxValue = keyframes[0].timestamp;
+
+                    keyframes.forEach(function (keyframe, i) {
+                        if (keyframe.timestamp < minValue)
+                            minValue = keyframe.timestamp;
+                        if (keyframe.timestamp > maxValue)
+                            maxValue = keyframe.timestamp;
+                    });
+
+                    if (maxValue != absMax) {
+                        var keyframesTdEl = _this.keyframesTableEl.find('tbody tr' + '[data-id="' + item.id + '"] > .keyframes-list');
+                        keyframesTdEl.prepend($('<div>').addClass('range').css({
+                            'left': _this.milisecToPx(minValue),
+                            'width': _this.milisecToPx(absMax - minValue) + 3
+                        }));
+                    }
+                }
+            });
+
+            $('tr.first').append(this.repeatIconEl);
+            this.repeatIconEl.css({ 'left': this.milisecToPx(absMax) - 5 });
+        } else {
+            this.repeatIconEl.remove();
+        }
+    };
+
+    Timeline.prototype.renderKeyframes = function (id, isAll) {
+        var _this = this;
+        if (typeof isAll === "undefined") { isAll = false; }
         var rowEl = this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]');
         rowEl.find('td.keyframes-list').remove();
-        rowEl.find('.range').remove();
         var keyframesTdEl = $('<td>').addClass('keyframes-list');
 
         this.getLayer(id).sortKeyframes();
         var keyframes = this.getLayer(id).getAllKeyframes();
         if (keyframes.length > 1) {
-            var minValue = keyframes[0].timestamp, maxValue = keyframes[0].timestamp;
-
             keyframes.forEach(function (keyframe, index) {
                 keyframesTdEl.append($('<div>').addClass('keyframe').attr('data-layer', id).attr('data-index', index).css({
                     'left': _this.milisecToPx(keyframe.timestamp) - 5
@@ -790,18 +902,12 @@ var Timeline = (function () {
                         'width': _this.milisecToPx(keyframes[index + 1].timestamp - keyframe.timestamp) - 10
                     }));
                 }
-                if (keyframe.timestamp < minValue)
-                    minValue = keyframe.timestamp;
-                if (keyframe.timestamp > maxValue)
-                    maxValue = keyframe.timestamp;
             });
 
-            keyframesTdEl.append($('<div>').addClass('range').css({
-                'left': this.milisecToPx(minValue),
-                'width': this.milisecToPx(maxValue - minValue)
-            }));
-
             rowEl.prepend(keyframesTdEl);
+        }
+        if (!isAll) {
+            this.renderAnimationRange();
         }
 
         $('.keyframe').draggable({
@@ -816,7 +922,6 @@ var Timeline = (function () {
 
                 _this.getLayer(layerID).updatePosition(keyframeID, ms);
 
-                console.log(_this.getLayer(layerID).timestamps);
                 _this.renderKeyframes(layerID);
             },
             drag: function (event, ui) {
@@ -853,10 +958,12 @@ var Timeline = (function () {
                 _this.renderRow(item.id);
 
                 //render keyframes
-                _this.renderKeyframes(item.id);
+                _this.renderKeyframes(item.id, true);
                 isEmpty = false;
             }
         });
+
+        this.renderAnimationRange();
 
         //if array layers is empty, insert default layer
         if (this.layers.length == 0 || isEmpty) {
@@ -1033,7 +1140,6 @@ var Timeline = (function () {
 
         order.forEach(function (value, index) {
             var layer = _this.layers[parseInt(value)];
-            console.log(parseInt(value));
             tmpLayers.push(layer);
 
             //TODO - update z-index podle poradi (brat v potaz keyframe nebo aktualizace do global shape?)
@@ -1128,6 +1234,7 @@ var Timeline = (function () {
     };
 
     Timeline.prototype.onClickTable = function (e) {
+        this.app.controlPanel.displayMainPanel(false, 'bezier');
         if (!$(e.target).hasClass('pointer')) {
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
             this.keyframesTableEl.find('.timing-function').removeClass('selected');
@@ -1235,11 +1342,9 @@ var Timeline = (function () {
     };
 
     Timeline.prototype.buildBreadcrumb = function (scope) {
-        console.log('building breadcrumb');
         $('.breadcrumb').remove();
         var container = $('<div>').addClass('breadcrumb');
         var currentLayer = this.getLayer(scope);
-        console.log(currentLayer);
         if (currentLayer) {
             container.append($('<span>').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));
             this.getParent(currentLayer.parent, container);
@@ -1300,9 +1405,19 @@ var Shape = (function () {
         this._parameters.left = pos.left;
     };
 
+    Shape.prototype.setRelativePosition = function (pos) {
+        this._parameters.relativePosition.top = pos.top;
+        this._parameters.relativePosition.left = pos.left;
+    };
+
     Shape.prototype.setDimensions = function (d) {
         this._parameters.width = d.width;
         this._parameters.height = d.height;
+    };
+
+    Shape.prototype.setRelativeDimensions = function (d) {
+        this._parameters.relativeSize.width = d.width;
+        this._parameters.relativeSize.height = d.height;
     };
 
     Shape.prototype.setBackground = function (c) {
@@ -1315,6 +1430,14 @@ var Shape = (function () {
 
     Shape.prototype.setX = function (x) {
         this._parameters.width = x;
+    };
+
+    Shape.prototype.setRelativeX = function (x) {
+        this._parameters.relativeSize.width = x;
+    };
+
+    Shape.prototype.setRelativeY = function (y) {
+        this._parameters.relativeSize.height = y;
     };
 
     Shape.prototype.setY = function (y) {
@@ -1373,6 +1496,7 @@ var Workspace = (function () {
         this.createdLayer = false;
         this._workspaceSize = { width: 800, height: 360 };
         this._scope = null;
+        this.movedLayer = null;
         this.workspaceOverlay = $('<div>').addClass('workspace-overlay');
         this.scopeOverlay = $('<div>').addClass('overlay-scope overlay-clickable');
         this.uploadArea = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
@@ -1380,15 +1504,22 @@ var Workspace = (function () {
         this.svgTextArea = $('<div>').addClass('svg-area');
         this.svgInsertBtn = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit');
         this.svgText = $('<textarea>');
+        this.loadArea = $('<div>').addClass('load-area').html('<p>Sem přetáhněte .json soubor s uloženými objekty</p>');
+        this.loadBtn = $('<input type="file"></input>').addClass('pick-json');
         this.contextMenuEl = $('<div>').addClass('context-menu');
         this.menuItemDelete = $('<a>').addClass('menu-item menu-delete').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat objekt');
         this.menuItemToBackground = $('<a>').addClass('menu-item menu-tobackground').attr('href', '#').html('<i class="fa fa-long-arrow-down"></i> Níže do pozadí');
         this.menuItemToForeground = $('<a>').addClass('menu-item menu-toforeground').attr('href', '#').html('<i class="fa fa-long-arrow-up"></i> Výše do popředí');
+        this.menuItemDuplicate = $('<a>').addClass('menu-item menu-duplicate').attr('href', '#').html('<i class="fa fa-files-o"></i> Duplikovat objekt');
+        this.menuItemMoveTo = $('<a>').addClass('menu-item menu-moveto').attr('href', '#').html('<i class="fa fa-file"></i> Přesunout do...');
+        this.menuItemMoveHere = $('<a>').addClass('menu-item menu-movehere').attr('href', '#').html('<i class="fa fa-file-o"></i> ...Přesunout tady');
+        this.menuItemMoveCancel = $('<a>').addClass('menu-item menu-movecancel').attr('href', '#').html('<i class="fa fa-times"></i> Zrušit přesun');
         this.app = app;
         this.workspaceContainer = workspaceContainer;
         this.workspaceContainerOriginal = workspaceContainer;
         this.workspaceWrapper = workspaceWrapper;
         this.uploadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.uploadBtn));
+        this.loadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.loadBtn));
         this.svgTextArea.append('Vložte XML kód');
         this.svgTextArea.append(this.svgText);
         this.svgTextArea.append(this.svgInsertBtn);
@@ -1448,6 +1579,10 @@ var Workspace = (function () {
             }*/
         });
 
+        this.workspaceContainer.on('contextmenu', function (e) {
+            //TODO - kontextova nabidka pro presun i na aktualni objekt
+        });
+
         this.workspaceWrapper.on('contextmenu', '.shape-helper', function (event) {
             console.log('contextmenu');
             _this.contextMenuEl.empty();
@@ -1473,12 +1608,29 @@ var Workspace = (function () {
                 _this.menuItemToForeground.removeClass('disabled');
             }
 
+            if (_this.movedLayer != null) {
+                _this.menuItemMoveHere.removeClass('disabled');
+                _this.menuItemMoveCancel.removeClass('disabled');
+            } else {
+                _this.menuItemMoveHere.addClass('disabled');
+                _this.menuItemMoveCancel.addClass('disabled');
+            }
+            if (_this.movedLayer != null && _this.movedLayer.id === parseInt($(event.target).closest('.shape-helper').data('id'))) {
+                _this.menuItemMoveHere.addClass('disabled');
+            }
+
             //context menu items
+            var targetID = $(event.target).closest('.shape-helper').data('id');
             _this.contextMenuEl.append('<ul></ul>');
-            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemToForeground.attr('data-id', $(event.target).data('id'))));
-            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemToBackground.attr('data-id', $(event.target).data('id'))));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemToForeground.attr('data-id', targetID)));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemToBackground.attr('data-id', targetID)));
             _this.contextMenuEl.find('ul').append($('<li class="separator"></li>'));
-            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemDelete.attr('data-id', $(event.target).data('id'))));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemMoveTo.attr('data-id', targetID)));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemMoveHere.attr('data-id', targetID)));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemMoveCancel.attr('data-id', targetID)));
+            _this.contextMenuEl.find('ul').append($('<li class="separator"></li>'));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemDuplicate.attr('data-id', targetID)));
+            _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemDelete.attr('data-id', targetID)));
 
             _this.contextMenuEl.appendTo(_this.workspaceContainer);
             _this.contextMenuEl.css({
@@ -1560,6 +1712,56 @@ var Workspace = (function () {
                 _this.app.timeline.selectLayer(id);
             });
 
+            _this.menuItemDuplicate.on('click', function (e) {
+                var l = _this.app.timeline.getLayer(parseInt($(e.target).data('id')));
+                if (l) {
+                    var idNewLayer = _this.makeCopy(l);
+                    _this.renderShapes();
+                    _this.transformShapes();
+                    _this.contextMenuEl.remove();
+                    _this.highlightShape([idNewLayer]);
+                }
+            });
+
+            _this.menuItemMoveTo.on('click', function (e) {
+                var l = _this.app.timeline.getLayer(parseInt($(e.target).data('id')));
+                if (l) {
+                    _this.movedLayer = l;
+                }
+                _this.contextMenuEl.remove();
+            });
+
+            _this.menuItemMoveCancel.on('click', function (e) {
+                if ($(e.target).hasClass('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                _this.movedLayer = null;
+                _this.contextMenuEl.remove();
+            });
+
+            _this.menuItemMoveHere.on('click', function (e) {
+                if ($(e.target).hasClass('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                var destID = parseInt($(e.target).data('id'));
+                var destLayer = _this.app.timeline.getLayer(destID);
+                if (_this.movedLayer) {
+                    _this.movedLayer.parent = destLayer.id;
+
+                    //this.movedLayer.nesting = (destLayer.nesting + 1);
+                    _this.updateNesting(_this.movedLayer);
+                }
+
+                _this.renderShapes();
+                _this.transformShapes();
+                _this.contextMenuEl.remove();
+                _this.movedLayer = null;
+                _this.highlightShape([destID]);
+            });
+
             event.preventDefault();
             return false;
         });
@@ -1585,6 +1787,7 @@ var Workspace = (function () {
                 $('.tool-btn').removeClass('active');
                 $('.tool-btn.select').addClass('active');
                 _this.onChangeMode();
+                _this.app.controlPanel.displayMainPanel(false, 'bezier');
             }
         });
 
@@ -1631,6 +1834,11 @@ var Workspace = (function () {
                 }
                 _this.setScope(scope);
             });
+
+            _this.workspaceWrapper.on('dblclick', '.overlay-clickable', function (e) {
+                var scopedLayer = _this.app.timeline.getLayer(_this._scope);
+                _this.setScope(scopedLayer.parent);
+            });
             /*$(document).on('mousedown', '.shape-helper', (e: JQueryEventObject) => {
             console.log('click helper');
             if (e.button == 2) {
@@ -1643,6 +1851,19 @@ var Workspace = (function () {
             });*/
         });
     }
+    Workspace.prototype.updateNesting = function (l) {
+        var _this = this;
+        var parentLayer = this.app.timeline.getLayer(l.parent);
+        if (parentLayer) {
+            l.nesting = (parentLayer.nesting + 1);
+        }
+        this.app.timeline.layers.forEach(function (layer, i) {
+            if (layer.parent == l.id) {
+                _this.updateNesting(layer);
+            }
+        });
+    };
+
     Workspace.prototype.onDrawSquare = function (e) {
         var _this = this;
         var new_object = $('<div>').addClass('shape-helper tmp-shape');
@@ -1686,11 +1907,20 @@ var Workspace = (function () {
             b: barva[2],
             a: barva[3]
         };
+        console.log('pozadovana sirka: ' + this.workspaceContainer.width());
         var params = {
             top: new_y,
             left: new_x,
             width: width,
             height: height,
+            relativePosition: {
+                top: (new_y / this.workspaceContainer.height()) * 100,
+                left: (new_x / this.workspaceContainer.width()) * 100
+            },
+            relativeSize: {
+                width: (width / this.workspaceContainer.width()) * 100,
+                height: (height / this.workspaceContainer.height()) * 100
+            },
             background: c,
             opacity: new_object.css('opacity'),
             zindex: this.app.timeline.layers.length,
@@ -1801,7 +2031,15 @@ var Workspace = (function () {
                         x: this.computeOpacity(interval['left'].shape.parameters.origin.x, interval['right'].shape.parameters.origin.x, bezier(p)),
                         y: this.computeOpacity(interval['left'].shape.parameters.origin.y, interval['right'].shape.parameters.origin.y, bezier(p))
                     },
-                    zindex: interval['left'].shape.parameters.zindex
+                    zindex: interval['left'].shape.parameters.zindex,
+                    relativePosition: {
+                        top: this.computeParameter(interval['left'].shape.parameters.relativePosition.top, interval['right'].shape.parameters.relativePosition.top, bezier(p)),
+                        left: this.computeParameter(interval['left'].shape.parameters.relativePosition.left, interval['right'].shape.parameters.relativePosition.left, bezier(p))
+                    },
+                    relativeSize: {
+                        width: this.computeParameter(interval['left'].shape.parameters.relativeSize.width, interval['right'].shape.parameters.relativeSize.width, bezier(p)),
+                        height: this.computeParameter(interval['left'].shape.parameters.relativeSize.height, interval['right'].shape.parameters.relativeSize.height, bezier(p))
+                    }
                 };
             }
 
@@ -1899,7 +2137,7 @@ var Workspace = (function () {
                 'height': '100%'
             }));
             this.workspaceContainer.closest('.square').css({
-                'border': '2px solid #f08080'
+                'outline': '2px solid #f08080'
             });
 
             this.workspaceContainer.parents('.square').addClass('scope');
@@ -2054,6 +2292,10 @@ var Workspace = (function () {
                         top: ui.position.top + 1,
                         left: ui.position.left + 1
                     });
+                    keyframe.shape.setRelativePosition({
+                        top: ((ui.position.top + 1) / _this.workspaceContainer.height()) * 100,
+                        left: ((ui.position.left + 1) / _this.workspaceContainer.width()) * 100
+                    });
                 }
 
                 _this.transformShapes();
@@ -2088,9 +2330,17 @@ var Workspace = (function () {
                         top: ui.position.top + 1,
                         left: ui.position.left + 1
                     });
+                    keyframe.shape.setRelativePosition({
+                        top: ((ui.position.top + 1) / _this.workspaceContainer.height()) * 100,
+                        left: ((ui.position.left + 1) / _this.workspaceContainer.width()) * 100
+                    });
                     keyframe.shape.setDimensions({
                         width: $(event.target).width(),
                         height: $(event.target).height()
+                    });
+                    keyframe.shape.setRelativeDimensions({
+                        width: (($(event.target).width()) / _this.workspaceContainer.width()) * 100,
+                        height: (($(event.target).height()) / _this.workspaceContainer.height()) * 100
                     });
                 }
 
@@ -2176,11 +2426,24 @@ var Workspace = (function () {
                 b: barva[2],
                 a: barva[3]
             };
+
+            //var topPx: number = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().top + 1;
+            //var leftPx: number = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1;
+            var topPx = shapeEl.position().top;
+            var leftPx = shapeEl.position().left;
             var params = {
-                top: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().top + 1,
-                left: this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1,
+                top: topPx,
+                left: leftPx,
                 width: shapeEl.width(),
                 height: shapeEl.height(),
+                relativePosition: {
+                    top: (topPx / shapeEl.parent().height() * 100),
+                    left: (leftPx / shapeEl.parent().width() * 100)
+                },
+                relativeSize: {
+                    width: (shapeEl.width() / shapeEl.parent().width() * 100),
+                    height: (shapeEl.height() / shapeEl.parent().height() * 100)
+                },
                 background: c,
                 opacity: parseFloat(shapeEl.css('opacity')),
                 zindex: parseInt(shapeEl.css('z-index')),
@@ -2223,6 +2486,8 @@ var Workspace = (function () {
                 var size = parseFloat(shapeEl.css('font-size'));
                 var font = shapeEl.css('font-family');
                 var shape = new TextField(params, shapeEl.html().toString(), color, size, font);
+            } else if (this.app.timeline.getLayer(id).globalShape instanceof Svg) {
+                var shape = new Svg(params, this.app.timeline.getLayer(id).globalShape.getSrc());
             } else {
                 var shape = new Rectangle(params);
             }
@@ -2356,8 +2621,10 @@ var Workspace = (function () {
             }
             if (axis === 'x') {
                 keyframe.shape.setX(dimension);
+                keyframe.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
             } else if (axis === 'y') {
                 keyframe.shape.setY(dimension);
+                keyframe.shape.setRelativeY((dimension / this.workspaceContainer.height()) * 100);
             }
 
             this.transformShapes();
@@ -2467,6 +2734,7 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.updateBezierCurve = function (layer) {
+        this.app.controlPanel.displayMainPanel(true, 'bezier');
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe) {
@@ -2476,6 +2744,7 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.updateBezierCurveByKeyframe = function (keyframe) {
+        this.app.controlPanel.displayMainPanel(true, 'bezier');
         if (keyframe) {
             this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
         }
@@ -2569,6 +2838,107 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.loadMode = function (active) {
+        var _this = this;
+        if (typeof active === "undefined") { active = true; }
+        if (active) {
+            this.workspaceOverlay.empty();
+            this.workspaceOverlay.append(this.loadArea);
+            this.workspaceWrapper.append(this.workspaceOverlay);
+            this.workspaceOverlay.css({
+                'height': this.workspaceWrapper.outerHeight(),
+                'width': this.workspaceWrapper.outerWidth()
+            });
+
+            //zpracovani souboru
+            $('.load-area > p').on('dragenter', function (event) {
+                console.log('vp');
+                $('.upload-area').addClass('over');
+            });
+
+            this.loadArea.on('dragenter', function (event) {
+                console.log('enter');
+                $(event.target).addClass('over');
+            });
+
+            this.loadArea.on('dragleave', function (event) {
+                $(event.target).removeClass('over');
+            });
+
+            this.loadArea.on('dragover', function (event) {
+                console.log('over');
+                event.preventDefault();
+            });
+
+            this.loadArea.on('drop', function (event) {
+                console.log('upload');
+                event.stopPropagation();
+                event.preventDefault();
+                var files = event.originalEvent.dataTransfer.files;
+                _this.uploadFile(files);
+            });
+
+            this.loadBtn.on('change', function (event) {
+                _this.uploadFile(event.target.files);
+            });
+        } else {
+            this.workspaceOverlay.remove();
+        }
+    };
+
+    Workspace.prototype.uploadFile = function (files) {
+        var _this = this;
+        var file = files[0];
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            if (file.name.split('.').pop() == 'json') {
+                _this.parseJson(e.target.result);
+            }
+            _this.loadBtn.val('');
+
+            _this.app.controlPanel.Mode = 0 /* SELECT */;
+            $('.tool-btn').removeClass('active');
+            $('.tool-btn.select').addClass('active');
+            _this.onChangeMode();
+        };
+
+        reader.readAsText(file);
+
+        this.insertMode(false);
+    };
+
+    Workspace.prototype.parseJson = function (data) {
+        var newLayers = new Array();
+        var maxCount = 0;
+
+        //parse fron JSON
+        var objLayers = JSON.parse(data);
+        objLayers.forEach(function (obj, i) {
+            if (obj._type == 0 /* DIV */) {
+                var newLayer = RectangleLayer.parseJson(obj);
+            } else if (obj._type == 1 /* TEXT */) {
+                var newLayer = TextLayer.parseJson(obj);
+            } else if (obj._type == 3 /* IMAGE */) {
+                var newLayer = ImageLayer.parseJson(obj);
+            } else if (obj._type == 2 /* SVG */) {
+                var newLayer = SvgLayer.parseJson(obj);
+            }
+
+            newLayers.push(newLayer);
+            if (maxCount < newLayer.id) {
+                maxCount = newLayer.id;
+            }
+        });
+
+        Layer.counter = maxCount;
+        this.app.timeline.layers = newLayers;
+        this.renderShapes();
+        this.app.timeline.renderLayers();
+        this.transformShapes();
+        this.highlightShape(null);
+    };
+
     Workspace.prototype.svgMode = function (active) {
         var _this = this;
         if (typeof active === "undefined") { active = true; }
@@ -2589,26 +2959,47 @@ var Workspace = (function () {
 
             this.svgInsertBtn.on('click', function (e) {
                 console.log('Inserting SVG');
-                var p = {
-                    top: 0,
-                    left: 0,
-                    width: 100,
-                    height: 100,
-                    background: { r: 255, g: 255, b: 255, a: 0 },
-                    opacity: 1,
-                    borderRadius: [0, 0, 0, 0],
-                    rotate: { x: 0, y: 0, z: 0 },
-                    skew: { x: 0, y: 0 },
-                    origin: { x: 50, y: 50 },
-                    zindex: _this.app.timeline.layers.length
-                };
 
                 var xmlString = _this.svgText.val();
                 var parser = new DOMParser();
                 var doc = parser.parseFromString(xmlString, "image/svg+xml");
-                if (_this.isParseError(doc)) {
-                } else {
-                    var svg = new Svg(p, doc);
+
+                if (!_this.isParseError(doc)) {
+                    var width = 150;
+                    var height = 150;
+
+                    for (var j = 0; j < doc.childNodes.length; j++) {
+                        var child = doc.childNodes[j];
+                        if (child.nodeName === 'svg' && child.attributes) {
+                            for (var i = 0; i < child.attributes.length; i++) {
+                                var attr = child.attributes[i];
+                                if (attr.name == 'viewBox') {
+                                    var view = attr.value.match(/-?[\d\.]+/g);
+                                    width = parseFloat(view[2]);
+                                    height = parseFloat(view[3]);
+                                }
+                            }
+                        }
+                    }
+
+                    var p = {
+                        top: 0,
+                        left: 0,
+                        width: width,
+                        height: height,
+                        relativeSize: { width: ((width / _this.workspaceContainer.width()) * 100), height: ((height / _this.workspaceContainer.height()) * 100) },
+                        relativePosition: { top: 0, left: 0 },
+                        background: { r: 255, g: 255, b: 255, a: 0 },
+                        opacity: 1,
+                        borderRadius: [0, 0, 0, 0],
+                        rotate: { x: 0, y: 0, z: 0 },
+                        skew: { x: 0, y: 0 },
+                        origin: { x: 50, y: 50 },
+                        zindex: _this.app.timeline.layers.length
+                    };
+
+                    //var svg: IShape = new Svg(p, doc);
+                    var svg = new Svg(p, xmlString);
                     var layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), svg);
                     var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
                     layer.parent = parent;
@@ -2683,6 +3074,83 @@ var Workspace = (function () {
 
     Workspace.prototype.uploadImage = function (files) {
         var _this = this;
+        var file = files[0];
+        if (file.type.match('image.*')) {
+            console.log('isImage');
+            var img = new Image();
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                img.src = e.target.result;
+
+                var canvas = document.createElement("canvas");
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+
+                var MAX_WIDTH = $('#workspace').width();
+                var MAX_HEIGHT = $('#workspace').height();
+                var width = img.width;
+                var height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                var dataurl = canvas.toDataURL("image/png");
+                console.log(dataurl);
+                var p = {
+                    top: 0,
+                    left: 0,
+                    width: width,
+                    height: height,
+                    relativeSize: { width: ((width / _this.workspaceContainer.width()) * 100), height: ((height / _this.workspaceContainer.height()) * 100) },
+                    relativePosition: { top: 0, left: 0 },
+                    background: { r: 255, g: 255, b: 255, a: 0 },
+                    opacity: 1,
+                    borderRadius: [0, 0, 0, 0],
+                    rotate: { x: 0, y: 0, z: 0 },
+                    skew: { x: 0, y: 0 },
+                    origin: { x: 50, y: 50 },
+                    zindex: _this.app.timeline.layers.length
+                };
+                var image = new Img(p, dataurl);
+                var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
+                var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
+                layer.parent = parent;
+                if (layer.parent) {
+                    layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
+                }
+                var idLayer = _this.app.timeline.addLayer(layer);
+
+                //this.renderShapes();
+                _this.renderSingleShape(idLayer);
+                _this.transformShapes();
+                _this.highlightShape([idLayer]);
+            };
+
+            reader.readAsDataURL(file);
+        }
+        this.uploadBtn.val('');
+
+        this.app.controlPanel.Mode = 0 /* SELECT */;
+        $('.tool-btn.select').addClass('active');
+        this.onChangeMode();
+        this.insertMode(false);
+    };
+
+    Workspace.prototype.uploadImageOld = function (files) {
+        var _this = this;
         var image = files[0];
         if (image.type.match('image.*')) {
             var reader = new FileReader();
@@ -2695,6 +3163,8 @@ var Workspace = (function () {
                             left: 0,
                             width: img.width,
                             height: img.height,
+                            relativeSize: { width: ((img.width / _this.workspaceContainer.width()) * 100), height: ((img.height / _this.workspaceContainer.height()) * 100) },
+                            relativePosition: { top: 0, left: 0 },
                             background: { r: 255, g: 255, b: 255, a: 0 },
                             opacity: 1,
                             borderRadius: [0, 0, 0, 0],
@@ -2738,11 +3208,19 @@ var Workspace = (function () {
     Workspace.prototype.onCreateText = function (e) {
         console.log('creating textfield');
 
+        var top = e.pageY - this.workspaceContainer.offset().top - 10;
+        var left = e.pageX - this.workspaceContainer.offset().left - 5;
+        var width = 150;
+        var height = 75;
+
+        //top: ((shape.parameters.top) / this.workspaceContainer.height()) * 100,
         var params = {
-            top: e.pageY - this.workspaceContainer.offset().top - 10,
-            left: e.pageX - this.workspaceContainer.offset().left - 5,
-            width: 150,
-            height: 75,
+            top: top,
+            left: left,
+            width: width,
+            height: height,
+            relativeSize: { width: ((width / this.workspaceContainer.width()) * 100), height: ((height / this.workspaceContainer.height()) * 100) },
+            relativePosition: { top: ((top / this.workspaceContainer.height()) * 100), left: ((left / this.workspaceContainer.width()) * 100) },
             background: { r: 255, g: 255, b: 255, a: 0 },
             opacity: 1,
             borderRadius: [0, 0, 0, 0],
@@ -2788,15 +3266,18 @@ var Workspace = (function () {
             $('.shape-helper').resizable('disable');
         }
 
-        if (mode == 2 /* IMAGE */ || mode == 4 /* SVG */) {
+        if (mode == 2 /* IMAGE */ || mode == 4 /* SVG */ || mode == 5 /* LOAD */) {
             if (mode == 2 /* IMAGE */) {
                 this.insertMode(true);
             } else if (mode == 4 /* SVG */) {
                 this.svgMode(true);
+            } else if (mode == 5 /* LOAD */) {
+                this.loadMode(true);
             }
         } else {
             this.insertMode(false);
             this.svgMode(false);
+            this.loadMode(false);
         }
 
         if (mode == 3 /* TEXT */) {
@@ -2835,7 +3316,6 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.setScope = function (id) {
-        var _this = this;
         this._scope = id;
         this.scopeOverlay.remove();
 
@@ -2844,11 +3324,6 @@ var Workspace = (function () {
                 'top': this.workspaceWrapper.scrollTop()
             });
             this.workspaceWrapper.prepend(this.scopeOverlay);
-
-            this.workspaceWrapper.on('dblclick', '.overlay-clickable', function (e) {
-                var scopedLayer = _this.app.timeline.getLayer(id);
-                _this.setScope(scopedLayer.parent);
-            });
 
             $('.workspace-wrapper').perfectScrollbar('destroy');
         } else {
@@ -2882,6 +3357,47 @@ var Workspace = (function () {
 
         return parsedDocument.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0;
     };
+
+    Workspace.prototype.makeCopy = function (l, idParent) {
+        if (typeof idParent === "undefined") { idParent = null; }
+        var shape = this.getCurrentShape(l.id);
+        if (l.parent == null) {
+            shape.setPosition({
+                top: shape.parameters.top + 50,
+                left: shape.parameters.left + 50
+            });
+            shape.setRelativePosition({
+                top: ((shape.parameters.top) / this.workspaceContainer.height()) * 100,
+                left: ((shape.parameters.left) / this.workspaceContainer.width()) * 100
+            });
+        }
+        if (shape instanceof Rectangle) {
+            var layer = new RectangleLayer(l.name + ' - kopie', this.getBezier(), shape);
+        } else if (shape instanceof TextField) {
+            var layer = new TextLayer(l.name + ' - kopie', this.getBezier(), shape);
+        } else if (shape instanceof Svg) {
+            var layer = new SvgLayer(l.name + ' - kopie', this.getBezier(), shape);
+        } else if (shape instanceof Img) {
+            var layer = new ImageLayer(l.name + ' - kopie', this.getBezier(), shape);
+        }
+        if (idParent == null) {
+            layer.parent = l.parent;
+        } else {
+            layer.parent = idParent;
+        }
+        if (layer.parent) {
+            layer.nesting = l.nesting;
+        }
+        var idLayer = this.app.timeline.addLayer(layer);
+
+        for (var i = this.app.timeline.layers.length - 1; i >= 0; i--) {
+            if (this.app.timeline.layers[i].parent == l.id) {
+                this.makeCopy(this.app.timeline.layers[i], idLayer);
+            }
+        }
+
+        return idLayer;
+    };
     return Workspace;
 })();
 ///<reference path="Workspace.ts" />
@@ -2902,10 +3418,13 @@ var ControlPanel = (function () {
         this.insertImageEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
         this.insertTextEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
         this.insertSVGEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-circle-o"></i>').attr('title', 'Vložit SVG');
+        this.saveEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip save').html('<i class="fa fa-floppy-o"></i>').attr('title', 'Uložit');
+        this.loadEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip load').html('<i class="fa fa-file-text-o"></i>').attr('title', 'Načíst ze souboru');
         this.controlPanelEl = $('<div>').addClass('control-panel');
         this.bgPickerEl = $('<input type="text" id="picker"></input>');
         this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
         this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
+        this.mainPanel = $('<div>').addClass('main-panel');
         this.itemControlEl = $('<div>').addClass('control-item');
         this.opacityEl = $('<input>').attr('id', 'opacity-input');
         this.opacitySliderEl = $('<div>').addClass('opacity-slider');
@@ -2944,6 +3463,9 @@ var ControlPanel = (function () {
         this.app = app;
         this.containerEl = container;
 
+        this.toolPanelEl.append(this.loadEl);
+        this.toolPanelEl.append(this.saveEl);
+        this.toolPanelEl.append($('<div>').addClass('deliminer'));
         this.toolPanelEl.append(this.selectToolEl);
         this.toolPanelEl.append(this.createDivToolEl);
         this.toolPanelEl.append(this.insertImageEl);
@@ -2951,6 +3473,9 @@ var ControlPanel = (function () {
         this.toolPanelEl.append(this.insertSVGEl);
         this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
+
+        this.controlPanelEl.append(this.mainPanel);
+        this.controlPanelEl.append($('<div>').addClass('clearfix'));
 
         //Workspace dimensions
         var workspaceXY = this.itemControlEl.clone();
@@ -2986,8 +3511,12 @@ var ControlPanel = (function () {
         this.graph.append(this.canvas);
         curve.append(this.graph);
         curve.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
-        this.controlPanelEl.append(curve);
+        this.curve = curve;
 
+        //this.displayMainPanel(true, 'bezier');
+        this.mainPanel.append(curve);
+
+        //this.controlPanelEl.append(curve);
         //background
         var newItem = this.itemControlEl.clone();
         newItem.html('<h2>Barva pozadí elementu</h2>');
@@ -3220,7 +3749,6 @@ var ControlPanel = (function () {
         });
 
         this.bgOpacityEl.on('change', function (e) {
-            console.log('alhpa');
             _this.bgOpacitySliderEl.slider('value', $(e.target).val());
             _this.app.workspace.setColor($.colpick.hexToRgb(_this.bgPickerEl.val()), parseFloat(_this.bgOpacityEl.val()));
         });
@@ -3277,7 +3805,6 @@ var ControlPanel = (function () {
         });
 
         this.transformOriginVisibleEl.on('change', function (event) {
-            console.log($(event.target).is(':checked'));
             if ($(event.target).is(':checked')) {
                 _this.isOriginVisible = true;
             } else {
@@ -3360,6 +3887,18 @@ var ControlPanel = (function () {
             _this.app.workspace.onChangeMode();
         });
 
+        this.loadEl.on('click', function (event) {
+            if ($(event.target).closest('a').hasClass('active')) {
+                $(event.target).closest('a').removeClass('active');
+                _this.selectToolEl.trigger('click');
+            } else {
+                _this._mode = 5 /* LOAD */;
+                $('.tool-btn').removeClass('active');
+                $(event.target).closest('a').addClass('active');
+            }
+            _this.app.workspace.onChangeMode();
+        });
+
         this.insertTextEl.on('click', function (event) {
             _this._mode = 3 /* TEXT */;
             $('.tool-btn').removeClass('active');
@@ -3385,12 +3924,27 @@ var ControlPanel = (function () {
             generator.generate();
         });
 
+        this.saveEl.on('click', function (event) {
+            var toSave = JSON.stringify(_this.app.timeline.layers);
+
+            if (_this.app.timeline.layers.length > 0) {
+                var blob = new Blob([toSave], { type: "application/json;charset=utf-8" });
+                var now = new Date();
+                var datetime = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                datetime += '_' + now.getHours() + '.' + now.getMinutes();
+
+                saveAs(blob, "animation_" + datetime + ".json");
+            }
+        });
+
         $(document).ready(function () {
             _this.selectToolEl.trigger('click');
+            _this.displayMainPanel(true, 'bezier');
             _this.ctx = _this.canvas.get(0).getContext('2d');
             _this.renderWrap(_this.ctx);
             _this.controlPanelEl.perfectScrollbar();
             _this.app.workspace.setBezier(_this.renderWrap(_this.ctx));
+            _this.displayMainPanel(false, 'bezier');
 
             $('.rotate-slider').slider({
                 min: -180,
@@ -3551,6 +4105,22 @@ var ControlPanel = (function () {
         this.transformOriginYEl.val(left.toString());
     };
 
+    ControlPanel.prototype.displayMainPanel = function (visible, type) {
+        var object;
+        if (type === 'bezier') {
+            object = this.curve;
+        }
+
+        if (visible) {
+            this.mainPanel.show();
+            $('.clearfix').show();
+            $('.clearfix').css({ 'margin-top': this.mainPanel.height() });
+        } else {
+            this.mainPanel.hide();
+            $('.clearfix').hide();
+        }
+    };
+
     Object.defineProperty(ControlPanel.prototype, "Mode", {
         /*get Mode (){
         if (this.selectToolEl.hasClass('active')) {
@@ -3685,7 +4255,6 @@ var GenerateCode = (function () {
         html += '<body>\n';
         html += this.generateObjects();
         html += '\n</body>\n</html>';
-        console.log(html);
 
         var encodehtml = html;
         html = html.replace(/[<>]/g, function (m) {
@@ -3781,26 +4350,20 @@ var GenerateCode = (function () {
         var css = '';
         var keyframesCss = '';
 
-        //if infinite animation, find absolute maximum
-        if (this.app.timeline.repeat) {
-            var absoluteMax = 0;
-            this.layers.forEach(function (item, index) {
-                var tmp = _this.arrayMax(item.timestamps);
-                if (tmp > absoluteMax)
-                    absoluteMax = tmp;
-            });
-        }
+        //find absolute maximum
+        var absoluteMax = 0;
+        this.layers.forEach(function (item, index) {
+            var tmp = _this.arrayMax(item.timestamps);
+            if (tmp > absoluteMax)
+                absoluteMax = tmp;
+        });
 
         this.layers.forEach(function (item, index) {
             var parentSize = _this.app.workspace.workspaceSize;
             var percents = new Array();
             var min = _this.arrayMin(item.timestamps);
             var max = _this.arrayMax(item.timestamps);
-            if (_this.app.timeline.repeat) {
-                var duration = absoluteMax;
-            } else {
-                var duration = max - min;
-            }
+            var duration = absoluteMax;
 
             var nameElement = 'object' + item.id;
 
@@ -3817,8 +4380,8 @@ var GenerateCode = (function () {
                 cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's infinite';
             } else {
                 if (duration != 0) {
-                    cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
-                    cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + (item.timestamps[0] / 1000) + 's forwards';
+                    cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's forwards';
+                    cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's forwards';
                 }
             }
 
@@ -3831,21 +4394,22 @@ var GenerateCode = (function () {
 
                 item.timestamps.forEach(function (timestamp, i) {
                     var keyframe = item.getKeyframeByTimestamp(timestamp);
-                    if (_this.app.timeline.repeat) {
-                        var part = ((keyframe.timestamp) / duration);
-                    } else {
-                        var part = ((keyframe.timestamp - min) / duration);
-                    }
+
+                    var part = ((keyframe.timestamp) / duration);
+
                     var percent = (part * 100).toString() + '%';
 
                     //if infinite animation and not 100% append it to last keyframe
-                    if (_this.app.timeline.repeat && i == item.timestamps.length - 1 && part != 1) {
-                        percent += ' ,100%';
+                    /*if (this.app.timeline.repeat && i == item.timestamps.length-1 && part != 1) {
+                    percent += ' ,100%';
                     }
-
                     //if infinite animation and set delay, append delay to first keyframe
-                    if (_this.app.timeline.repeat && i == 0 && part != 0) {
-                        percent += ', 0%';
+                    if (this.app.timeline.repeat && i == 0 && part != 0) {
+                    percent += ', 0%';
+                    }*/
+                    //if first keyframe and not 0, make object invisible
+                    if (i == 0 && part != 0) {
+                        cssObject['0%'] = { 'visibility': 'hidden' };
                     }
                     percents.push(percent);
 
@@ -3863,6 +4427,22 @@ var GenerateCode = (function () {
                         }
                     }
                     cssObject[percent] = item.getKeyframeStyle(timestamp, parentSize);
+
+                    //if last keyframe and not 100%, make object invisible
+                    if (i == item.timestamps.length - 1 && part != 1) {
+                        cssObject[percent]['visibility'] = 'hidden';
+                        cssObject['100%'] = cssObject[percent];
+                    }
+
+                    //if first keyframe and not 0, make object invisible
+                    if (i == 0 && part != 0) {
+                        cssObject[percent]['visibility'] = 'hidden';
+
+                        //fix, if only 2 keyframes
+                        if (item.timestamps.length == 2 && ((item.timestamps[item.timestamps.length - 1] / duration) != 1)) {
+                            cssObject[((part * 100) + 0.1).toString() + '%'] = { 'visibility': 'visible' };
+                        }
+                    }
 
                     if (i != item.timestamps.length - 1) {
                         cssObject[percent]['-webkit-animation-timing-function'] = 'cubic-bezier(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')';
@@ -3948,7 +4528,16 @@ var Mode;
     Mode[Mode["IMAGE"] = 2] = "IMAGE";
     Mode[Mode["TEXT"] = 3] = "TEXT";
     Mode[Mode["SVG"] = 4] = "SVG";
+    Mode[Mode["LOAD"] = 5] = "LOAD";
 })(Mode || (Mode = {}));
+
+var Type;
+(function (Type) {
+    Type[Type["DIV"] = 0] = "DIV";
+    Type[Type["TEXT"] = 1] = "TEXT";
+    Type[Type["SVG"] = 2] = "SVG";
+    Type[Type["IMAGE"] = 3] = "IMAGE";
+})(Type || (Type = {}));
 
 var Animation_playing;
 (function (Animation_playing) {
@@ -3966,7 +4555,7 @@ var ImageLayer = (function (_super) {
     __extends(ImageLayer, _super);
     function ImageLayer(name, fn, shape) {
         if (typeof shape === "undefined") { shape = null; }
-        _super.call(this, name, fn, shape);
+        _super.call(this, name, fn, 3 /* IMAGE */, shape);
     }
     ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
         _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
@@ -4004,6 +4593,35 @@ var ImageLayer = (function (_super) {
         shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope);
 
         return shape;
+    };
+
+    ImageLayer.parseJson = function (obj) {
+        var name = obj.name;
+        var fn = obj._keyframes[0]._timing_function;
+        var params = obj._globalShape._parameters;
+        var src = obj._globalShape._src;
+
+        var img = new Img(params, src);
+        var newLayer = new ImageLayer(name, fn, img);
+        newLayer.id = obj.id;
+        newLayer.order = obj._order;
+        newLayer.idEl = obj._idEl;
+        newLayer.globalShape.id = obj.id;
+        newLayer.parent = obj._parent;
+        newLayer.nesting = obj.nesting;
+
+        obj._keyframes.forEach(function (k, i) {
+            if (k._timestamp != 0) {
+                var p = k._shape._parameters;
+                var s = new Img(p, null);
+                var f = k._timing_function;
+                var t = k._timestamp;
+                s.id = newLayer.id;
+                newLayer.addKeyframe(s, t, f);
+            }
+        });
+
+        return newLayer;
     };
     return ImageLayer;
 })(Layer);
@@ -4075,7 +4693,7 @@ var RectangleLayer = (function (_super) {
     __extends(RectangleLayer, _super);
     function RectangleLayer(name, fn, shape) {
         if (typeof shape === "undefined") { shape = null; }
-        _super.call(this, name, fn, shape);
+        _super.call(this, name, fn, 0 /* DIV */, shape);
     }
     RectangleLayer.prototype.jsem = function () {
         console.log('jsem cverec');
@@ -4116,17 +4734,57 @@ var RectangleLayer = (function (_super) {
 
         return shape;
     };
+
+    RectangleLayer.parseJson = function (obj) {
+        var name = obj.name;
+        var fn = obj._keyframes[0]._timing_function;
+        var params = obj._globalShape._parameters;
+        var rect = new Rectangle(params);
+        var newLayer = new RectangleLayer(name, fn, rect);
+        newLayer.id = obj.id;
+        newLayer.order = obj._order;
+        newLayer.idEl = obj._idEl;
+        newLayer.globalShape.id = obj.id;
+        newLayer.parent = obj._parent;
+        newLayer.nesting = obj.nesting;
+
+        obj._keyframes.forEach(function (k, i) {
+            if (k._timestamp != 0) {
+                var p = k._shape._parameters;
+                var s = new Rectangle(p);
+                var f = k._timing_function;
+                var t = k._timestamp;
+                s.id = newLayer.id;
+                newLayer.addKeyframe(s, t, f);
+            }
+        });
+
+        return newLayer;
+    };
     return RectangleLayer;
 })(Layer);
 var Svg = (function (_super) {
     __extends(Svg, _super);
     function Svg(params, src) {
+        var _this = this;
         _super.call(this, params);
         this._src = src;
+        var blob = new Blob([this.getSrc()], { type: 'image/svg+xml' });
+        this.readFile(blob, function (e) {
+            _this.base64 = e.target.result;
+        });
     }
     Svg.prototype.getSrc = function () {
-        return new XMLSerializer().serializeToString(this._src.documentElement);
+        //return new XMLSerializer().serializeToString(this._src.documentElement);
         //return this._src.documentElement.innerText;
+        //return new XMLSerializer().serializeToString(this._src.documentElement);
+        return this._src;
+    };
+
+    Svg.prototype.readFile = function (file, onLoadCallback) {
+        var reader = new FileReader();
+        reader.onload = onLoadCallback;
+        reader.readAsDataURL(file);
     };
     return Svg;
 })(Shape);
@@ -4134,7 +4792,7 @@ var SvgLayer = (function (_super) {
     __extends(SvgLayer, _super);
     function SvgLayer(name, fn, shape) {
         if (typeof shape === "undefined") { shape = null; }
-        _super.call(this, name, fn, shape);
+        _super.call(this, name, fn, 2 /* SVG */, shape);
     }
     SvgLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
         _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
@@ -4156,25 +4814,62 @@ var SvgLayer = (function (_super) {
 
     SvgLayer.prototype.getObject = function () {
         var g = this.globalShape;
-        var object = Array(this.nesting + 1).join('  ') + '    <div class="svg object' + this.id + '">\n' + g.getSrc() + '\n';
+        var object = Array(this.nesting + 1).join('  ') + '    <img class="svg object' + this.id + '" src="' + g.base64 + '">\n';
         if (this.idEl != null) {
-            object = Array(this.nesting + 1).join('  ') + '    <div id="' + this.idEl + '" class="svg object' + this.id + '">\n' + g.getSrc() + '\n';
+            object = Array(this.nesting + 1).join('  ') + '    <img id="' + this.idEl + '" class="svg object' + this.id + '" src="' + g.base64 + '">\n';
         }
         return object;
     };
 
     SvgLayer.prototype.renderShape = function (container, position, currentScope) {
-        /*var shape = $('<img>').addClass('shape svg');
-        
-        var svgShape: any = this.globalShape;
-        shape.attr('src', 'data:image/svg+xml;charset=utf-8,' + svgShape.getSrc());*/
-        var shape = $('<div>').addClass('shape svg');
         var svgShape = this.globalShape;
-        shape.append(svgShape.getSrc());
+        var blob = new Blob([svgShape.getSrc()], { type: 'image/svg+xml' });
+        var shape = $('<img>').addClass('shape svg');
 
+        /*var shape = $('<div>').addClass('shape svg');
+        var svgShape: any = this.globalShape;*/
+        //shape.append(svgShape.getSrc());
+        this.readFile(blob, function (e) {
+            shape.attr('src', e.target.result);
+        });
         shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope);
 
         return shape;
+    };
+
+    SvgLayer.prototype.readFile = function (file, onLoadCallback) {
+        var reader = new FileReader();
+        reader.onload = onLoadCallback;
+        reader.readAsDataURL(file);
+    };
+
+    SvgLayer.parseJson = function (obj) {
+        var name = obj.name;
+        var fn = obj._keyframes[0]._timing_function;
+        var params = obj._globalShape._parameters;
+        var src = obj._globalShape._src;
+
+        var img = new Svg(params, src);
+        var newLayer = new SvgLayer(name, fn, img);
+        newLayer.id = obj.id;
+        newLayer.order = obj._order;
+        newLayer.idEl = obj._idEl;
+        newLayer.globalShape.id = obj.id;
+        newLayer.parent = obj._parent;
+        newLayer.nesting = obj.nesting;
+
+        obj._keyframes.forEach(function (k, i) {
+            if (k._timestamp != 0) {
+                var p = k._shape._parameters;
+                var s = new Svg(p, null);
+                var f = k._timing_function;
+                var t = k._timestamp;
+                s.id = newLayer.id;
+                newLayer.addKeyframe(s, t, f);
+            }
+        });
+
+        return newLayer;
     };
     return SvgLayer;
 })(Layer);
@@ -4221,7 +4916,7 @@ var TextLayer = (function (_super) {
     __extends(TextLayer, _super);
     function TextLayer(name, fn, shape) {
         if (typeof shape === "undefined") { shape = null; }
-        _super.call(this, name, fn, shape);
+        _super.call(this, name, fn, 1 /* TEXT */, shape);
     }
     TextLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
         _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
@@ -4269,7 +4964,7 @@ var TextLayer = (function (_super) {
 
         shape.css({
             'color': 'rgb(' + fontParams.color.r + ',' + fontParams.color.g + ',' + fontParams.color.b + ')',
-            'font-size': fontParams.size,
+            'font-size': (fontParams.size / 16) + 'em',
             'font-family': fontParams.fontFamily
         });
 
@@ -4287,7 +4982,7 @@ var TextLayer = (function (_super) {
 
         var cssObject = _super.prototype.getInitStyles.call(this, nameElement, workspaceSize);
         cssObject['display'] = 'inline';
-        cssObject['font-size'] = shape.getSize() + 'px';
+        cssObject['font-size'] = (shape.getSize() / 16) + 'em';
         cssObject['font-family'] = '"' + shape.getFamily() + '"';
         cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
 
@@ -4317,7 +5012,7 @@ var TextLayer = (function (_super) {
                 change.color = true;
         });
         if (change.size)
-            cssObject['font-size'] = shape.getSize() + 'px';
+            cssObject['font-size'] = (shape.getSize() / 16) + 'em';
         if (change.color)
             cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
 
@@ -4348,7 +5043,7 @@ var TextLayer = (function (_super) {
         var textShape = keyframe.shape;
         shape.css({
             'color': 'rgba(' + textShape.getColor().r + ',' + textShape.getColor().g + ',' + textShape.getColor().b + ')',
-            'font-size': textShape.getSize(),
+            'font-size': (textShape.getSize() / 16) + 'em',
             'font-family': globalTextShape.getFamily()
         });
         shape.froala({
@@ -4367,6 +5062,42 @@ var TextLayer = (function (_super) {
         shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope);
 
         return shape;
+    };
+
+    TextLayer.parseJson = function (obj) {
+        var name = obj.name;
+        var fn = obj._keyframes[0]._timing_function;
+        var params = obj._globalShape._parameters;
+        var content = obj._globalShape._content;
+        var color = obj._globalShape.color;
+        var size = obj._globalShape.size;
+        var family = obj._globalShape.family;
+
+        var text = new TextField(params, content, color, size, family);
+        var newLayer = new TextLayer(name, fn, text);
+        newLayer.id = obj.id;
+        newLayer.order = obj._order;
+        newLayer.idEl = obj._idEl;
+        newLayer.globalShape.id = obj.id;
+        newLayer.parent = obj._parent;
+        newLayer.nesting = obj.nesting;
+
+        obj._keyframes.forEach(function (k, i) {
+            if (k._timestamp != 0) {
+                var p = k._shape._parameters;
+                var content = k._shape._content;
+                var color = k._shape.color;
+                var size = k._shape.size;
+                var family = k._shape.family;
+                var s = new TextField(p, content, color, size, family);
+                var f = k._timing_function;
+                var t = k._timestamp;
+                s.id = newLayer.id;
+                newLayer.addKeyframe(s, t, f);
+            }
+        });
+
+        return newLayer;
     };
     return TextLayer;
 })(Layer);

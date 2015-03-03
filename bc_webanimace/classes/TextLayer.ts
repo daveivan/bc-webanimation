@@ -1,6 +1,6 @@
 ﻿class TextLayer extends Layer {
     constructor(name: string, fn: Bezier_points, shape: IShape = null) {
-        super(name, fn, shape);
+        super(name, fn, Type.TEXT, shape);
     }
 
     transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, controlPanel) {
@@ -49,7 +49,7 @@
 
         shape.css({
             'color': 'rgb(' + fontParams.color.r + ',' + fontParams.color.g + ',' + fontParams.color.b + ')',
-            'font-size': fontParams.size,
+            'font-size': (fontParams.size / 16) + 'em',
             'font-family': fontParams.fontFamily,
         });
 
@@ -67,7 +67,7 @@
 
         var cssObject = super.getInitStyles(nameElement, workspaceSize);
         cssObject['display'] = 'inline';
-        cssObject['font-size'] = shape.getSize() + 'px';
+        cssObject['font-size'] = (shape.getSize() / 16) + 'em';
         cssObject['font-family'] = '"' + shape.getFamily() + '"';
         cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
 
@@ -92,7 +92,7 @@
             if (initShape.color.g != s.color.g) change.color = true;
             if (initShape.color.b != s.color.b) change.color = true;
         });
-        if(change.size) cssObject['font-size'] = shape.getSize() + 'px';
+        if(change.size) cssObject['font-size'] = (shape.getSize() / 16) + 'em';
         if(change.color) cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
 
         return cssObject;
@@ -121,7 +121,7 @@
         var textShape: any = keyframe.shape;
         shape.css({
             'color': 'rgba(' + textShape.getColor().r + ',' + textShape.getColor().g + ',' + textShape.getColor().b + ')',
-            'font-size': textShape.getSize(),
+            'font-size': (textShape.getSize()/ 16) + 'em',
             'font-family': globalTextShape.getFamily(),
         });
         shape.froala({
@@ -140,5 +140,42 @@
         shape = super.renderShapeCore(shape, container, position, currentScope);
 
         return shape;
+    }
+
+    static parseJson(obj: any): Layer {
+
+        var name: string = obj.name;
+        var fn: Bezier_points = obj._keyframes[0]._timing_function;
+        var params: Parameters = obj._globalShape._parameters;
+        var content: string = obj._globalShape._content;
+        var color: rgb = obj._globalShape.color;
+        var size: number = obj._globalShape.size;
+        var family: string = obj._globalShape.family;
+
+        var text: IShape = new TextField(params, content, color, size, family);
+        var newLayer: Layer = new TextLayer(name, fn, text);
+        newLayer.id = obj.id;
+        newLayer.order = obj._order;
+        newLayer.idEl = obj._idEl;
+        newLayer.globalShape.id = obj.id;
+        newLayer.parent = obj._parent;
+        newLayer.nesting = obj.nesting;
+
+        obj._keyframes.forEach((k: any, i: number) => {
+            if (k._timestamp != 0) {
+                var p: Parameters = k._shape._parameters;
+                var content: string = k._shape._content;
+                var color: rgb = k._shape.color;
+                var size: number = k._shape.size;
+                var family: string = k._shape.family;
+                var s: IShape = new TextField(p, content, color, size, family);
+                var f: Bezier_points = k._timing_function;
+                var t: number = k._timestamp;
+                s.id = newLayer.id;
+                newLayer.addKeyframe(s, t, f);
+            }
+        });
+
+        return newLayer;
     }
 } 

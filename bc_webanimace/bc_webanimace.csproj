@@ -22,6 +22,7 @@
     <Content Include="assets\colorhelpers\csscolorparser.js" />
     <Content Include="assets\colpick\colpick.css" />
     <Content Include="assets\colpick\colpick.js" />
+    <Content Include="assets\filesaver\FileSaver.min.js" />
     <Content Include="assets\font-awesome\font-awesome.css" />
     <Content Include="assets\font-awesome\font-awesome.min.css" />
     <Content Include="assets\froala-editor\froala_editor.min.css" />

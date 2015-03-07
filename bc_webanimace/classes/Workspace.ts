@@ -393,7 +393,7 @@ class Workspace {
             'top': click_y,
             'left': click_x,
             //'background': this.getRandomColor(),
-            'background': 'rgba(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ', ' + this.color.a + ')',
+            'background': 'rgba(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ', ' + 0 + ')',
             'z-index': this.app.timeline.layers.length,
             'opacity': this.opacity,
         });

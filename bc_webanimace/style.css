@@ -1115,7 +1115,7 @@ a.run-preview:hover {
 box-shadow:         1px 1px 6px 0px rgba(50, 50, 50, 0.42);
     color: #ffffff;
     font-size: 11px;
-    z-index: 9999;
+    z-index: 10010;
     -webkit-border-radius: 5px;
 -moz-border-radius: 5px;
 border-radius: 5px;

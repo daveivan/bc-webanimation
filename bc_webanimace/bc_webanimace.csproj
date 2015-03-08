@@ -103,6 +103,7 @@
     <TypeScriptCompile Include="classes\RectangleLayer.ts" />
     <TypeScriptCompile Include="classes\Shape.ts" />
     <TypeScriptCompile Include="classes\Svg.ts" />
+    <TypeScriptCompile Include="classes\SvgGallery.ts" />
     <TypeScriptCompile Include="classes\SvgLayer.ts" />
     <TypeScriptCompile Include="classes\TextField.ts" />
     <TypeScriptCompile Include="classes\TextLayer.ts" />

@@ -132,7 +132,7 @@
         return this._timestamps;
     }
 
-    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, controlPanel) {
+    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app) {
         //find interval between position
         var rangeData = this.getRange(position);
         var left: number = rangeData.left;
@@ -189,12 +189,27 @@
                 },
             }
             shape.css("visibility", "visible");  
+            helper.css("visibility", "visible");
         } else {
             if (this._keyframes.length == 1) {
-                shape.css("visibility", "visible");  
+                var parent: Layer = app.timeline.getLayer(this.parent);
+                if (parent) {
+                    if (parent.isVisible(position, app.timeline)) {
+                        shape.css("visibility", "visible");
+                        helper.css("visibility", "visible");
+                    } else {
+                        shape.css("visibility", "hidden");
+                        helper.css("visibility", "hidden");
+                    }
+                } else {
+                    shape.css("visibility", "visible");
+                    helper.css("visibility", "visible");
+                }
             } else {
                 //shape.hide(); 
-                shape.css("visibility", "hidden");  
+                shape.css("visibility", "hidden");
+                helper.css("visibility", "hidden");
+                //shape.find('.shape').css('visibility', 'hidden');
             }
         }
 
@@ -253,17 +268,38 @@
         }
 
         if (currentLayerId == this.id) {
-            controlPanel.updateDimensions({ width: params.width, height: params.height });
-            controlPanel.updateOpacity(params.opacity);
-            controlPanel.updateColor({ r: params.background.r, g: params.background.g, b: params.background.b }, params.background.a);
-            controlPanel.updateBorderRadius(params.borderRadius);
-            controlPanel.update3DRotate({ x: params.rotate.x, y: params.rotate.y, z: params.rotate.z });
-            controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
-            controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
+            app.controlPanel.updateDimensions({ width: params.width, height: params.height });
+            app.controlPanel.updateOpacity(params.opacity);
+            app.controlPanel.updateColor({ r: params.background.r, g: params.background.g, b: params.background.b }, params.background.a);
+            app.controlPanel.updateBorderRadius(params.borderRadius);
+            app.controlPanel.update3DRotate({ x: params.rotate.x, y: params.rotate.y, z: params.rotate.z });
+            app.controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
+            app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
             $('.shape-helper.highlight').first().find('.origin-point').css({
                 'left': params.origin.x + '%',
                 'top': params.origin.y + '%',
             });
+        }
+    }
+
+    isVisible(position: number, timeline) {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var rng: Array<Keyframe> = rangeData.rng;
+        if (Object.keys(rng).length == 2) {
+            return true;
+        } else {
+            if (this._keyframes.length == 1) {
+                //return true;
+                var parent: Layer = timeline.getLayer(this.parent);
+                if (parent) {
+                    return parent.isVisible(position, timeline);
+                } else {
+                    return true;
+                }
+            } else {
+                return false;
+            }
         }
     }
 

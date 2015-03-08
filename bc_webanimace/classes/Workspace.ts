@@ -100,8 +100,88 @@ class Workspace {
             }*/
         });
 
-        this.workspaceContainer.on('contextmenu', (e: JQueryEventObject) => {
-            //TODO - kontextova nabidka pro presun i na aktualni objekt
+        this.workspaceContainer.on('contextmenu', (event: JQueryEventObject) => {
+            if (!$(event.target).hasClass('shape-helper')) {
+                //kontextova nabidka pro presun i na aktualni objekt
+
+                //TODO - doresit (pri presunuti na hlavni platno)
+                console.log('contextmenu_current');
+                this.contextMenuEl.empty();
+
+                if (this.movedLayer != null) {
+                    this.menuItemMoveHere.removeClass('disabled');
+                    this.menuItemMoveCancel.removeClass('disabled');
+                } else {
+                    this.menuItemMoveHere.addClass('disabled');
+                    this.menuItemMoveCancel.addClass('disabled');
+                }
+                if (this.movedLayer != null && this.movedLayer.id === parseInt($(event.target).closest('.shape-helper').data('id'))) {
+                    this.menuItemMoveHere.addClass('disabled');
+                }
+
+                //context menu items
+                var targetID: number = $(event.target).data('id');
+                if (!targetID) {
+                    targetID = 0;
+                }
+                this.contextMenuEl.append('<ul></ul>');
+                this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemMoveHere.attr('data-id', targetID)));
+                this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemMoveCancel.attr('data-id', targetID)));
+
+                this.contextMenuEl.appendTo(this.workspaceContainer);
+                this.contextMenuEl.css({
+                    'top': event.pageY - this.workspaceContainer.offset().top,
+                    'left': event.pageX - this.workspaceContainer.offset().left,
+                });
+                this.contextMenuEl.focus();
+
+                this.contextMenuEl.addClass('active');
+
+
+
+                this.menuItemMoveCancel.on('click', (e: JQueryEventObject) => {
+                    if ($(e.target).hasClass('disabled')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    this.movedLayer = null;
+                    this.contextMenuEl.remove();
+                });
+
+                this.menuItemMoveHere.on('click', (e: JQueryEventObject) => {
+                    if ($(e.target).hasClass('disabled')) {
+                        e.preventDefault();
+                        return false;
+                    }
+
+                    var destID: number = parseInt($(e.target).data('id'));
+                    if (destID == 0) {
+                        if (this.movedLayer) {
+                            this.movedLayer.parent = null;
+
+                            this.updateNesting(this.movedLayer);
+                        }
+                    } else {
+                        var destLayer: Layer = this.app.timeline.getLayer(destID);
+                        if (this.movedLayer) {
+                            this.movedLayer.parent = destLayer.id;
+                            //this.movedLayer.nesting = (destLayer.nesting + 1);
+
+                            this.updateNesting(this.movedLayer);
+                        }   
+                    }
+
+                    this.renderShapes();
+                    this.transformShapes();
+                    this.app.timeline.renderLayers();
+                    this.contextMenuEl.remove();
+                    this.movedLayer = null;
+                    this.highlightShape([destID]);
+                });
+
+                event.preventDefault();
+                return false; 
+            }
         });
 
         this.workspaceWrapper.on('contextmenu', '.shape-helper', (event: JQueryEventObject) => {
@@ -153,10 +233,10 @@ class Workspace {
             this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemDuplicate.attr('data-id', targetID)));
             this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemDelete.attr('data-id', targetID)));
 
-            this.contextMenuEl.appendTo(this.workspaceContainer);
+            this.contextMenuEl.appendTo($('body'));
             this.contextMenuEl.css({
-                'top': event.pageY - this.workspaceContainer.offset().top,
-                'left': event.pageX - this.workspaceContainer.offset().left,
+                'top': event.pageY - $('body').offset().top,
+                'left': event.pageX - $('body').offset().left,
             });
             this.contextMenuEl.focus();
 
@@ -274,6 +354,7 @@ class Workspace {
 
                 this.renderShapes();
                 this.transformShapes();
+                this.app.timeline.renderLayers();
                 this.contextMenuEl.remove();
                 this.movedLayer = null;
                 this.highlightShape([destID]);
@@ -574,7 +655,7 @@ class Workspace {
             var helper: JQuery = this.workspaceWrapper.find('.shape-helper[data-id="' + layer.id + '"]');
             var currentLayerId = this.workspaceWrapper.find('.shape-helper.highlight').first().data('id');
 
-            layer.transform(currentTimestamp, shape, helper, currentLayerId, this.app.controlPanel);
+            layer.transform(currentTimestamp, shape, helper, currentLayerId, this.app);
         });
     }
 
@@ -1892,5 +1973,18 @@ class Workspace {
         }
 
         return idLayer;
+    }
+
+    insertLayerFromGallery(svg: IShape) {
+        var layer: Layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), svg);
+        var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
+        layer.parent = parent;
+        if (layer.parent) {
+            layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
+        }
+        var idLayer: number = this.app.timeline.addLayer(layer);
+        this.renderSingleShape(idLayer);
+        this.transformShapes();
+        this.highlightShape([idLayer]);   
     }
 } 

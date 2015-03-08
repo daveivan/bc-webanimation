@@ -18,10 +18,10 @@ class ControlPanel {
     private generateCodeEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-code"></i>').attr('title', 'Vygenerovat kód');
     private insertImageEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
     private insertTextEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
-    private insertSVGEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-circle-o"></i>').attr('title', 'Vložit SVG');
+    private insertSVGEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-file-code-o"></i>').attr('title', 'Vložit kód s SVG');
     private saveEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip save').html('<i class="fa fa-floppy-o"></i>').attr('title', 'Uložit');
     private loadEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip load').html('<i class="fa fa-file-text-o"></i>').attr('title', 'Načíst ze souboru');
-    
+    private svgGalleryEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip svg-gallery').html('<i class="fa fa-smile-o"></i>').attr('title', 'SVG galerie');
 
     private controlPanelEl: JQuery = $('<div>').addClass('control-panel');
 
@@ -90,6 +90,7 @@ class ControlPanel {
         this.toolPanelEl.append(this.insertImageEl);
         this.toolPanelEl.append(this.insertTextEl);
         this.toolPanelEl.append(this.insertSVGEl);
+        this.toolPanelEl.append(this.svgGalleryEl);
         this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
 
@@ -534,6 +535,11 @@ class ControlPanel {
                 $(event.target).closest('a').addClass('active');
             }
             this.app.workspace.onChangeMode();
+        });
+
+        this.svgGalleryEl.on('click', (event: JQueryEventObject) => {
+            var svgGallery = new SvgGallery(this.app);
+            //this.app.workspace.insertMode(false);
         });
 
         this.generateCodeEl.on('click', (event: JQueryEventObject) => {

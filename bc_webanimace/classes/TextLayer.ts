@@ -3,8 +3,8 @@
         super(name, fn, Type.TEXT, shape);
     }
 
-    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, controlPanel) {
-        super.transform(position, shape, helper, currentLayerId, controlPanel);
+    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
+        super.transform(position, shape, helper, currentLayerId, app);
 
         //find interval between position
         var rangeData = this.getRange(position);
@@ -54,7 +54,7 @@
         });
 
         if (currentLayerId == this.id) {
-            controlPanel.updateFont(fontParams.color, fontParams.size, fontParams.fontFamily);
+            app.controlPanel.updateFont(fontParams.color, fontParams.size, fontParams.fontFamily);
         }
     }
 

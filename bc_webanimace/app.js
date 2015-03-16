@@ -1538,7 +1538,7 @@ var Workspace = (function () {
         this.uploadArea = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
         this.uploadBtn = $('<input type="file"></input>').addClass('pick-image');
         this.svgTextArea = $('<div>').addClass('svg-area');
-        this.svgInsertBtn = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit');
+        this.svgInsertBtn = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit SVG');
         this.svgText = $('<textarea>');
         this.loadArea = $('<div>').addClass('load-area').html('<p>Sem přetáhněte .json soubor s uloženými objekty</p>');
         this.loadBtn = $('<input type="file"></input>').addClass('pick-json');
@@ -1550,6 +1550,8 @@ var Workspace = (function () {
         this.menuItemMoveTo = $('<a>').addClass('menu-item menu-moveto').attr('href', '#').html('<i class="fa fa-file"></i> Přesunout do...');
         this.menuItemMoveHere = $('<a>').addClass('menu-item menu-movehere').attr('href', '#').html('<i class="fa fa-file-o"></i> ...Přesunout tady');
         this.menuItemMoveCancel = $('<a>').addClass('menu-item menu-movecancel').attr('href', '#').html('<i class="fa fa-times"></i> Zrušit přesun');
+        this.dialogEl = $('<div>').attr('id', 'dialog');
+        this.tooltip = $('<span>').addClass('tooltip-text').html('Dvojklikem umístětě textové pole');
         this.app = app;
         this.workspaceContainer = workspaceContainer;
         this.workspaceContainerOriginal = workspaceContainer;
@@ -1792,6 +1794,7 @@ var Workspace = (function () {
                 _this.renderShapes();
                 _this.transformShapes();
                 _this.app.timeline.selectLayer(id);
+                _this.contextMenuEl.remove();
             });
 
             _this.menuItemToForeground.on('click', function (e) {
@@ -1823,6 +1826,7 @@ var Workspace = (function () {
                 _this.renderShapes();
                 _this.transformShapes();
                 _this.app.timeline.selectLayer(id);
+                _this.contextMenuEl.remove();
             });
 
             _this.menuItemDuplicate.on('click', function (e) {
@@ -1990,7 +1994,7 @@ var Workspace = (function () {
             'top': click_y,
             'left': click_x,
             //'background': this.getRandomColor(),
-            'background': 'rgba(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ', ' + 0 + ')',
+            'background': 'rgba(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ', ' + this.color.a + ')',
             'z-index': this.app.timeline.layers.length,
             'opacity': this.opacity
         });
@@ -2021,7 +2025,7 @@ var Workspace = (function () {
             b: barva[2],
             a: barva[3]
         };
-        console.log('pozadovana sirka: ' + this.workspaceContainer.width());
+
         var params = {
             top: new_y,
             left: new_x,
@@ -2243,16 +2247,21 @@ var Workspace = (function () {
             'left': this.workspaceContainer.position().left,
             'z-index': '10002',
             }));*/
-            this.workspaceContainer.parents('.square').append($('<div>').addClass('overlay-clickable').css({
-                'background-color': 'rgba(255, 255, 255, 0.6)',
+            this.workspaceContainer.parents('.square').append($('<div>').addClass('overlay-clickable'));
+            this.workspaceContainer.closest('.square').css({
+                'outline': '3px solid #f08080'
+            });
+
+            //white-base for container with transparent background
+            this.workspaceContainer.parent().append($('<div>').css({
+                'background-color': '#fff',
+                'width': this.workspaceContainer.width(),
+                'height': this.workspaceContainer.height(),
                 'position': 'absolute',
                 'z-index': '10001',
-                'width': '100%',
-                'height': '100%'
+                'top': this.workspaceContainer.position().top,
+                'left': this.workspaceContainer.position().left
             }));
-            this.workspaceContainer.closest('.square').css({
-                'outline': '2px solid #f08080'
-            });
 
             this.workspaceContainer.parents('.square').addClass('scope');
         } else {
@@ -2952,7 +2961,64 @@ var Workspace = (function () {
         }
     };
 
-    Workspace.prototype.loadMode = function (active) {
+    Workspace.prototype.loadMode = function () {
+        var _this = this;
+        this.dialogEl.empty();
+        $('body').find(this.dialogEl).remove();
+        this.dialogEl.append(this.loadArea);
+        $('body').append(this.dialogEl);
+        this.dialogEl.dialog({
+            title: 'Nahrát projekt ze souboru',
+            autoOpen: true,
+            draggable: false,
+            height: 400,
+            width: 550,
+            resizable: false,
+            modal: true,
+            closeOnEscape: true,
+            close: function (event, ui) {
+                _this.dialogEl.remove();
+                _this.app.controlPanel.Mode = 0 /* SELECT */;
+                _this.onChangeMode();
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+            }
+        });
+
+        //zpracovani souboru
+        $('.load-area > p').on('dragenter', function (event) {
+            console.log('vp');
+            $('.upload-area').addClass('over');
+        });
+
+        this.loadArea.on('dragenter', function (event) {
+            console.log('enter');
+            $(event.target).addClass('over');
+        });
+
+        this.loadArea.on('dragleave', function (event) {
+            $(event.target).removeClass('over');
+        });
+
+        this.loadArea.on('dragover', function (event) {
+            console.log('over');
+            event.preventDefault();
+        });
+
+        this.loadArea.on('drop', function (event) {
+            console.log('upload');
+            event.stopPropagation();
+            event.preventDefault();
+            var files = event.originalEvent.dataTransfer.files;
+            _this.uploadFile(files);
+        });
+
+        this.loadBtn.on('change', function (event) {
+            _this.uploadFile(event.target.files);
+        });
+    };
+
+    Workspace.prototype.loadModeOld = function (active) {
         var _this = this;
         if (typeof active === "undefined") { active = true; }
         if (active) {
@@ -3011,6 +3077,7 @@ var Workspace = (function () {
             }
             _this.loadBtn.val('');
 
+            _this.dialogEl.remove();
             _this.app.controlPanel.Mode = 0 /* SELECT */;
             $('.tool-btn').removeClass('active');
             $('.tool-btn.select').addClass('active');
@@ -3018,8 +3085,6 @@ var Workspace = (function () {
         };
 
         reader.readAsText(file);
-
-        this.insertMode(false);
     };
 
     Workspace.prototype.parseJson = function (data) {
@@ -3053,137 +3118,151 @@ var Workspace = (function () {
         this.highlightShape(null);
     };
 
-    Workspace.prototype.svgMode = function (active) {
+    Workspace.prototype.svgMode = function () {
         var _this = this;
-        if (typeof active === "undefined") { active = true; }
-        if (active) {
-            this.workspaceOverlay.empty();
-            this.workspaceOverlay.append(this.svgTextArea);
-            this.workspaceWrapper.append(this.workspaceOverlay);
-            this.workspaceOverlay.css({
-                'height': this.workspaceWrapper.outerHeight(),
-                'width': this.workspaceWrapper.outerWidth()
-            });
+        this.dialogEl.empty();
+        $('body').find(this.dialogEl).remove();
+        this.dialogEl.append(this.svgTextArea);
+        $('body').append(this.dialogEl);
+        this.dialogEl.dialog({
+            title: 'Vložit SVG z kódu',
+            autoOpen: true,
+            draggable: false,
+            height: 400,
+            width: 550,
+            resizable: false,
+            modal: true,
+            closeOnEscape: true,
+            close: function (event, ui) {
+                _this.dialogEl.remove();
+                _this.app.controlPanel.Mode = 0 /* SELECT */;
+                _this.onChangeMode();
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+            }
+        });
 
-            this.svgText.on('keyup', function (e) {
-                if (e.which == 13) {
-                    _this.svgInsertBtn.trigger('click');
-                }
-            });
+        this.svgInsertBtn.on('click', function (e) {
+            console.log('Inserting SVG');
 
-            this.svgInsertBtn.on('click', function (e) {
-                console.log('Inserting SVG');
+            var xmlString = _this.svgText.val();
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(xmlString, "image/svg+xml");
 
-                var xmlString = _this.svgText.val();
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(xmlString, "image/svg+xml");
+            if (!_this.isParseError(doc)) {
+                var width = 150;
+                var height = 150;
 
-                if (!_this.isParseError(doc)) {
-                    var width = 150;
-                    var height = 150;
-
-                    for (var j = 0; j < doc.childNodes.length; j++) {
-                        var child = doc.childNodes[j];
-                        if (child.nodeName === 'svg' && child.attributes) {
-                            for (var i = 0; i < child.attributes.length; i++) {
-                                var attr = child.attributes[i];
-                                if (attr.name == 'viewBox') {
-                                    var view = attr.value.match(/-?[\d\.]+/g);
-                                    width = parseFloat(view[2]);
-                                    height = parseFloat(view[3]);
-                                }
+                for (var j = 0; j < doc.childNodes.length; j++) {
+                    var child = doc.childNodes[j];
+                    if (child.nodeName === 'svg' && child.attributes) {
+                        for (var i = 0; i < child.attributes.length; i++) {
+                            var attr = child.attributes[i];
+                            if (attr.name == 'viewBox') {
+                                var view = attr.value.match(/-?[\d\.]+/g);
+                                width = parseFloat(view[2]);
+                                height = parseFloat(view[3]);
                             }
                         }
                     }
-
-                    var p = {
-                        top: 0,
-                        left: 0,
-                        width: width,
-                        height: height,
-                        relativeSize: { width: ((width / _this.workspaceContainer.width()) * 100), height: ((height / _this.workspaceContainer.height()) * 100) },
-                        relativePosition: { top: 0, left: 0 },
-                        background: { r: 255, g: 255, b: 255, a: 0 },
-                        opacity: 1,
-                        borderRadius: [0, 0, 0, 0],
-                        rotate: { x: 0, y: 0, z: 0 },
-                        skew: { x: 0, y: 0 },
-                        origin: { x: 50, y: 50 },
-                        zindex: _this.app.timeline.layers.length
-                    };
-
-                    //var svg: IShape = new Svg(p, doc);
-                    var svg = new Svg(p, xmlString);
-                    var layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), svg);
-                    var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
-                    layer.parent = parent;
-                    if (layer.parent) {
-                        layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
-                    }
-                    var idLayer = _this.app.timeline.addLayer(layer);
-                    _this.renderSingleShape(idLayer);
-                    _this.transformShapes();
-                    _this.highlightShape([idLayer]);
                 }
 
+                var p = {
+                    top: 0,
+                    left: 0,
+                    width: width,
+                    height: height,
+                    relativeSize: { width: ((width / _this.workspaceContainer.width()) * 100), height: ((height / _this.workspaceContainer.height()) * 100) },
+                    relativePosition: { top: 0, left: 0 },
+                    background: { r: 255, g: 255, b: 255, a: 0 },
+                    opacity: 1,
+                    borderRadius: [0, 0, 0, 0],
+                    rotate: { x: 0, y: 0, z: 0 },
+                    skew: { x: 0, y: 0 },
+                    origin: { x: 50, y: 50 },
+                    zindex: _this.app.timeline.layers.length
+                };
+
+                //var svg: IShape = new Svg(p, doc);
+                var svg = new Svg(p, xmlString);
+                var layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), svg);
+                var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
+                layer.parent = parent;
+                if (layer.parent) {
+                    layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
+                }
+                var idLayer = _this.app.timeline.addLayer(layer);
+                _this.renderSingleShape(idLayer);
+                _this.transformShapes();
+                _this.highlightShape([idLayer]);
+
+                _this.dialogEl.remove();
                 _this.app.controlPanel.Mode = 0 /* SELECT */;
                 _this.svgText.val('');
                 $('.tool-btn').removeClass('active');
                 $('.tool-btn.select').addClass('active');
                 _this.onChangeMode();
-            });
-        } else {
-            this.workspaceOverlay.remove();
-        }
+            } else {
+                alert('Nevalidní kód');
+            }
+        });
     };
 
-    Workspace.prototype.insertMode = function (active) {
+    Workspace.prototype.imageMode = function () {
         var _this = this;
-        if (typeof active === "undefined") { active = true; }
-        if (active) {
-            this.workspaceOverlay.empty();
-            this.workspaceOverlay.append(this.uploadArea);
-            this.workspaceWrapper.append(this.workspaceOverlay);
-            this.workspaceOverlay.css({
-                'height': this.workspaceWrapper.outerHeight(),
-                'width': this.workspaceWrapper.outerWidth()
-            });
+        this.dialogEl.empty();
+        $('body').find(this.dialogEl).remove();
+        this.dialogEl.append(this.uploadArea);
+        $('body').append(this.dialogEl);
+        this.dialogEl.dialog({
+            title: 'Nahrát obrázek',
+            autoOpen: true,
+            draggable: false,
+            height: 400,
+            width: 550,
+            resizable: false,
+            modal: true,
+            closeOnEscape: true,
+            close: function (event, ui) {
+                _this.dialogEl.remove();
+                _this.app.controlPanel.Mode = 0 /* SELECT */;
+                _this.onChangeMode();
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+            }
+        });
 
-            $('.upload-area > p').on('dragenter', function (event) {
-                console.log('vp');
-                $('.upload-area').addClass('over');
-            });
+        $('.upload-area > p').on('dragenter', function (event) {
+            console.log('vp');
+            $('.upload-area').addClass('over');
+        });
 
-            this.uploadArea.on('dragenter', function (event) {
-                console.log('enter');
-                $(event.target).addClass('over');
-            });
+        this.uploadArea.on('dragenter', function (event) {
+            console.log('enter');
+            $(event.target).addClass('over');
+        });
 
-            this.uploadArea.on('dragleave', function (event) {
-                $(event.target).removeClass('over');
-            });
+        this.uploadArea.on('dragleave', function (event) {
+            $(event.target).removeClass('over');
+        });
 
-            this.uploadArea.on('dragover', function (event) {
-                console.log('over');
-                event.preventDefault();
-            });
+        this.uploadArea.on('dragover', function (event) {
+            console.log('over');
+            event.preventDefault();
+        });
 
-            this.uploadArea.on('drop', function (event) {
-                console.log('upload');
-                event.stopPropagation();
-                event.preventDefault();
-                var files = event.originalEvent.dataTransfer.files;
-                _this.uploadImage(files);
-            });
+        this.uploadArea.on('drop', function (event) {
+            console.log('upload');
+            event.stopPropagation();
+            event.preventDefault();
+            var files = event.originalEvent.dataTransfer.files;
+            _this.uploadImage(files);
+        });
 
-            this.uploadBtn.on('change', function (event) {
-                console.log('pick image');
-                _this.uploadImage(event.target.files);
-            });
-        } else {
-            $('.insert-image').removeClass('active');
-            this.workspaceOverlay.remove();
-        }
+        this.uploadBtn.on('change', function (event) {
+            console.log('pick image');
+            _this.uploadImage(event.target.files);
+        });
     };
 
     Workspace.prototype.uploadImage = function (files) {
@@ -3257,10 +3336,11 @@ var Workspace = (function () {
         }
         this.uploadBtn.val('');
 
+        this.dialogEl.remove();
         this.app.controlPanel.Mode = 0 /* SELECT */;
+        $('.tool-btn').removeClass('active');
         $('.tool-btn.select').addClass('active');
         this.onChangeMode();
-        this.insertMode(false);
     };
 
     Workspace.prototype.uploadImageOld = function (files) {
@@ -3315,8 +3395,6 @@ var Workspace = (function () {
 
             reader.readAsDataURL(image);
         }
-
-        this.insertMode(false);
     };
 
     Workspace.prototype.onCreateText = function (e) {
@@ -3357,6 +3435,7 @@ var Workspace = (function () {
         this.renderSingleShape(layer.id);
         this.transformShapes();
         this.highlightShape([idLayer]);
+        this.tooltip.remove();
         this.onChangeMode();
     };
 
@@ -3382,28 +3461,48 @@ var Workspace = (function () {
 
         if (mode == 2 /* IMAGE */ || mode == 4 /* SVG */ || mode == 5 /* LOAD */) {
             if (mode == 2 /* IMAGE */) {
-                this.insertMode(true);
+                this.imageMode();
             } else if (mode == 4 /* SVG */) {
-                this.svgMode(true);
+                this.svgMode();
             } else if (mode == 5 /* LOAD */) {
-                this.loadMode(true);
+                this.loadMode();
             }
         } else {
-            this.insertMode(false);
-            this.svgMode(false);
-            this.loadMode(false);
+            //this.insertMode(false);
+            //this.svgMode(false);
+            //this.loadMode(false);
         }
 
         if (mode == 3 /* TEXT */) {
             $('.workspace-wrapper').addClass('text-mode');
             $('.froala').froala('enable');
             $('.froala').removeClass('nonedit');
+            if (this.workspaceContainer.find('.shape.text').length == 0) {
+                $('.workspace-wrapper').mousemove(function (e) {
+                    _this.tooltip.css({
+                        'top': e.pageY - _this.workspaceWrapper.offset().top - 20,
+                        'left': e.pageX - _this.workspaceWrapper.offset().left + 10
+                    });
+                });
+
+                this.workspaceWrapper.mouseenter(function (e) {
+                    _this.workspaceWrapper.append(_this.tooltip);
+                });
+                this.workspaceWrapper.mouseleave(function (e) {
+                    _this.tooltip.remove();
+                });
+            } else {
+                this.tooltip.remove();
+                this.workspaceWrapper.unbind('mouseenter').unbind('mouseleave');
+            }
             this.workspaceContainer.find('.shape.text').each(function (index, el) {
                 $(el).css({
                     'z-index': parseInt(_this.workspaceContainer.find('.shape-helper' + '[data-id="' + $(el).data('id') + '"]').css('z-index')) + 1
                 });
             });
         } else {
+            this.tooltip.remove();
+            this.workspaceWrapper.unbind('mouseenter').unbind('mouseleave');
             $('.workspace-wrapper').removeClass('text-mode');
             $('.froala').froala('disable');
             $('.froala').addClass('nonedit');
@@ -3654,7 +3753,7 @@ var ControlPanel = (function () {
         s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
         row.append(s);
         var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
-        this.bgOpacityEl.val('1');
+        this.bgOpacityEl.val('0');
         a.append(this.bgOpacitySliderEl);
         a.append(this.bgOpacityEl);
         row.append(a);
@@ -3846,7 +3945,7 @@ var ControlPanel = (function () {
             min: 0,
             max: 1,
             step: 0.05,
-            value: 1,
+            value: 0,
             slide: function (event, ui) {
                 _this.bgOpacityEl.val(ui.value).change();
             }
@@ -4054,7 +4153,8 @@ var ControlPanel = (function () {
 
         this.generateCodeEl.on('click', function (event) {
             var generator = new GenerateCode(_this.app, _this.app.timeline.layers);
-            _this.app.workspace.insertMode(false);
+
+            //this.app.workspace.insertMode(false);
             generator.generate();
         });
 
@@ -4691,8 +4791,8 @@ var ImageLayer = (function (_super) {
         if (typeof shape === "undefined") { shape = null; }
         _super.call(this, name, fn, 3 /* IMAGE */, shape);
     }
-    ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app);
     };
 
     ImageLayer.prototype.jsem = function () {
@@ -4833,8 +4933,8 @@ var RectangleLayer = (function (_super) {
         console.log('jsem cverec');
     };
 
-    RectangleLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    RectangleLayer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app);
     };
 
     RectangleLayer.prototype.getInitStyles = function (nameElement, workspaceSize) {
@@ -4925,11 +5025,10 @@ var Svg = (function (_super) {
 var SvgGallery = (function () {
     function SvgGallery(app) {
         var _this = this;
-        this.dialogEl = $('<div>').attr('id', 'dialog').html('<p></p>').attr('title', 'Výsledný kód animace');
+        this.dialogEl = $('<div>').attr('id', 'dialog').attr('title', 'Galerie');
         this.app = app;
 
         $('body').find(this.dialogEl).remove();
-        console.log('vytvarim galerii');
         $('body').append(this.dialogEl);
         this.dialogEl.dialog({
             autoOpen: false,
@@ -4943,8 +5042,6 @@ var SvgGallery = (function () {
                 _this.dialogEl.remove();
             }
         });
-
-        this.dialogEl.append($('<p>Ahoj ahoj ahoj</p>'));
 
         this.objects = new Array();
 
@@ -4980,7 +5077,7 @@ var SvgGallery = (function () {
         var _this = this;
         this.objects.forEach(function (svg, i) {
             var blob = new Blob([svg.getSrc()], { type: 'image/svg+xml' });
-            var link = $('<a>').attr('href', '#');
+            var link = $('<a>').attr('href', '#').addClass('gallery-item');
             var shape = $('<img>').css({ 'width': '150px', 'height': '150px' });
 
             _this.readFile(blob, function (e) {
@@ -5015,8 +5112,8 @@ var SvgLayer = (function (_super) {
         if (typeof shape === "undefined") { shape = null; }
         _super.call(this, name, fn, 2 /* SVG */, shape);
     }
-    SvgLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    SvgLayer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app);
     };
 
     SvgLayer.prototype.jsem = function () {
@@ -5139,8 +5236,8 @@ var TextLayer = (function (_super) {
         if (typeof shape === "undefined") { shape = null; }
         _super.call(this, name, fn, 1 /* TEXT */, shape);
     }
-    TextLayer.prototype.transform = function (position, shape, helper, currentLayerId, controlPanel) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, controlPanel);
+    TextLayer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app);
 
         //find interval between position
         var rangeData = this.getRange(position);
@@ -5190,7 +5287,7 @@ var TextLayer = (function (_super) {
         });
 
         if (currentLayerId == this.id) {
-            controlPanel.updateFont(fontParams.color, fontParams.size, fontParams.fontFamily);
+            app.controlPanel.updateFont(fontParams.color, fontParams.size, fontParams.fontFamily);
         }
     };
 

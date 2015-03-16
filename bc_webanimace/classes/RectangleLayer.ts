@@ -7,8 +7,8 @@
         console.log('jsem cverec');
     }
 
-    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, controlPanel) {
-        super.transform(position, shape, helper, currentLayerId, controlPanel);
+    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
+        super.transform(position, shape, helper, currentLayerId, app);
     }
 
     getInitStyles(nameElement: string, workspaceSize: Dimensions) {

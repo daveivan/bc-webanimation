@@ -976,10 +976,11 @@ input.origin {
 
 .shape.square.scope {
     z-index: 10002 !important;
+    /*background: rgba(255, 255, 255, 1) !important;*/
 }
 
-.overlay-scope {
-    background-color: rgba(255, 255, 255, 0.6);
+.overlay-scope, .overlay-clickable {
+    background-color: rgba(0, 0, 0, 0.2);
     width: 100%;
     height: 100%;
     z-index: 10001;
@@ -1102,7 +1103,9 @@ a.run-preview:hover {
     height: 150px;
     margin-bottom: 15px;
     margin-top: 10px;
-    border: 2px solid #d8d8d8;
+    border: 1px solid #eeeeee;
+    font-size: 12px;
+    font-family: monospace;
 }
 
 .context-menu {
@@ -1168,31 +1171,32 @@ a.menu-item.disabled:hover {
     font-size: 12px;
 }
 
-.btn {
-  background: #747b80;
-  background-image: -webkit-linear-gradient(top, #747b80, #424242);
-  background-image: -moz-linear-gradient(top, #747b80, #424242);
-  background-image: -ms-linear-gradient(top, #747b80, #424242);
-  background-image: -o-linear-gradient(top, #747b80, #424242);
-  background-image: linear-gradient(to bottom, #747b80, #424242);
-  -webkit-border-radius: 8;
-  -moz-border-radius: 8;
-  border-radius: 8px;
-  font-family: Arial;
-  color: #ffffff;
-  font-size: 16px;
-  padding: 10px 20px 10px 20px;
-  text-decoration: none;
+.btn, .ui-button  {
+  border: 0 none !important;
+  border-radius: 2px 2px 2px 2px !important;
+  color: #FFFFFF !important;
+  cursor: pointer;
+  display: inline-block;
+  font-family: Arial,sans-serif;
+  font-size: 12px;
+  font-weight: bold !important;
+  line-height: 20px;
+  margin-bottom: 0;
+  margin-top: 10px;
+  padding: 10px 13px !important;
+  text-transform: none;
+  transition: all 0.3s ease 0s;
+  -moz-transition: all 0.3s ease 0s;
+  -webkit-transition: all 0.3s ease 0s;
 }
 
-.btn:hover {
-  background: #3cb0fd;
-  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
-  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
-  text-decoration: none;
+.btn.svg-btn, .ui-button {
+  background: none repeat scroll 0 0 #2DB6CF !important;
+  color: #FFFFFF;
+}
+.btn.svg-btn:hover, .ui-button:hover {
+  background: none repeat scroll 0 0 #444444 !important;
+  color: #FFFFFF;
 }
 
 .repeat-icon {
@@ -1271,4 +1275,21 @@ a.menu-item.disabled:hover {
 
 .load-area.over p {
     color: #c3c3c3;
+}
+
+.tooltip-text {
+    position: absolute;
+    font-size: 11px;
+    color: #aaaaaa;
+    display: block;
+}
+
+.gallery-item {
+    border: 2px solid #eeeeee;
+    display: inline-block;
+    margin: 5px;
+}
+
+.gallery-item:hover {
+    border: 2px solid #bbbbbb;
 }

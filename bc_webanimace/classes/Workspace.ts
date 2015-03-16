@@ -20,7 +20,7 @@ class Workspace {
     private uploadArea: JQuery = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
     private uploadBtn: JQuery = $('<input type="file"></input>').addClass('pick-image');
     private svgTextArea: JQuery = $('<div>').addClass('svg-area');
-    private svgInsertBtn: JQuery = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit');
+    private svgInsertBtn: JQuery = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit SVG');
     private svgText: JQuery = $('<textarea>');
     private loadArea: JQuery = $('<div>').addClass('load-area').html('<p>Sem přetáhněte .json soubor s uloženými objekty</p>');
     private loadBtn: JQuery = $('<input type="file"></input>').addClass('pick-json');
@@ -32,6 +32,8 @@ class Workspace {
     private menuItemMoveTo: JQuery = $('<a>').addClass('menu-item menu-moveto').attr('href', '#').html('<i class="fa fa-file"></i> Přesunout do...');
     private menuItemMoveHere: JQuery = $('<a>').addClass('menu-item menu-movehere').attr('href', '#').html('<i class="fa fa-file-o"></i> ...Přesunout tady');
     private menuItemMoveCancel: JQuery = $('<a>').addClass('menu-item menu-movecancel').attr('href', '#').html('<i class="fa fa-times"></i> Zrušit přesun');
+    private dialogEl: JQuery = $('<div>').attr('id', 'dialog');
+    private tooltip: JQuery = $('<span>').addClass('tooltip-text').html('Dvojklikem umístětě textové pole');
 
     constructor(app: Application, workspaceContainer: JQuery, workspaceWrapper: JQuery) {
         this.app = app;
@@ -278,6 +280,7 @@ class Workspace {
                 this.renderShapes();
                 this.transformShapes();
                 this.app.timeline.selectLayer(id);
+                this.contextMenuEl.remove();
             });
 
             this.menuItemToForeground.on('click', (e: JQueryEventObject) => {
@@ -307,6 +310,7 @@ class Workspace {
                 this.renderShapes();
                 this.transformShapes();
                 this.app.timeline.selectLayer(id);
+                this.contextMenuEl.remove();
             });
 
             this.menuItemDuplicate.on('click', (e: JQueryEventObject) => {
@@ -474,7 +478,7 @@ class Workspace {
             'top': click_y,
             'left': click_x,
             //'background': this.getRandomColor(),
-            'background': 'rgba(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ', ' + 0 + ')',
+            'background': 'rgba(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ', ' + this.color.a + ')',
             'z-index': this.app.timeline.layers.length,
             'opacity': this.opacity,
         });
@@ -506,7 +510,7 @@ class Workspace {
             b: barva[2],
             a: barva[3],
         };
-        console.log('pozadovana sirka: ' + this.workspaceContainer.width());
+
         var params: Parameters = {
             top: new_y,
             left: new_x,
@@ -726,16 +730,22 @@ class Workspace {
                 'z-index': '10002',
             }));*/
 
-            this.workspaceContainer.parents('.square').append($('<div>').addClass('overlay-clickable').css({
-                'background-color': 'rgba(255, 255, 255, 0.6)',
+            this.workspaceContainer.parents('.square').append($('<div>').addClass('overlay-clickable'));
+            this.workspaceContainer.closest('.square').css({
+                'outline': '3px solid #f08080',
+            });
+
+            //white-base for container with transparent background
+            this.workspaceContainer.parent().append($('<div>').css({
+                'background-color': '#fff',
+                'width': this.workspaceContainer.width(),
+                'height': this.workspaceContainer.height(),
                 'position': 'absolute',
                 'z-index': '10001',
-                'width': '100%',
-                'height': '100%',
+                'top': this.workspaceContainer.position().top,
+                'left': this.workspaceContainer.position().left,
+
             }));
-            this.workspaceContainer.closest('.square').css({
-                'outline': '2px solid #f08080',
-            });
 
             this.workspaceContainer.parents('.square').addClass('scope');
         } else {
@@ -1425,7 +1435,63 @@ class Workspace {
         }
     }
 
-    loadMode(active: boolean = true) {
+    loadMode() {
+            this.dialogEl.empty();
+            $('body').find(this.dialogEl).remove();
+            this.dialogEl.append(this.loadArea);
+            $('body').append(this.dialogEl);
+        this.dialogEl.dialog({
+                title: 'Nahrát projekt ze souboru',
+                autoOpen: true,
+                draggable: false,
+                height: 400,
+                width: 550,
+                resizable: false,
+                modal: true,
+                closeOnEscape: true,
+                close: (event, ui) => {
+                    this.dialogEl.remove();
+                    this.app.controlPanel.Mode = Mode.SELECT;
+                    this.onChangeMode();
+                    $('.tool-btn').removeClass('active');
+                    $('.tool-btn.select').addClass('active');
+                },
+            });
+
+            //zpracovani souboru
+            $('.load-area > p').on('dragenter', (event: JQueryEventObject) => {
+                console.log('vp');
+                $('.upload-area').addClass('over');
+            });
+
+            this.loadArea.on('dragenter', (event: JQueryEventObject) => {
+                console.log('enter');
+                $(event.target).addClass('over');
+            });
+
+            this.loadArea.on('dragleave', (event: JQueryEventObject) => {
+                $(event.target).removeClass('over');
+            });
+
+            this.loadArea.on('dragover', (event: JQueryEventObject) => {
+                console.log('over');
+                event.preventDefault();
+            });
+
+            this.loadArea.on('drop', (event: JQueryEventObject) => {
+                console.log('upload');
+                event.stopPropagation();
+                event.preventDefault();
+                var files = (<DragEvent>event.originalEvent).dataTransfer.files;
+                this.uploadFile(files);
+            });
+
+            this.loadBtn.on('change', (event: any) => {
+                this.uploadFile(event.target.files);
+            });
+    }
+
+    loadModeOld(active: boolean = true) {
         if (active) {
             this.workspaceOverlay.empty();
             this.workspaceOverlay.append(this.loadArea);
@@ -1481,6 +1547,7 @@ class Workspace {
             }
             this.loadBtn.val('');
 
+            this.dialogEl.remove();
             this.app.controlPanel.Mode = Mode.SELECT;
             $('.tool-btn').removeClass('active');
             $('.tool-btn.select').addClass('active');
@@ -1488,8 +1555,6 @@ class Workspace {
         }
 
         reader.readAsText(file);
-
-        this.insertMode(false);
     }
 
     parseJson(data: string) {
@@ -1523,136 +1588,151 @@ class Workspace {
         this.highlightShape(null);
     }
 
-    svgMode(active: boolean = true) {
-        if (active) {
-            this.workspaceOverlay.empty();
-            this.workspaceOverlay.append(this.svgTextArea);
-            this.workspaceWrapper.append(this.workspaceOverlay);
-            this.workspaceOverlay.css({
-                'height': this.workspaceWrapper.outerHeight(),
-                'width': this.workspaceWrapper.outerWidth(),
-            });
+    svgMode() {
+        this.dialogEl.empty();
+        $('body').find(this.dialogEl).remove();
+        this.dialogEl.append(this.svgTextArea);
+        $('body').append(this.dialogEl);
+        this.dialogEl.dialog({
+            title: 'Vložit SVG z kódu',
+            autoOpen: true,
+            draggable: false,
+            height: 400,
+            width: 550,
+            resizable: false,
+            modal: true,
+            closeOnEscape: true,
+            close: (event, ui) => {
+                this.dialogEl.remove();
+                this.app.controlPanel.Mode = Mode.SELECT;
+                this.onChangeMode();
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+            },
+        });
 
-            this.svgText.on('keyup', (e: JQueryEventObject) => {
-                if (e.which == 13) {
-                    this.svgInsertBtn.trigger('click');
-                }
-            });
+        this.svgInsertBtn.on('click', (e: JQueryEventObject) => {
+            console.log('Inserting SVG');
 
-            this.svgInsertBtn.on('click', (e: JQueryEventObject) => {
-                console.log('Inserting SVG');
+            var xmlString = this.svgText.val();
+            var parser: DOMParser = new DOMParser();
+            var doc: XMLDocument = parser.parseFromString(xmlString, "image/svg+xml");
 
-                var xmlString = this.svgText.val();
-                var parser: DOMParser = new DOMParser();
-                var doc: XMLDocument = parser.parseFromString(xmlString, "image/svg+xml");
+            if (!this.isParseError(doc)) {
 
-                if (!this.isParseError(doc)) {
+                var width: number = 150;
+                var height: number = 150;
 
-                    var width: number = 150;
-                    var height: number = 150;
-
-                    //if set viewbox, parse width and height
-                    for (var j: number = 0; j < doc.childNodes.length; j++) {
-                        var child: Node = doc.childNodes[j];
-                        if (child.nodeName === 'svg' && child.attributes) {
-                            for (var i: number = 0; i < child.attributes.length; i++) {
-                                var attr: Attr = child.attributes[i];
-                                if (attr.name == 'viewBox') {
-                                    var view = attr.value.match(/-?[\d\.]+/g);
-                                    width = parseFloat(view[2]);
-                                    height = parseFloat(view[3]);
-                                }
+                //if set viewbox, parse width and height
+                for (var j: number = 0; j < doc.childNodes.length; j++) {
+                    var child: Node = doc.childNodes[j];
+                    if (child.nodeName === 'svg' && child.attributes) {
+                        for (var i: number = 0; i < child.attributes.length; i++) {
+                            var attr: Attr = child.attributes[i];
+                            if (attr.name == 'viewBox') {
+                                var view = attr.value.match(/-?[\d\.]+/g);
+                                width = parseFloat(view[2]);
+                                height = parseFloat(view[3]);
                             }
                         }
                     }
-
-                    var p: Parameters = {
-                        top: 0,
-                        left: 0,
-                        width: width,
-                        height: height,
-                        relativeSize: { width: ((width / this.workspaceContainer.width()) * 100), height: ((height / this.workspaceContainer.height()) * 100) },
-                        relativePosition: { top: 0, left: 0 },
-                        background: { r: 255, g: 255, b: 255, a: 0 },
-                        opacity: 1,
-                        borderRadius: [0, 0, 0, 0],
-                        rotate: { x: 0, y: 0, z: 0 },
-                        skew: { x: 0, y: 0 },
-                        origin: { x: 50, y: 50 },
-                        zindex: this.app.timeline.layers.length,
-                    };
-
-                    //var svg: IShape = new Svg(p, doc);
-                    var svg: IShape = new Svg(p, xmlString);
-                    var layer: Layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), svg);
-                    var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
-                    layer.parent = parent;
-                    if (layer.parent) {
-                        layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
-                    }
-                    var idLayer: number = this.app.timeline.addLayer(layer);
-                    this.renderSingleShape(idLayer);
-                    this.transformShapes();
-                    this.highlightShape([idLayer]);   
                 }
 
+                var p: Parameters = {
+                    top: 0,
+                    left: 0,
+                    width: width,
+                    height: height,
+                    relativeSize: { width: ((width / this.workspaceContainer.width()) * 100), height: ((height / this.workspaceContainer.height()) * 100) },
+                    relativePosition: { top: 0, left: 0 },
+                    background: { r: 255, g: 255, b: 255, a: 0 },
+                    opacity: 1,
+                    borderRadius: [0, 0, 0, 0],
+                    rotate: { x: 0, y: 0, z: 0 },
+                    skew: { x: 0, y: 0 },
+                    origin: { x: 50, y: 50 },
+                    zindex: this.app.timeline.layers.length,
+                };
+
+                //var svg: IShape = new Svg(p, doc);
+                var svg: IShape = new Svg(p, xmlString);
+                var layer: Layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), svg);
+                var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
+                layer.parent = parent;
+                if (layer.parent) {
+                    layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
+                }
+                var idLayer: number = this.app.timeline.addLayer(layer);
+                this.renderSingleShape(idLayer);
+                this.transformShapes();
+                this.highlightShape([idLayer]);
+
+                this.dialogEl.remove();
                 this.app.controlPanel.Mode = Mode.SELECT;
                 this.svgText.val('');
                 $('.tool-btn').removeClass('active');
                 $('.tool-btn.select').addClass('active');
                 this.onChangeMode();
-
-            });
-        } else {
-            this.workspaceOverlay.remove();
-        }
+            } else {
+                alert('Nevalidní kód');
+            }
+        });
     }
 
-    insertMode(active: boolean = true) {
-        if (active) {
-            this.workspaceOverlay.empty();
-            this.workspaceOverlay.append(this.uploadArea);
-            this.workspaceWrapper.append(this.workspaceOverlay);
-            this.workspaceOverlay.css({
-                'height': this.workspaceWrapper.outerHeight(),
-                'width': this.workspaceWrapper.outerWidth(),
-            });
+    imageMode() {
+        this.dialogEl.empty();
+        $('body').find(this.dialogEl).remove();
+        this.dialogEl.append(this.uploadArea);
+        $('body').append(this.dialogEl);
+        this.dialogEl.dialog({
+            title: 'Nahrát obrázek',
+            autoOpen: true,
+            draggable: false,
+            height: 400,
+            width: 550,
+            resizable: false,
+            modal: true,
+            closeOnEscape: true,
+            close: (event, ui) => {
+                this.dialogEl.remove();
+                this.app.controlPanel.Mode = Mode.SELECT;
+                this.onChangeMode();
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+            },
+        });
 
-            $('.upload-area > p').on('dragenter', (event: JQueryEventObject) => {
-                console.log('vp');
-                $('.upload-area').addClass('over');
-            });
+        $('.upload-area > p').on('dragenter', (event: JQueryEventObject) => {
+            console.log('vp');
+            $('.upload-area').addClass('over');
+        });
 
-            this.uploadArea.on('dragenter', (event: JQueryEventObject) => {
-                console.log('enter');
-                $(event.target).addClass('over');
-            });
+        this.uploadArea.on('dragenter', (event: JQueryEventObject) => {
+            console.log('enter');
+            $(event.target).addClass('over');
+        });
 
-            this.uploadArea.on('dragleave', (event: JQueryEventObject) => {
-                $(event.target).removeClass('over');
-            });
+        this.uploadArea.on('dragleave', (event: JQueryEventObject) => {
+            $(event.target).removeClass('over');
+        });
 
-            this.uploadArea.on('dragover', (event: JQueryEventObject) => {
-                console.log('over');
-                event.preventDefault();
-            });
+        this.uploadArea.on('dragover', (event: JQueryEventObject) => {
+            console.log('over');
+            event.preventDefault();
+        });
 
-            this.uploadArea.on('drop', (event: JQueryEventObject) => {
-                console.log('upload');
-                event.stopPropagation();
-                event.preventDefault();
-                var files = (<DragEvent>event.originalEvent).dataTransfer.files;
-                this.uploadImage(files);
-            });
+        this.uploadArea.on('drop', (event: JQueryEventObject) => {
+            console.log('upload');
+            event.stopPropagation();
+            event.preventDefault();
+            var files = (<DragEvent>event.originalEvent).dataTransfer.files;
+            this.uploadImage(files);
+        });
 
-            this.uploadBtn.on('change', (event: any) => {
-                console.log('pick image');
-                this.uploadImage(event.target.files);
-            });
-        } else {
-            $('.insert-image').removeClass('active');
-            this.workspaceOverlay.remove();
-        }
+        this.uploadBtn.on('change', (event: any) => {
+            console.log('pick image');
+            this.uploadImage(event.target.files);
+        });
     }
 
     uploadImage(files: FileList) {
@@ -1724,10 +1804,11 @@ class Workspace {
         }
         this.uploadBtn.val('');
 
+        this.dialogEl.remove();
         this.app.controlPanel.Mode = Mode.SELECT;
+        $('.tool-btn').removeClass('active');
         $('.tool-btn.select').addClass('active');
         this.onChangeMode();
-        this.insertMode(false);
     }
 
     uploadImageOld(files: FileList) {
@@ -1781,8 +1862,6 @@ class Workspace {
 
             reader.readAsDataURL(image);
         }
-
-        this.insertMode(false);
     }
 
     onCreateText(e: JQueryEventObject) {
@@ -1822,6 +1901,7 @@ class Workspace {
         this.renderSingleShape(layer.id);
         this.transformShapes();
         this.highlightShape([idLayer]);
+        this.tooltip.remove();
         this.onChangeMode();
     }
 
@@ -1846,28 +1926,48 @@ class Workspace {
 
         if (mode == Mode.IMAGE || mode == Mode.SVG || mode == Mode.LOAD) {
             if (mode == Mode.IMAGE) {
-                this.insertMode(true);   
+                this.imageMode();   
             } else if (mode == Mode.SVG) {
-                this.svgMode(true);
+                this.svgMode();
             } else if (mode == Mode.LOAD) {
-                this.loadMode(true);
+                this.loadMode();
             }
         } else {
-            this.insertMode(false);
-            this.svgMode(false);
-            this.loadMode(false);
+            //this.insertMode(false);
+            //this.svgMode(false);
+            //this.loadMode(false);
         }
 
         if (mode == Mode.TEXT) {
             $('.workspace-wrapper').addClass('text-mode');
             $('.froala').froala('enable');
             $('.froala').removeClass('nonedit');
+            if (this.workspaceContainer.find('.shape.text').length == 0) {
+                $('.workspace-wrapper').mousemove((e: JQueryEventObject) => {
+                    this.tooltip.css({
+                        'top': e.pageY - this.workspaceWrapper.offset().top - 20,
+                        'left': e.pageX - this.workspaceWrapper.offset().left + 10,
+                    });
+                });
+
+                this.workspaceWrapper.mouseenter((e: JQueryEventObject) => {
+                    this.workspaceWrapper.append(this.tooltip);
+                });
+                this.workspaceWrapper.mouseleave((e: JQueryEventObject) => {
+                    this.tooltip.remove();
+                });
+            } else {
+                this.tooltip.remove();
+                this.workspaceWrapper.unbind('mouseenter').unbind('mouseleave');
+            }
             this.workspaceContainer.find('.shape.text').each((index: number, el: Element) => {
                 $(el).css({
                     'z-index': parseInt(this.workspaceContainer.find('.shape-helper' + '[data-id="' + $(el).data('id') + '"]').css('z-index')) + 1,
                 });
             });
         } else {
+            this.tooltip.remove();
+            this.workspaceWrapper.unbind('mouseenter').unbind('mouseleave');
             $('.workspace-wrapper').removeClass('text-mode');
             $('.froala').froala('disable');
             $('.froala').addClass('nonedit');
@@ -1904,6 +2004,7 @@ class Workspace {
             this.workspaceWrapper.prepend(this.scopeOverlay);
 
             $('.workspace-wrapper').perfectScrollbar('destroy');
+
         } else {
             this.workspaceContainer = this.workspaceContainerOriginal;
             $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });

@@ -132,7 +132,7 @@
         return this._timestamps;
     }
 
-    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app) {
+    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
         //find interval between position
         var rangeData = this.getRange(position);
         var left: number = rangeData.left;

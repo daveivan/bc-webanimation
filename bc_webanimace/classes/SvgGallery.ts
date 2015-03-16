@@ -2,13 +2,12 @@
     private app;
     private objects: Array<Svg>;
 
-    private dialogEl: JQuery = $('<div>').attr('id', 'dialog').html('<p></p>').attr('title', 'Výsledný kód animace');
+    private dialogEl: JQuery = $('<div>').attr('id', 'dialog').attr('title', 'Galerie');
 
     constructor(app: Application) {
         this.app = app;
 
         $('body').find(this.dialogEl).remove();
-        console.log('vytvarim galerii');
         $('body').append(this.dialogEl);
         this.dialogEl.dialog({
             autoOpen: false,
@@ -23,7 +22,6 @@
             },
         });
 
-        this.dialogEl.append($('<p>Ahoj ahoj ahoj</p>'));
 
         this.objects = new Array<Svg>();
 
@@ -59,7 +57,7 @@
     showGallery() {
         this.objects.forEach((svg: Svg, i: number) => {
             var blob = new Blob([svg.getSrc()], { type: 'image/svg+xml' });
-            var link: JQuery = $('<a>').attr('href', '#');
+            var link: JQuery = $('<a>').attr('href', '#').addClass('gallery-item');
             var shape = $('<img>').css({ 'width': '150px', 'height': '150px' });
 
             this.readFile(blob, (e) => {

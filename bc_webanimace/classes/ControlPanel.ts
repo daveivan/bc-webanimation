@@ -144,7 +144,7 @@ class ControlPanel {
         s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
         row.append(s);
         var a: JQuery = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
-        this.bgOpacityEl.val('1');
+        this.bgOpacityEl.val('0');
         a.append(this.bgOpacitySliderEl);
         a.append(this.bgOpacityEl);
         row.append(a);
@@ -334,7 +334,7 @@ class ControlPanel {
             min: 0,
             max: 1,
             step: 0.05,
-            value: 1,
+            value: 0,
             slide: (event, ui) => {
                 this.bgOpacityEl.val(ui.value).change();
             },
@@ -544,7 +544,7 @@ class ControlPanel {
 
         this.generateCodeEl.on('click', (event: JQueryEventObject) => {
             var generator = new GenerateCode(this.app, this.app.timeline.layers);
-            this.app.workspace.insertMode(false);
+            //this.app.workspace.insertMode(false);
             generator.generate();
         });
 

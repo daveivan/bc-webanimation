@@ -48,6 +48,72 @@ class Workspace {
 
         this.workspaceContainer.css(this._workspaceSize);
 
+        //performance test
+        /*$(document).on('ready', (e: JQueryEventObject) => {
+            console.log('onReady');
+
+            function rand(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            for (var i = 0; i < 50; i++) {
+                var diameter: number = rand(10, 30);
+                var params: Parameters = {
+                    top: 0,
+                    left: 0,
+                    width: diameter,
+                    height: diameter,
+                    relativePosition: {
+                        top: (0 / this.workspaceContainer.height()) * 100,
+                        left: (0 / this.workspaceContainer.width()) * 100,
+                    },
+                    relativeSize: {
+                        width: (diameter / this.workspaceContainer.width()) * 100,
+                        height: (diameter / this.workspaceContainer.height()) * 100,
+                    },
+                    background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
+                    opacity: 1,
+                    zindex: this.app.timeline.layers.length,
+                    borderRadius: [20, 20, 20, 20],
+                    rotate: { x: 0, y: 0, z: 0 },
+                    skew: { x: 0, y: 0 },
+                    origin: { x: 50, y: 50 },
+                };
+                console.log(params.background);
+                var shape: IShape = new Rectangle(params);
+                var layer: Layer = new RectangleLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), shape);
+                var idLayer: number = this.app.timeline.addLayer(layer);
+                var t = rand(0, this._workspaceSize.height);
+                var l = rand(0, this._workspaceSize.width);
+                var paramsNew: Parameters = {
+                    top: t,
+                    left: l,
+                    width: diameter,
+                    height: diameter,
+                    relativePosition: {
+                        top: (t / this.workspaceContainer.height()) * 100,
+                        left: (l / this.workspaceContainer.width()) * 100,
+                    },
+                    relativeSize: {
+                        width: (diameter / this.workspaceContainer.width()) * 100,
+                        height: (diameter / this.workspaceContainer.height()) * 100,
+                    },
+                    background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
+                    opacity: 1,
+                    zindex: this.app.timeline.layers.length,
+                    borderRadius: [20, 20, 20, 20],
+                    rotate: { x: 0, y: 0, z: 0 },
+                    skew: { x: 0, y: 0 },
+                    origin: { x: 50, y: 50 },
+                };
+
+                layer.addKeyframe(new Rectangle(paramsNew), 4000, this.getBezier());
+                this.app.timeline.renderKeyframes(layer.id);
+                this.renderSingleShape(layer.id);
+            }
+            //this.renderShapes();
+            this.transformShapes();
+        });*/
+
         $(document).on('mousedown', (e: JQueryEventObject) => {
             //hide context menu
             if (!$(e.target).parents().hasClass('context-menu')) {
@@ -106,7 +172,6 @@ class Workspace {
             if (!$(event.target).hasClass('shape-helper')) {
                 //kontextova nabidka pro presun i na aktualni objekt
 
-                //TODO - doresit (pri presunuti na hlavni platno)
                 console.log('contextmenu_current');
                 this.contextMenuEl.empty();
 
@@ -130,10 +195,15 @@ class Workspace {
                 this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemMoveHere.attr('data-id', targetID)));
                 this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemMoveCancel.attr('data-id', targetID)));
 
-                this.contextMenuEl.appendTo(this.workspaceContainer);
+                /*this.contextMenuEl.appendTo(this.workspaceContainer);
                 this.contextMenuEl.css({
                     'top': event.pageY - this.workspaceContainer.offset().top,
                     'left': event.pageX - this.workspaceContainer.offset().left,
+                });*/
+                this.contextMenuEl.appendTo($('body'));
+                this.contextMenuEl.css({
+                    'top': event.pageY - $('body').offset().top,
+                    'left': event.pageX - $('body').offset().left,
                 });
                 this.contextMenuEl.focus();
 
@@ -157,6 +227,7 @@ class Workspace {
                     }
 
                     var destID: number = parseInt($(e.target).data('id'));
+                    console.log('descID: ' + destID);
                     if (destID == 0) {
                         if (this.movedLayer) {
                             this.movedLayer.parent = null;
@@ -459,6 +530,8 @@ class Workspace {
         var parentLayer: Layer = this.app.timeline.getLayer(l.parent);
         if (parentLayer) {
             l.nesting = (parentLayer.nesting + 1);
+        } else {
+            l.nesting = 0;
         }
         this.app.timeline.layers.forEach((layer: Layer, i: number) => {
             if (layer.parent == l.id) {
@@ -656,7 +729,12 @@ class Workspace {
         var layers: Array<Layer> = this.app.timeline.layers;
         layers.forEach((layer, index: number) => {
             var shape: JQuery = this.workspaceWrapper.find('.shape[data-id="' + layer.id + '"]');
-            var helper: JQuery = this.workspaceWrapper.find('.shape-helper[data-id="' + layer.id + '"]');
+            if (layer.id == this.scope) {
+                var helper: JQuery = this.workspaceContainer.parent().find('.base-fff');
+            } else {
+                var helper: JQuery = this.workspaceWrapper.find('.shape-helper[data-id="' + layer.id + '"]');
+            }
+           
             var currentLayerId = this.workspaceWrapper.find('.shape-helper.highlight').first().data('id');
 
             layer.transform(currentTimestamp, shape, helper, currentLayerId, this.app);
@@ -720,15 +798,6 @@ class Workspace {
         this.onChangeMode();
         if (this.scope) {
             this.workspaceContainer = this.workspaceWrapper.find('.square' + '[data-id="' + this.scope + '"]').addClass('scope');
-            /*this.workspaceContainer.parent().prepend($('<div>').css({
-                'background-color': '#fff',
-                'width': this.workspaceContainer.width(),
-                'height': this.workspaceContainer.height(),
-                'position': 'absolute',
-                'top': this.workspaceContainer.position().top,
-                'left': this.workspaceContainer.position().left,
-                'z-index': '10002',
-            }));*/
 
             this.workspaceContainer.parents('.square').append($('<div>').addClass('overlay-clickable'));
             this.workspaceContainer.closest('.square').css({
@@ -736,10 +805,12 @@ class Workspace {
             });
 
             //white-base for container with transparent background
-            this.workspaceContainer.parent().append($('<div>').css({
+            console.log('xx: ' + this.workspaceContainer.width());
+            console.log(this.workspaceContainer.parent().width());
+            this.workspaceContainer.parent().append($('<div>').addClass('base-fff').css({
                 'background-color': '#fff',
-                'width': this.workspaceContainer.width(),
-                'height': this.workspaceContainer.height(),
+                'width': (this.workspaceContainer.width() / this.workspaceContainer.parent().width()) * 100 + '%',
+                'height': (this.workspaceContainer.height() / this.workspaceContainer.parent().height()) * 100 + '%',
                 'position': 'absolute',
                 'z-index': '10001',
                 'top': this.workspaceContainer.position().top,
@@ -961,6 +1032,7 @@ class Workspace {
         this.workspaceContainer.find('.shape-helper').find('.origin-point').hide();
 
         if (arrayID != null) {
+            $('.delete-layer').removeClass('disabled');
             arrayID.forEach((id: number, index: number) => {
                 this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').addClass('highlight');
                 //last selected shape(if selected more then one)
@@ -1015,6 +1087,7 @@ class Workspace {
         } else {
             this.app.controlPanel.updateDimensions({ width: null, height: null });
             this.app.controlPanel.updateIdEl(null);
+            $('.delete-layer').addClass('disabled');
         }
     }
 
@@ -1399,14 +1472,17 @@ class Workspace {
 
     setWorkspaceDimension(x: number, y: number) {
         var newDimension: Dimensions;
-        if (x != null) {
+        if (x != null && y != null) {
+            newDimension = {
+                width: x,
+                height: y,
+            }
+        } else if (x != null) {
             newDimension = {
                 width: x,
                 height: this._workspaceSize.height,
             };
-        } 
-
-        if (y != null) {
+        } else if(y != null) {
             newDimension = {
                 width: this._workspaceSize.width,
                 height: y,
@@ -1416,6 +1492,7 @@ class Workspace {
         this._workspaceSize = newDimension;
         $('#workspace').css(this._workspaceSize);
         $('.workspace-wrapper').perfectScrollbar('update');
+        this.transformShapes();
     }
 
     getBezier() {
@@ -1544,6 +1621,17 @@ class Workspace {
         reader.onload = (e) => {
             if (file.name.split('.').pop() == 'json') {
                 this.parseJson(e.target.result);
+            } else {
+                $('#message-dialog').attr('title', 'Chyba').html('Vložený soubor není typu .json. Vložte správný soubor.');
+                $("#message-dialog").dialog({
+                    dialogClass: 'message-dialog',
+                    modal: false,
+                    buttons: {
+                        Ok: function () {
+                            $(this).dialog("close");
+                        }
+                    }
+                });
             }
             this.loadBtn.val('');
 
@@ -1562,7 +1650,10 @@ class Workspace {
         var maxCount = 0;
 
         //parse fron JSON
-        var objLayers = JSON.parse(data);
+        var workspaceSize =  JSON.parse(data)[0];
+        var objLayers = JSON.parse(data)[1];
+        this.setWorkspaceDimension(parseInt(workspaceSize.x), parseInt(workspaceSize.y));
+        this.app.controlPanel.updateWorkspaceDimension(this._workspaceSize);
         objLayers.forEach((obj: any, i: number) => {
             if (obj._type == Type.DIV) {
                 var newLayer: Layer = RectangleLayer.parseJson(obj);
@@ -1799,8 +1890,19 @@ class Workspace {
                 this.transformShapes();
                 this.highlightShape([idLayer]);
             }
-        
-            reader.readAsDataURL(file); 
+
+            reader.readAsDataURL(file);
+        } else {
+            $('#message-dialog').attr('title', 'Chyba').html('Vložený obrázek má nepodporovaný formát. Vložte soubor typu .jpg, .png nebo .gif');
+            $("#message-dialog").dialog({
+                dialogClass: 'message-dialog',
+                modal: false,
+                buttons: {
+                    Ok: function () {
+                        $(this).dialog("close");
+                    }
+                }
+            });
         }
         this.uploadBtn.val('');
 

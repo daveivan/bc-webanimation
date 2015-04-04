@@ -17,6 +17,7 @@
         this.app = app;
         this.layers = l;
 
+        
         this.tabsEl.append('<ul><li><a href="#code">Kód</a></li><li><a href="#preview">Náhled animace</a></li></ul>');
         this.tabsEl.append(this.codeTab);
         this.tabsEl.append(this.previewTab);
@@ -133,7 +134,6 @@
                 } else if (layer instanceof TextLayer) {
                     value += '</span>\n';
                 } else if (layer instanceof SvgLayer) {
-                    value += (Array(layer.nesting + 1).join('  ') + '    </div>\n');
                 } else if (layer instanceof ImageLayer) {
                 }
             }

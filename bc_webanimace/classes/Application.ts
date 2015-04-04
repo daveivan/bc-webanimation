@@ -12,6 +12,7 @@ class Application {
     workspaceWrapperEl: JQuery = $('<div>').addClass('workspace-wrapper');
     workspaceEl: JQuery = $('<div>').attr('id', 'workspace');
     topContainerEl: JQuery = $('<div>').attr('id', 'top-container');
+    messageEl: JQuery = $('<div>').attr('id', 'message-dialog').css({ 'display': 'none' });
 
     timeline: Timeline;
     workspace: Workspace;
@@ -24,18 +25,13 @@ class Application {
         this.workspace = new Workspace(this, this.workspaceEl, this.workspaceWrapperEl);
         this.controlPanel = new ControlPanel(this, this.topContainerEl);
 
+        $('body').append(this.messageEl);
         $('body').append(this.topContainerEl);
         $('body').append(this.timelineEl);
 
         this.controlPanel.setHeight();
 
         this.topContainerEl.append(this.workspaceWrapperEl.append(this.workspaceEl));
-
-        var pole: Array<Array<string>> = new Array<Array<string>>();
-        pole[0] = ['ahoj'];
-        pole[3] = ['zdar', 'hoy'];
-        //pole[0].push('jo');
-        pole[2] = ['nove'].concat(pole[2]);
     }
 }
 

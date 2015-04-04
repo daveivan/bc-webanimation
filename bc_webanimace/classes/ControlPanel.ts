@@ -19,8 +19,8 @@ class ControlPanel {
     private insertImageEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
     private insertTextEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
     private insertSVGEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-file-code-o"></i>').attr('title', 'Vložit kód s SVG');
-    private saveEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip save').html('<i class="fa fa-floppy-o"></i>').attr('title', 'Uložit');
-    private loadEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip load').html('<i class="fa fa-file-text-o"></i>').attr('title', 'Načíst ze souboru');
+    private saveEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip save').html('<i class="fa fa-floppy-o"></i>').attr('title', 'Uložit projekt');
+    private loadEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip load').html('<i class="fa fa-file-text-o"></i>').attr('title', 'Načíst projekt ze souboru');
     private svgGalleryEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip svg-gallery').html('<i class="fa fa-smile-o"></i>').attr('title', 'SVG galerie');
 
     private controlPanelEl: JQuery = $('<div>').addClass('control-panel');
@@ -549,9 +549,11 @@ class ControlPanel {
         });
 
         this.saveEl.on('click', (event: JQueryEventObject) => {
-            
 
-            var toSave = JSON.stringify(this.app.timeline.layers);
+            var arr: Array<any> = new Array<any>();
+            arr.push({ x: this.app.workspace.workspaceSize.width, y: this.app.workspace.workspaceSize.height });
+            arr.push(this.app.timeline.layers);
+            var toSave = JSON.stringify(arr);
 
             if (this.app.timeline.layers.length > 0) {
                 var blob = new Blob([toSave], { type: "application/json;charset=utf-8" });
@@ -628,6 +630,11 @@ class ControlPanel {
         this.fontColorEl.val($.colpick.rgbToHex(color));
         this.fontSizeEl.val(size.toString());
         this.fontFamilyEl.val(family);
+    }
+
+    updateWorkspaceDimension(d: Dimensions) {
+        this.workspaceHeightEl.val(d.height.toString());
+        this.workspaceWidthEl.val(d.width.toString());
     }
 
     setHeight() {
@@ -745,9 +752,11 @@ class ControlPanel {
             this.mainPanel.show();
             $('.clearfix').show();
             $('.clearfix').css({ 'margin-top': this.mainPanel.height() });
+            $('.delete-keyframe').removeClass('disabled');
         } else {
             this.mainPanel.hide();
             $('.clearfix').hide();
+            $('.delete-keyframe').addClass('disabled');
         }
 
     }

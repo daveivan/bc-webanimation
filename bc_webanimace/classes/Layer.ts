@@ -76,6 +76,11 @@
         //IE9<
         this._timestamps.splice(this._timestamps.indexOf(keyframe.timestamp), 1);
         this._keyframes.splice(index, 1);
+        //if only one keyframe remain, set it to zero position
+        if (this._keyframes.length == 1) {
+            this.getKeyframe(0).timestamp = 0;
+            this._timestamps[0] = 0;
+        }
     }
 
     getKeyframe(index: number): Keyframe {
@@ -130,6 +135,276 @@
 
     get timestamps() {
         return this._timestamps;
+    }
+
+    transformOld(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left: number = rangeData.left;
+        var right: number = rangeData.right;
+        var rng: Array<Keyframe> = rangeData.rng;
+        var params: Parameters = {
+            top: rangeData.params.top,
+            left: rangeData.params.left,
+            width: rangeData.params.width,
+            height: rangeData.params.height,
+            background: {
+                r: rangeData.params.background.r,
+                g: rangeData.params.background.g,
+                b: rangeData.params.background.b,
+                a: rangeData.params.background.a,
+            },
+            opacity: rangeData.params.opacity,
+            borderRadius: [
+                rangeData.params.borderRadius[0],
+                rangeData.params.borderRadius[1],
+                rangeData.params.borderRadius[2],
+                rangeData.params.borderRadius[3]
+            ],
+            rotate: {
+                x: rangeData.params.rotate.x,
+                y: rangeData.params.rotate.y,
+                z: rangeData.params.rotate.z,
+            },
+            skew: {
+                x: rangeData.params.skew.x,
+                y: rangeData.params.skew.y,
+            },
+            origin: {
+                x: rangeData.params.origin.x,
+                y: rangeData.params.origin.y,
+            },
+            zindex: this.globalShape.parameters.zindex,
+            relativeSize: {
+                width: rangeData.params.relativeSize.width,
+                height: rangeData.params.relativeSize.height,
+            },
+            relativePosition: {
+                top: rangeData.params.relativePosition.top,
+                left: rangeData.params.relativePosition.left,
+            },
+        }
+        var cssStyles = new Array();
+        /*var isChange = {
+            top: false, left: false,
+            width: false, height: false,
+            bgR: false, bgG: false, bgB: false, bgA: false,
+            opacity: false,
+            br0: false, br1: false, br2: false, br3: false,
+            rotateX: false, rotateY: false, rotateZ: false,
+            skewX: false, skewY: false,
+            originX: false, originY: false,
+        };*/
+        var isChange = {
+            isKeyframe: false,
+            top: false, left: false,
+            width: false, height: false,
+            bg: false,
+            opacity: false,
+            br0: false, br1: false, br2: false, br3: false,
+            rotate: false,
+            origin: false
+        };
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            isChange.isKeyframe = true;
+            var fn: Bezier_points = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p: number = (position - left) / (right - left);
+            var paramsLeft: Parameters = rng['l'].shape.parameters;
+            var paramsRight: Parameters = rng['r'].shape.parameters;
+
+            if (paramsLeft.top != paramsRight.top) {
+                console.log('vypočitavam top');
+                isChange.top = true;
+                params['relativePosition']['top'] = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
+                params['top'] = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
+            }
+            if (paramsLeft.left != paramsRight.left) {
+                isChange.left = true;
+                params['relativePosition']['left'] = this.computeAttr(paramsLeft.relativePosition.left, paramsRight.relativePosition.left, bezier(p));
+                params['left'] = Math.round(this.computeAttr(paramsLeft.left, paramsRight.left, bezier(p)));
+            }
+            if (paramsLeft.width != paramsRight.width) {
+                isChange.width = true;
+                params['relativeSize']['width'] = this.computeAttr(paramsLeft.relativeSize.width, paramsRight.relativeSize.width, bezier(p));
+                params['width'] = Math.round(this.computeAttr(paramsLeft.width, paramsRight.width, bezier(p)));
+            }
+            if (paramsLeft.height != paramsRight.height) {
+                isChange.height = true;
+                params['relativeSize']['height'] = this.computeAttr(paramsLeft.relativeSize.height, paramsRight.relativeSize.height, bezier(p));
+                params['height'] = Math.round(this.computeAttr(paramsLeft.height, paramsRight.height, bezier(p)));
+            }
+            if (paramsLeft.background.r != paramsRight.background.r) {
+                isChange.bg = true;
+                params['background']['r'] = Math.round(this.computeAttr(paramsLeft.background.r, paramsRight.background.r, bezier(p)));
+            }
+            if (paramsLeft.background.g != paramsRight.background.g) {
+                isChange.bg = true;
+                params['background']['g'] = Math.round(this.computeAttr(paramsLeft.background.g, paramsRight.background.g, bezier(p)));
+            }
+            if (paramsLeft.background.b != paramsRight.background.b) {
+                isChange.bg = true;
+                params['background']['b'] = Math.round(this.computeAttr(paramsLeft.background.b, paramsRight.background.b, bezier(p)));
+            }
+            if (paramsLeft.background.a != paramsRight.background.a) {
+                isChange.bg = true;
+                params['background']['a'] = this.computeAttr(paramsLeft.background.a, paramsRight.background.a, bezier(p));
+            }
+            if (paramsLeft.opacity != paramsRight.opacity) {
+                isChange.opacity = true;
+                params['opacity'] = this.computeAttr(paramsLeft.opacity, paramsRight.opacity, bezier(p));
+            }
+            if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0]) {
+                isChange.br0 = true;
+                params['borderRadius']['0'] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
+            }
+            if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1]) {
+                isChange.br1 = true;
+                params['borderRadius']['1'] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
+            }
+            if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2]) {
+                isChange.br2 = true;
+                params['borderRadius']['2'] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
+            }
+            if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3]) {
+                isChange.br3 = true;
+                params['borderRadius']['3'] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
+            }
+            if (paramsLeft.rotate.x != paramsRight.rotate.x) {
+                isChange.rotate = true;
+                params['rotate']['x'] = Math.round(this.computeAttr(paramsLeft.rotate.x, paramsRight.rotate.x, bezier(p)));
+            }
+            if (paramsLeft.rotate.y != paramsRight.rotate.y) {
+                isChange.rotate = true;
+                params['rotate']['y'] = Math.round(this.computeAttr(paramsLeft.rotate.y, paramsRight.rotate.y, bezier(p)));
+            }
+            if (paramsLeft.rotate.z != paramsRight.rotate.z) {
+                isChange.rotate = true;
+                params['rotate']['z'] = Math.round(this.computeAttr(paramsLeft.rotate.z, paramsRight.rotate.z, bezier(p)));
+            }
+            if (paramsLeft.skew.x != paramsRight.skew.x) {
+                isChange.rotate = true;
+                params['skew']['x'] = Math.round(this.computeAttr(paramsLeft.skew.x, paramsRight.skew.x, bezier(p)));
+            }
+            if (paramsLeft.skew.y != paramsRight.skew.y) {
+                isChange.rotate = true;
+                params['skew']['y'] = Math.round(this.computeAttr(paramsLeft.skew.y, paramsRight.skew.y, bezier(p)));
+            }
+            if (paramsLeft.origin.x != paramsRight.origin.x) {
+                isChange.origin = true;
+                params['origin']['x'] = this.computeAttr(paramsLeft.origin.x, paramsRight.origin.x, bezier(p));
+            }
+            if (paramsLeft.origin.y != paramsRight.origin.y) {
+                isChange.origin = true;
+                params['origin']['y'] = this.computeAttr(paramsLeft.origin.y, paramsRight.origin.y, bezier(p));
+            }
+            params['zindex'] = this.globalShape.parameters.zindex;
+            shape.css("visibility", "visible");
+            helper.css("visibility", "visible");
+        } else {
+            if (this._keyframes.length == 1) {
+                var parent: Layer = app.timeline.getLayer(this.parent);
+                if (parent) {
+                    if (parent.isVisible(position, app.timeline)) {
+                        shape.css("visibility", "visible");
+                        helper.css("visibility", "visible");
+                    } else {
+                        shape.css("visibility", "hidden");
+                        helper.css("visibility", "hidden");
+                    }
+                } else {
+                    shape.css("visibility", "visible");
+                    helper.css("visibility", "visible");
+                }
+            } else { 
+                shape.css("visibility", "hidden");
+                helper.css("visibility", "hidden");
+            }            
+        }
+
+        //set new attributes to object
+        if (isChange.top)
+            cssStyles['top'] = params.relativePosition.top + "%";
+        if (isChange.left)
+            cssStyles['left'] = params.relativePosition.left + "%";
+        if (isChange.width)
+            cssStyles['width'] = params.relativeSize.width + "%";
+        if (isChange.height)
+            cssStyles['height'] = params.relativeSize.height + "%";
+        if (isChange.bg)
+            cssStyles['background'] = 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')';
+        if (isChange.opacity)
+            cssStyles['opacity'] = params.opacity;
+        if (isChange.br0)
+            cssStyles['border-top-left-radius'] = params.borderRadius[0];
+        if (isChange.br1)
+            cssStyles['border-top-right-radius'] = params.borderRadius[1];
+        if (isChange.br2)
+            cssStyles['border-bottom-right-radius'] = params.borderRadius[2];
+        if (isChange.br3)
+            cssStyles['border-bottom-left-radius'] = params.borderRadius[3];
+        if (isChange.rotate)
+            cssStyles['transform'] = 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)';
+        if (isChange.origin)
+            cssStyles['transform-origin'] = params.origin.x + '% ' + params.origin.y + '%';
+        cssStyles['z-index'] = params.zindex;
+
+        if (isChange.isKeyframe) {
+            shape.css(cssStyles);
+        } else {
+            shape.css({
+                'left': params.relativePosition.left + '%',
+                'top': params.relativePosition.top + '%',
+                'width': params.relativeSize.width + '%',
+                'height': params.relativeSize.height + '%',
+                'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
+                'border': params.border,
+                'z-index': params.zindex,
+                'opacity': params.opacity,
+                'border-top-left-radius': params.borderRadius[0],
+                'border-top-right-radius': params.borderRadius[1],
+                'border-bottom-right-radius': params.borderRadius[2],
+                'border-bottom-left-radius': params.borderRadius[3],
+                'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
+            });           
+        }
+
+        helper.css({
+            'left': params.relativePosition.left + '%',
+            'top': params.relativePosition.top + '%',
+            'width': params.relativeSize.width + '%',
+            'height': params.relativeSize.height + '%',
+            'z-index': helper.css('z-index'),
+            'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+            'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
+        });
+        helper.css("left", "-=1");
+        helper.css("top", "-=1");
+        helper.css("width", "+=2");
+        helper.css("height", "+=2");
+
+        if (this.idEl != null) {
+            shape.attr('id', this.idEl);
+        } else {
+            shape.removeAttr('id');
+        }
+
+        if (currentLayerId == this.id) {
+            app.controlPanel.updateDimensions({ width: params.width, height: params.height });
+            app.controlPanel.updateOpacity(params.opacity);
+            app.controlPanel.updateColor({ r: params.background.r, g: params.background.g, b: params.background.b }, params.background.a);
+            app.controlPanel.updateBorderRadius(params.borderRadius);
+            app.controlPanel.update3DRotate({ x: params.rotate.x, y: params.rotate.y, z: params.rotate.z });
+            app.controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
+            app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
+            $('.shape-helper.highlight').first().find('.origin-point').css({
+                'left': params.origin.x + '%',
+                'top': params.origin.y + '%',
+            });
+        }
     }
 
     transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
@@ -255,6 +530,8 @@
             'width': params.relativeSize.width + '%',
             'height': params.relativeSize.height + '%',
             'z-index': helper.css('z-index'),
+            'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+            'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
         });
         helper.css("left", "-=1");
         helper.css("top", "-=1");
@@ -403,11 +680,10 @@
             } else if (p.skew.x != 0 || p.skew.y != 0) {
                 cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
             }
-
-            if (p.origin.x != 50 && p.origin.y != 50) {
-                cssObject['transform-origin'] = p.origin.x + '% ' + p.origin.y + '%';
-            }
         }
+
+        cssObject['transform-origin'] = p.origin.x + '% ' + p.origin.y + '%';
+        cssObject['-webkit-transform-origin'] = p.origin.x + '% ' + p.origin.y + '%';
 
         return cssObject;
     }
@@ -496,7 +772,7 @@
             cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         }
 
-        if (change.rotate && change.skew) {
+        if ((change.rotate || change.skew) && change.origin) {
             if (change.origin) cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
 
@@ -533,7 +809,7 @@
                 'left': relativeLeft + '%',
                 'width': relativeWidth + '%',
                 'height': relativeHeight + '%',
-                'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.a + ',' + params.background.a + ')',
+                'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
                 'border': params.border,
                 //'z-index': params.zindex,
                 'z-index': this.globalShape.parameters.zindex,
@@ -574,6 +850,7 @@
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
                 });
+
 
                 helper.attr('data-id', keyframe.shape.id);
                 helpername.appendTo(helper);

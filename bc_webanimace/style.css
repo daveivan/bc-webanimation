@@ -149,9 +149,24 @@ table {
     background-color: #a0a1a1;
     border-right: 5px solid #909090;
         text-align: right;
-    padding-top: 2px;
+    padding-top: 10px;
     padding-right: 10px;
     float: left;
+    font-size: 12px;
+    font-weight: bold;
+    color: #f3f3f3;
+}
+
+.layers-footer a {
+    margin-left: 20px;
+}
+
+.layers-footer a:hover {
+    color: #e2e3e3;
+}
+
+.layers-footer a.disabled:hover {
+    color: #cbcbcb;
 }
 
 .keyframes-footer {
@@ -1167,8 +1182,8 @@ a.menu-item.disabled:hover {
     color: #6c6c6c;
 }
 
-.delete-confirm {
-    font-size: 12px;
+.delete-confirm, .message-dialog {
+    font-size: 12px !important;
 }
 
 .btn, .ui-button  {
@@ -1203,6 +1218,36 @@ a.menu-item.disabled:hover {
     position: absolute;
     z-index: 2;
     top: 5px;
+}
+
+.repeat-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #f3f3f3;
+    position: relative;
+    top: -2px;
+    cursor: pointer;
+    border-right: 2px solid #bbb;
+    padding-right: 8px;
+}
+
+.repeat-label i {
+    font-size: 18px;
+    position: relative;
+    top: 2px;
+}
+
+#repeat {
+    height: 17px;
+    width: 17px;
+    position: relative;
+    top: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.repeat-label:hover {
+    color: #e2e3e3;
 }
 
 .main-panel {
@@ -1282,6 +1327,7 @@ a.menu-item.disabled:hover {
     font-size: 11px;
     color: #aaaaaa;
     display: block;
+    z-index: 15000;
 }
 
 .gallery-item {

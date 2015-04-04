@@ -25,10 +25,10 @@ class Timeline
     start;
     stop;
 
-    deleteLayerEl: JQuery = $('<a class="delete-layer" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
-    repeatEl: JQuery = $('<label><input type="checkbox" class="repeat">Opakovat celou animaci</label>');
+    deleteLayerEl: JQuery = $('<a class="delete-layer disabled" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
+    repeatEl: JQuery = $('<label for="repeat" class="repeat-label">Opakovat celou animaci <i class="fa fa-repeat"></i><input type="checkbox" id="repeat"></label>');
     repeatIconEl: JQuery = $('<div>').addClass('repeat-icon').html('<i class="fa fa-undo"></i>');
-    deleteKeyframeEl: JQuery = $('<a>').addClass('delete-keyframe').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
+    deleteKeyframeEl: JQuery = $('<a>').addClass('delete-keyframe').addClass('disabled').html('Smazat keyframe <i class="fa fa-trash"></i>').attr('href', '#');
     layersEl: JQuery = $('<div id="layers"></div>');
     timelineHeadEl: JQuery = $('<div class="layers-head"></div>');
     layersWrapperEl: JQuery = $('<div class="layers-wrapper"></div>');
@@ -39,7 +39,7 @@ class Timeline
     keyframesFooterEl: JQuery = $('<div class="keyframes-footer"></div>');
     keyframesTableEl: JQuery = $('<table><thead></thead><tbody></tbody>');
     pointerEl: JQuery = $('<div class="pointer"><div class="pointer-top"></div></div>');
-    deleteConfirmEl: JQuery = $('<div>').attr('id', 'delete-confirm').attr('title', 'Vymazat vybrané vrstvy?').css({'display': 'none'}).html('Opravu chcete vymazat vybrané vrstvy. Objekty v těchto vrstvách budou smazány také!');
+    deleteConfirmEl: JQuery = $('<div>').attr('id', 'delete-confirm').css({ 'display': 'none' });
 
     playEl: JQuery = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
     stopEl: JQuery = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
@@ -57,7 +57,9 @@ class Timeline
         this.buildBreadcrumb(null);
 
         this.deleteLayerEl.on('click', (event: JQueryEventObject) => {
-            this.deleteLayers(event);
+            if (!this.deleteLayerEl.hasClass('disabled')) {
+                this.deleteLayers(event);   
+            }
             return false;
         });
 
@@ -73,13 +75,15 @@ class Timeline
             this.onClickLayer(event, ui);
         });
 
-        this.repeatEl.on('change', (event: JQueryEventObject) => {
-            this._repeat = this.repeatEl.find('input').is(':checked');
+        $('body').on('change', '#repeat', (event: JQueryEventObject) => {
+            console.log('repeat event');
+            this._repeat = $('#repeat').is(':checked');
             this.renderAnimationRange();
         });
 
         this.playEl.on('click', (event: JQueryEventObject) => {
             this.playMode = Animation_playing.PLAY;
+            $('.shape-helper').hide();
             this.showPause();
             this.runTimeline();
             var int = this.miliSecPerFrame / (this.keyframeWidth / 2);
@@ -95,6 +99,7 @@ class Timeline
         this.stopEl.on('click', (event: JQueryEventObject) => {
             //clearTimeout(this.playInterval);
             this.playMode = Animation_playing.STOP;
+            $('.shape-helper').show();
             this.showPlay();
             $('tr.first').removeClass('to-background');
             cancelAnimationFrame(this.playInterval);
@@ -105,10 +110,12 @@ class Timeline
         });
 
         this.pauseEl.on('click', (event: JQueryEventObject) => {
+            $('.shape-helper').show();
             this.playMode = Animation_playing.PAUSE;
             this.showPlay();
             $('tr.first').removeClass('to-background');
             cancelAnimationFrame(this.playInterval);
+            this.app.workspace.transformShapes();
         });
 
         $(document).on('mousedown', 'td', (event: JQueryEventObject) => {
@@ -193,7 +200,8 @@ class Timeline
                     $('tr.first').removeClass('to-background');
                     this.pointerPosition = 0;
                     this.pointerEl.css('left', this.pointerPosition - 1);
-                    this.showPlay();   
+                    this.showPlay();
+                    $('.shape-helper').show();
                 }
             }
 
@@ -231,25 +239,39 @@ class Timeline
     }
 
     private renderRow(id: number, selector: string = null) {
-        var trEl: JQuery = $('<tr>').addClass('layer-row').attr('data-id', id);
-
-        if (selector != null) {
-            trEl.attr('class', selector);
-        }
-
-        //render frames
-        for (var i: number = 0; i < this.keyframeCount; i++) {
-            var tdEl: JQuery = $('<td>').attr('class', i);
-
-            //every n-th highlighted
-            if ((i + 1) % this.groupKeyframes == 0) {
-                tdEl.addClass('highlight');
+        var existTrEl: JQuery = this.keyframesTableEl.find('.layer-row').first().clone();
+        if (existTrEl.length != 0) {
+            console.log('existuje');
+            existTrEl.removeClass();
+            existTrEl.addClass('layer-row').attr('data-id', id);
+            if (selector != null) {
+                existTrEl.attr('class', selector);
             }
 
-            tdEl.appendTo(trEl);
-        }
+            this.keyframesTableEl.find('tbody').append(existTrEl);
 
-        this.keyframesTableEl.find('tbody').append(trEl);
+        } else {
+            console.log('neexistuje');
+            var trEl: JQuery = $('<tr>').addClass('layer-row').attr('data-id', id);
+
+            if (selector != null) {
+                trEl.attr('class', selector);
+            }
+
+            //render frames
+            for (var i: number = 0; i < this.keyframeCount; i++) {
+                var tdEl: JQuery = $('<td>').attr('class', i);
+
+                //every n-th highlighted
+                if ((i + 1) % this.groupKeyframes == 0) {
+                    tdEl.addClass('highlight');
+                }
+
+                tdEl.appendTo(trEl);
+            }
+
+            this.keyframesTableEl.find('tbody').append(trEl);
+        }
     }
 
     renderAnimationRange() {
@@ -362,7 +384,7 @@ class Timeline
                     layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
                 }
                 this.layersEl.append(layerItem);
-                //and render frames fot this layer
+                //and render frames for this layer
                 this.renderRow(item.id);
                 //render keyframes
                 this.renderKeyframes(item.id, true);
@@ -391,6 +413,35 @@ class Timeline
             onblur: 'submit',
            event: 'dblclick',
             });
+    }
+
+    renderSingleLayer(layer: Layer, index: number) {
+        if (this.app.workspace.scope == layer.parent) {
+            var layerItem: JQuery = $('<div>').addClass('layer').attr('id', index).attr('data-id', layer.id);
+            layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(layer.name));
+            if (layer.idEl) {
+                layerItem.append($('<span>').addClass('div-id').html('#' + layer.idEl));
+            }
+            this.layersEl.append(layerItem);
+            //and render frames for this layer
+            this.renderRow(layer.id);
+            //render keyframes
+            this.renderKeyframes(layer.id, true);
+
+            //add jeditable plugin
+            var me: any = this;
+            $('.editable').editable(function (value: string, settings: any) {
+                me.onChangeName($(this).attr('id'), value);
+                me.app.workspace.renderShapes();
+                me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
+                me.app.workspace.transformShapes();
+                return (value);
+            }, {
+                    width: 150,
+                    onblur: 'submit',
+                    event: 'dblclick',
+                });
+        }       
     }
 
     selectLayer(id: number, idKeyframe: number = null) {
@@ -429,17 +480,19 @@ class Timeline
 
     public addLayer(layer): number {
         this.keyframesTableEl.find('tbody tr.disabled').remove();
-        this.layers.push(layer);
-        if (layer.parent == null) {
+        this.layersEl.find('.layer.disabled').remove();
+        var index: number = this.layers.push(layer);
+        /*if (layer.parent == null) {
             (this.groupedLayers[0]).push(layer);
         } else {
             if (!this.groupedLayers[layer.parent]) {
                 this.groupedLayers[layer.parent] = new Array<Layer>();
             }
             (this.groupedLayers[layer.parent]).push(layer);
-        }
+        }*/
         layer.order = this.layers.length;
-        this.renderLayers();
+        //this.renderLayers();
+        this.renderSingleLayer(layer, index-1);
 
         this.selectLayer(layer.id);
         this.layersWrapperEl.stop(true, true).animate({ scrollTop: this.layersWrapperEl[0].scrollHeight - 50 }, 300);
@@ -461,6 +514,7 @@ class Timeline
     }
 
     deleteOneLayer(index: number) {
+        this.deleteConfirmEl.attr('title', 'Vymazat vybrané vrstvy?').html('Opravu chcete vymazat vybrané vrstvy. Objekty v těchto vrstvách budou smazány také!');
         this.deleteConfirmEl.dialog({
             dialogClass: 'delete-confirm',
             resizable: false,
@@ -496,6 +550,7 @@ class Timeline
         var selectedLayers: Array<JQueryEventObject> = this.layersEl.find('div.layer.selected').get();
 
         if (selectedLayers.length) {
+            this.deleteConfirmEl.attr('title', 'Vymazat vybrané vrstvy?').html('Opravu chcete vymazat vybrané vrstvy. Objekty v těchto vrstvách budou smazány také!');
             this.deleteConfirmEl.dialog({
                 dialogClass: 'delete-confirm',
                 resizable: false,
@@ -598,8 +653,7 @@ class Timeline
         this.pointerEl.find('.pointer-top').css('top', posY);
     }
 
-    private onReady(e: JQueryEventObject)
-    {
+    private onReady(e: JQueryEventObject) {
         this.layersEl.multisortable({
             items: '> div.layer:not(.disabled)',
             axis: 'y', delay: 150,
@@ -698,7 +752,8 @@ class Timeline
                 });
                 //for check
 
-                this.renderKeyframes(id); 
+                this.renderKeyframes(id);
+                this.app.workspace.transformShapes();
             }
         }
     }
@@ -716,15 +771,33 @@ class Timeline
     }
 
     onDeleteKeyframe(e: JQueryEventObject) {
-        console.log('Deleting keyframe...');
-        var keyframeEl = this.keyframesTableEl.find('tbody .keyframe.selected');
-
-        if (keyframeEl.length) {
-            this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
-
-            this.renderKeyframes(keyframeEl.data('layer'));
-            this.app.workspace.transformShapes();
+        if (this.deleteKeyframeEl.hasClass('disabled')) {
+            e.preventDefault();
+            return false;
         }
+        this.deleteConfirmEl.attr('title', 'Vymazat keframe?').html('Opravu chcete vymazat vybráný klíčový snímek?');
+        this.deleteConfirmEl.dialog({
+            dialogClass: 'delete-confirm',
+            resizable: false,
+            buttons: {
+                "Smazat": () => {
+                    console.log('Deleting keyframe...');
+                    var keyframeEl = this.keyframesTableEl.find('tbody .keyframe.selected');
+
+                    if (keyframeEl.length) {
+                        this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
+
+                        this.renderKeyframes(keyframeEl.data('layer'));
+                        this.app.workspace.transformShapes();
+                        this.app.controlPanel.displayMainPanel(false, 'bezier');
+                    }  
+                    this.deleteConfirmEl.dialog("destroy");
+                },
+                Cancel: function () {
+                    $(this).dialog("destroy");
+                }
+            }
+        });
     }
 
     get repeat() {

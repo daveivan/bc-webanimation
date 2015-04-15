@@ -37,4 +37,8 @@
     set timing_function(val: Bezier_points) {
         this._timing_function = val;
     }
+
+    set shape(shape: IShape) {
+        this._shape = shape;
+    } 
 } 

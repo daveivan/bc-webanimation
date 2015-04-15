@@ -59,6 +59,7 @@
     }
 
     addKeyframe(shape: IShape, timestamp: number, timing_function: Bezier_points, index: number = null): Keyframe {
+
         var keyframe: Keyframe = new Keyframe(shape, timestamp, timing_function);
         if (index != null) {
             this._keyframes.splice(index, 0, keyframe);
@@ -135,6 +136,10 @@
 
     get timestamps() {
         return this._timestamps;
+    }
+
+    get type() {
+        return this._type;
     }
 
     transformOld(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
@@ -407,6 +412,10 @@
         }
     }
 
+    transform2(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
+        //nedelej nic
+    }
+
     transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
         //find interval between position
         var rangeData = this.getRange(position);
@@ -463,28 +472,38 @@
                     left: this.computeAttr(rng['l'].shape.parameters.relativePosition.left, rng['r'].shape.parameters.relativePosition.left, bezier(p)),
                 },
             }
-            shape.css("visibility", "visible");  
-            helper.css("visibility", "visible");
+            //shape.css("visibility", "visible");  
+            //helper.css("visibility", "visible");
+            shape.removeClass('novisible');  
+            helper.removeClass('novisible');    
         } else {
             if (this._keyframes.length == 1) {
                 var parent: Layer = app.timeline.getLayer(this.parent);
                 if (parent) {
                     if (parent.isVisible(position, app.timeline)) {
-                        shape.css("visibility", "visible");
-                        helper.css("visibility", "visible");
+                        //Jen tato vetev a bez if, pokud chci napodobit CSS3 animaci
+                        //shape.css("visibility", "visible");
+                        //helper.css("visibility", "visible");
+                        shape.removeClass('novisible');
+                        helper.removeClass('novisible'); 
                     } else {
-                        shape.css("visibility", "hidden");
-                        helper.css("visibility", "hidden");
+                        //shape.css("visibility", "hidden");
+                        //helper.css("visibility", "hidden");
+                        shape.addClass('novisible');
+                        helper.addClass('novisible'); 
                     }
                 } else {
-                    shape.css("visibility", "visible");
-                    helper.css("visibility", "visible");
+                    //shape.css("visibility", "visible");
+                    //helper.css("visibility", "visible");
+                    shape.removeClass('novisible');
+                    helper.removeClass('novisible'); 
                 }
             } else {
                 //shape.hide(); 
-                shape.css("visibility", "hidden");
-                helper.css("visibility", "hidden");
-                //shape.find('.shape').css('visibility', 'hidden');
+                //shape.css("visibility", "hidden");
+                //helper.css("visibility", "hidden");
+                shape.addClass('novisible');
+                helper.addClass('novisible'); 
             }
         }
 
@@ -517,6 +536,8 @@
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
         });
 
+        shape.attr('data-opacity', params.opacity);
+
         /*helper.css({
             'top': ((params.top - 1) / parentHeight) * 100 + '%',
             'left': ((params.left - 1) / parentWidth) * 100 + '%',
@@ -529,7 +550,8 @@
             'top': params.relativePosition.top + '%',
             'width': params.relativeSize.width + '%',
             'height': params.relativeSize.height + '%',
-            'z-index': helper.css('z-index'),
+            //'z-index': helper.css('z-index'),
+            'z-index': (params.zindex + 1000),
             'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
         });
@@ -788,7 +810,7 @@
         return null;
     }
 
-    renderShapeCore(shape: JQuery, container: JQuery, position: number, currentScope: number): JQuery {
+    renderShapeCore(shape: JQuery, container: JQuery, position: number, currentScope: number, h: JQuery = null): JQuery {
         //get keyframe by pointer position
         var keyframe: Keyframe = this.getKeyframeByTimestamp(position);
 
@@ -835,7 +857,11 @@
 
             //if current scope is rendered scope, show helpers
             if (currentScope == this.parent) {
-                var helper: JQuery = $('<div>').addClass('shape-helper');
+                if (h == null) {
+                    var helper: JQuery = $('<div>').addClass('shape-helper');
+                } else {
+                    var helper = h;
+                }
                 helper.append($('<div>').addClass('origin-point'));
                 if (this.idEl) {
                     var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + this.name + '<span class="div-id">#' + this.idEl + '</span></p>');

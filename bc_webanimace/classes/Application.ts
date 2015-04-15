@@ -39,7 +39,9 @@ class Application {
 $(document).ready(() => {
     console.log('DOM Loaded');
     new Application();
-    $('.tooltip').tooltipster({ position: 'right' });
+    $('.tooltip').tooltipster({ position: 'right', maxWidth: 200});
     $('.tooltip-top').tooltipster({ position: 'top' });
     $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });
+
+    window.onbeforeunload = function() { return "Opravdu chcete opustit stránku? Neuložený projekt bude ztracený!" };
 });

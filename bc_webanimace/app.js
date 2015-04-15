@@ -156,6 +156,14 @@
         configurable: true
     });
 
+    Object.defineProperty(Layer.prototype, "type", {
+        get: function () {
+            return this._type;
+        },
+        enumerable: true,
+        configurable: true
+    });
+
     Layer.prototype.transformOld = function (position, shape, helper, currentLayerId, app) {
         //find interval between position
         var rangeData = this.getRange(position);
@@ -427,6 +435,10 @@
         }
     };
 
+    Layer.prototype.transform2 = function (position, shape, helper, currentLayerId, app) {
+        //nedelej nic
+    };
+
     Layer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
         //find interval between position
         var rangeData = this.getRange(position);
@@ -483,28 +495,39 @@
                     left: this.computeAttr(rng['l'].shape.parameters.relativePosition.left, rng['r'].shape.parameters.relativePosition.left, bezier(p))
                 }
             };
-            shape.css("visibility", "visible");
-            helper.css("visibility", "visible");
+
+            //shape.css("visibility", "visible");
+            //helper.css("visibility", "visible");
+            shape.removeClass('novisible');
+            helper.removeClass('novisible');
         } else {
             if (this._keyframes.length == 1) {
                 var parent = app.timeline.getLayer(this.parent);
                 if (parent) {
                     if (parent.isVisible(position, app.timeline)) {
-                        shape.css("visibility", "visible");
-                        helper.css("visibility", "visible");
+                        //Jen tato vetev a bez if, pokud chci napodobit CSS3 animaci
+                        //shape.css("visibility", "visible");
+                        //helper.css("visibility", "visible");
+                        shape.removeClass('novisible');
+                        helper.removeClass('novisible');
                     } else {
-                        shape.css("visibility", "hidden");
-                        helper.css("visibility", "hidden");
+                        //shape.css("visibility", "hidden");
+                        //helper.css("visibility", "hidden");
+                        shape.addClass('novisible');
+                        helper.addClass('novisible');
                     }
                 } else {
-                    shape.css("visibility", "visible");
-                    helper.css("visibility", "visible");
+                    //shape.css("visibility", "visible");
+                    //helper.css("visibility", "visible");
+                    shape.removeClass('novisible');
+                    helper.removeClass('novisible');
                 }
             } else {
                 //shape.hide();
-                shape.css("visibility", "hidden");
-                helper.css("visibility", "hidden");
-                //shape.find('.shape').css('visibility', 'hidden');
+                //shape.css("visibility", "hidden");
+                //helper.css("visibility", "hidden");
+                shape.addClass('novisible');
+                helper.addClass('novisible');
             }
         }
 
@@ -537,6 +560,8 @@
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
         });
 
+        shape.attr('data-opacity', params.opacity);
+
         /*helper.css({
         'top': ((params.top - 1) / parentHeight) * 100 + '%',
         'left': ((params.left - 1) / parentWidth) * 100 + '%',
@@ -549,7 +574,8 @@
             'top': params.relativePosition.top + '%',
             'width': params.relativeSize.width + '%',
             'height': params.relativeSize.height + '%',
-            'z-index': helper.css('z-index'),
+            //'z-index': helper.css('z-index'),
+            'z-index': (params.zindex + 1000),
             'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
         });
@@ -831,7 +857,8 @@
         return null;
     };
 
-    Layer.prototype.renderShapeCore = function (shape, container, position, currentScope) {
+    Layer.prototype.renderShapeCore = function (shape, container, position, currentScope, h) {
+        if (typeof h === "undefined") { h = null; }
         //get keyframe by pointer position
         var keyframe = this.getKeyframeByTimestamp(position);
 
@@ -878,7 +905,11 @@
 
             //if current scope is rendered scope, show helpers
             if (currentScope == this.parent) {
-                var helper = $('<div>').addClass('shape-helper');
+                if (h == null) {
+                    var helper = $('<div>').addClass('shape-helper');
+                } else {
+                    var helper = h;
+                }
                 helper.append($('<div>').addClass('origin-point'));
                 if (this.idEl) {
                     var helpername = $('<div>').addClass('helpername').html('<p>' + this.name + '<span class="div-id">#' + this.idEl + '</span></p>');
@@ -922,13 +953,15 @@ var Timeline = (function () {
         //init number of keyframes
         this.keyframeCount = 100;
         //minimum free frames, when exceed, append another
-        this.expandTimelineBound = 10;
+        this.expandTimelineBound = 5;
         //convert frame to time
         this.miliSecPerFrame = 100;
         this.groupKeyframes = 5;
         this.playMode = 1 /* STOP */;
+        this.copyKeyframe = null;
         this._repeat = false;
         this.absoluteMax = 0;
+        this.arrayMax = Function.prototype.apply.bind(Math.max, null);
         this.deleteLayerEl = $('<a class="delete-layer disabled" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
         this.repeatEl = $('<label for="repeat" class="repeat-label">Opakovat celou animaci <i class="fa fa-repeat"></i><input type="checkbox" id="repeat"></label>');
         this.repeatIconEl = $('<div>').addClass('repeat-icon').html('<i class="fa fa-undo"></i>');
@@ -942,11 +975,19 @@ var Timeline = (function () {
         this.layersFooterEl = $('<div class="layers-footer"></div>');
         this.keyframesFooterEl = $('<div class="keyframes-footer"></div>');
         this.keyframesTableEl = $('<table><thead></thead><tbody></tbody>');
-        this.pointerEl = $('<div class="pointer"><div class="pointer-top"></div></div>');
+        this.pointerEl = $('<div class="pointer"><div class="pointer-top-wrapper"><div class="pointer-top"></div></div></div>');
         this.deleteConfirmEl = $('<div>').attr('id', 'delete-confirm').css({ 'display': 'none' });
         this.playEl = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
         this.stopEl = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
         this.pauseEl = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
+        this.contextMenuEl = $('<div>').addClass('context-menu');
+        this.menuCreateKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Vytvořit nový snímek');
+        this.menuDeleteKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat snímek');
+        this.menuCopyKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-copy"></i> Kopírovat snímek');
+        this.menuPasteKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Vložit snímekze schránky');
+        this.menuReplaceKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Nahradit snímkem ze schránky');
+        this.menuRenameLayer = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-pencil"></i> Přejmenovat vrstvu');
+        this.menuDeleteLayer = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat vrstvu');
         this.app = app;
         this.timelineContainer = timelineContainer;
         this.layers = new Array();
@@ -956,6 +997,14 @@ var Timeline = (function () {
         this.renderTimeline();
 
         this.buildBreadcrumb(null);
+
+        $(document).on('mousedown', function (e) {
+            //hide context menu
+            if (!$(e.target).parents().hasClass('context-menu')) {
+                _this.contextMenuEl.removeClass('active');
+                _this.contextMenuEl.remove();
+            }
+        });
 
         this.deleteLayerEl.on('click', function (event) {
             if (!_this.deleteLayerEl.hasClass('disabled')) {
@@ -1020,26 +1069,185 @@ var Timeline = (function () {
         });
 
         $(document).on('mousedown', 'td', function (event) {
+            console.log('onClickRow');
             _this.onClickRow(event);
         });
 
         $(document).on('dblclick', 'td', function (event) {
+            console.log('onDblClick');
             _this.onCreateKeyframe(event);
         });
 
-        $(document).on('mousedown', '.keyframes > table', function (event) {
+        $(document).on('mousedown', '.keyframes > table > tbody', function (event) {
+            console.log('mousedown tbody');
             _this.onClickTable(event);
         });
 
-        this.keyframesTableEl.on('click', '.keyframe', function (event) {
+        $(document).on('mousedown', '.keyframes > table > thead', function (event) {
+            console.log('mousedown thead');
+            _this.onClickChangePosition(event);
+        });
+
+        $(document).on('contextmenu', '#layers > .layer', function (e) {
+            if (!$(e.target).hasClass('disabled')) {
+                _this.contextMenuEl.empty();
+
+                _this.contextMenuEl.append('<ul></ul>');
+                _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuRenameLayer.attr('data-id', $(e.target).closest('.layer').data('id'))));
+                _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuDeleteLayer.attr('data-id', $(e.target).closest('.layer').data('id'))));
+
+                _this.contextMenuEl.appendTo($('body'));
+                _this.contextMenuEl.css({
+                    'top': e.pageY - $('body').offset().top,
+                    'left': e.pageX - $('body').offset().left
+                });
+                _this.contextMenuEl.focus();
+
+                _this.menuRenameLayer.on('click', function (event) {
+                    $(e.target).closest('.layer').find('.editable').trigger('dblclick');
+                    _this.contextMenuEl.remove();
+                });
+
+                _this.menuDeleteLayer.on('click', function (event) {
+                    var id = parseInt($(e.target).data('id'));
+                    var index = _this.getLayerIndex(id);
+                    _this.deleteOneLayer(index);
+                    _this.contextMenuEl.remove();
+                });
+
+                _this.contextMenuEl.addClass('active');
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        $(document).on('contextmenu', '.keyframes > table > tbody', function (e) {
+            if (!$(e.target).closest('tr').hasClass('disabled')) {
+                if (!$(e.target).hasClass('keyframe')) {
+                    _this.contextMenuEl.empty();
+
+                    _this.contextMenuEl.append('<ul></ul>');
+                    _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuCreateKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+                    _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuPasteKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+
+                    if (_this.copyKeyframe != null && _this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
+                        _this.menuPasteKeyframe.removeClass('disabled');
+                    } else {
+                        _this.menuPasteKeyframe.addClass('disabled');
+                    }
+
+                    _this.contextMenuEl.appendTo($('body'));
+                    _this.contextMenuEl.css({
+                        'top': e.pageY - $('body').offset().top,
+                        'left': e.pageX - $('body').offset().left
+                    });
+                    _this.contextMenuEl.focus();
+
+                    _this.menuCreateKeyframe.on('click', function (event) {
+                        var idLayer = parseInt($(event.target).data('id'));
+                        var n = $('body').find('.keyframes > table');
+                        var posX = e.pageX - $(n).offset().left;
+                        posX = Math.round(posX / _this.keyframeWidth) * _this.keyframeWidth;
+                        var position = _this.pxToMilisec(posX);
+                        _this.createKeyframe(idLayer, position);
+                        _this.contextMenuEl.remove();
+                    });
+
+                    _this.menuPasteKeyframe.on('click', function (event) {
+                        if (!$(event.target).hasClass('disabled')) {
+                            if (_this.copyKeyframe != null && _this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
+                                var n = $('body').find('.keyframes > table');
+                                var posX = e.pageX - $(n).offset().left;
+                                posX = Math.round(posX / _this.keyframeWidth) * _this.keyframeWidth;
+                                var position = _this.pxToMilisec(posX);
+
+                                _this.pasteKeyframe(position);
+                            } else {
+                                alert('Klíčový snímek je možné zkopírovat jen v rámci vrstvy.');
+                            }
+                        }
+                        _this.copyKeyframe = null;
+                        _this.app.workspace.transformShapes();
+                        _this.contextMenuEl.remove();
+                    });
+
+                    _this.contextMenuEl.addClass('active');
+                    e.preventDefault();
+                    return false;
+                } else {
+                    //context menu for keyframe
+                    _this.contextMenuEl.empty();
+
+                    _this.contextMenuEl.append('<ul></ul>');
+
+                    //data-id = idLayer
+                    _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuDeleteKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+                    _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuCopyKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+                    _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuReplaceKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+
+                    if (_this.copyKeyframe != null && _this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
+                        _this.menuReplaceKeyframe.removeClass('disabled');
+                    } else {
+                        _this.menuReplaceKeyframe.addClass('disabled');
+                    }
+
+                    _this.contextMenuEl.appendTo($('body'));
+                    _this.contextMenuEl.css({
+                        'top': e.pageY - $('body').offset().top,
+                        'left': e.pageX - $('body').offset().left
+                    });
+                    _this.contextMenuEl.focus();
+
+                    _this.menuDeleteKeyframe.on('click', function (event) {
+                        $(e.target).addClass('selected');
+                        $(e.target).next('.timing-function').addClass('selected');
+                        _this.onDeleteKeyframe(e);
+                    });
+
+                    _this.menuCopyKeyframe.on('click', function (event) {
+                        var idLayer = $(event.target).data('id');
+                        var indexKeyframe = $(e.target).data('index');
+                        _this.copyKeyframe = { layer: idLayer, keyframe: indexKeyframe };
+                        _this.contextMenuEl.remove();
+                    });
+
+                    _this.menuReplaceKeyframe.on('click', function (event) {
+                        if (!$(event.target).hasClass('disabled')) {
+                            if (_this.copyKeyframe != null && _this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
+                                var n = $('body').find('.keyframes > table');
+                                var posX = e.pageX - $(n).offset().left;
+                                posX = Math.round(posX / _this.keyframeWidth) * _this.keyframeWidth;
+                                var position = _this.pxToMilisec(posX);
+
+                                _this.pasteKeyframe(position);
+                            } else {
+                                alert('Klíčový snímek je možné zkopírovat jen v rámci vrstvy.');
+                            }
+                        }
+                        _this.copyKeyframe = null;
+                        _this.app.workspace.transformShapes();
+                        _this.contextMenuEl.remove();
+                    });
+
+                    _this.contextMenuEl.addClass('active');
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+
+        this.keyframesTableEl.on('mouseup', '.keyframe', function (event) {
+            console.log('keyframe click');
             _this.keyframesTableEl.find('.keyframe').removeClass('selected');
             _this.keyframesTableEl.find('.timing-function').removeClass('selected');
             $(event.target).addClass('selected');
             $(event.target).next('.timing-function').addClass('selected');
             _this.app.workspace.updateBezierCurve(_this.getLayer($(event.target).data('layer')));
+            _this.onClickChangePosition(event);
         });
 
         this.keyframesTableEl.on('click', '.timing-function p', function (event) {
+            console.log('timing function click');
             var keyframeEl = $(event.target).parent('.timing-function').prev('.keyframe');
 
             _this.keyframesTableEl.find('.keyframe').removeClass('selected');
@@ -1054,6 +1262,76 @@ var Timeline = (function () {
             _this.onReady(event);
         });
     }
+    Timeline.prototype.pasteKeyframe = function (position) {
+        var layer = this.getLayer(this.copyKeyframe.layer);
+        if (layer) {
+            var k = layer.getKeyframe(this.copyKeyframe.keyframe);
+            if (k) {
+                var p = {
+                    top: k.shape.parameters.top,
+                    left: k.shape.parameters.left,
+                    width: k.shape.parameters.width,
+                    height: k.shape.parameters.height,
+                    relativePosition: {
+                        top: k.shape.parameters.relativePosition.top,
+                        left: k.shape.parameters.relativePosition.left
+                    },
+                    relativeSize: {
+                        width: k.shape.parameters.relativeSize.width,
+                        height: k.shape.parameters.relativeSize.height
+                    },
+                    background: k.shape.parameters.background,
+                    opacity: k.shape.parameters.opacity,
+                    zindex: k.shape.parameters.zindex,
+                    borderRadius: [
+                        k.shape.parameters.borderRadius[0],
+                        k.shape.parameters.borderRadius[1],
+                        k.shape.parameters.borderRadius[2],
+                        k.shape.parameters.borderRadius[3]
+                    ],
+                    rotate: {
+                        x: k.shape.parameters.rotate.x,
+                        y: k.shape.parameters.rotate.y,
+                        z: k.shape.parameters.rotate.z
+                    },
+                    skew: {
+                        x: k.shape.parameters.skew.x,
+                        y: k.shape.parameters.skew.y
+                    },
+                    origin: {
+                        x: k.shape.parameters.origin.x,
+                        y: k.shape.parameters.origin.y
+                    }
+                };
+
+                if (layer.type == 0 /* DIV */) {
+                    var shape = new Rectangle(p);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                } else if (layer.type == 3 /* IMAGE */) {
+                    var shape = new Img(p, layer.globalShape.getSrc());
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                } else if (layer.type == 2 /* SVG */) {
+                    var shape = new Svg(p, layer.globalShape.getSrc());
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                } else if (layer.type == 1 /* TEXT */) {
+                    var g = layer.globalShape;
+                    var shape = new TextField(p, g.getContent(), k.shape.getColor(), k.shape.getSize(), g.getFamily());
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                }
+
+                if (newKeyframe == null) {
+                    var currentKeyframe = layer.getKeyframeByTimestamp(position);
+                    if (currentKeyframe) {
+                        if (confirm('Stávající snímek na pozici ' + position / 1000 + ' s bude nahrazen.')) {
+                            currentKeyframe.shape = shape;
+                            currentKeyframe.timing_function = k.timing_function;
+                        }
+                    }
+                }
+            }
+        }
+    };
+
     Timeline.prototype.showPause = function () {
         $('.play-animation').hide();
         $('.pause-animation').show();
@@ -1081,7 +1359,16 @@ var Timeline = (function () {
             if (tmp > absoluteMax)
                 absoluteMax = tmp;
         });
-        absoluteMax = this.milisecToPx(absoluteMax);
+        var absoluteMaxPx = this.milisecToPx(absoluteMax);
+
+        if (absoluteMax == 0) {
+            this.playMode = 1 /* STOP */;
+            $('.shape-helper').show();
+            this.showPlay();
+            $('tr.first').removeClass('to-background');
+            return false;
+        }
+
         var time;
         this.start = new Date();
         var draw = function () {
@@ -1090,8 +1377,9 @@ var Timeline = (function () {
             var dt = now - (time || now);
 
             time = now;
-            _this.pointerPosition += 2;
-            if (_this.pointerPosition >= absoluteMax) {
+            _this.pointerPosition += (absoluteMaxPx / absoluteMax) * dt;
+            ;
+            if (_this.pointerPosition >= absoluteMaxPx) {
                 cancelAnimationFrame(_this.playInterval);
                 if (_this.repeat) {
                     _this.pointerPosition = 0;
@@ -1174,6 +1462,25 @@ var Timeline = (function () {
         }
     };
 
+    Timeline.prototype.expandFrames = function () {
+        var trEl = $('body').find('.keyframes > table > tbody > tr');
+
+        for (var i = 0; i < 10; i++) {
+            var tdEl = $('<td>').attr('class', i + this.keyframeCount);
+
+            //every n-th highlighted
+            if ((i + 1) % this.groupKeyframes == 0) {
+                tdEl.addClass('highlight');
+            }
+
+            tdEl.appendTo(trEl);
+        }
+
+        this.keyframeCount += 10;
+        this.fixedWidthEl.width((this.keyframeWidth) * this.keyframeCount + 350 + 15);
+        this.renderHeader();
+    };
+
     Timeline.prototype.renderAnimationRange = function () {
         var _this = this;
         this.keyframesTableEl.find('.range').remove();
@@ -1232,7 +1539,7 @@ var Timeline = (function () {
                 }));
 
                 if (index != (keyframes.length - 1)) {
-                    keyframesTdEl.append($('<div>').addClass('timing-function').html('<p>(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')</p>').css({
+                    keyframesTdEl.append($('<div>').addClass('timing-function').html('<p class="tooltip-bottom" title="Kliknutím editujte časovou funkci">(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')</p>').css({
                         'left': _this.milisecToPx(keyframe.timestamp) + 5,
                         'width': _this.milisecToPx(keyframes[index + 1].timestamp - keyframe.timestamp) - 10
                     }));
@@ -1255,7 +1562,42 @@ var Timeline = (function () {
                 var layerID = $(event.target).data('layer');
                 var keyframeID = $(event.target).data('index');
 
-                _this.getLayer(layerID).updatePosition(keyframeID, ms);
+                var layer = _this.getLayer(layerID);
+
+                var err1 = false;
+                var err2 = false;
+                if (layer.parent != null) {
+                    var parentLayer = _this.getLayer(layer.parent);
+                    var maxTimestamp = _this.arrayMax(parentLayer.timestamps);
+                    if (ms > maxTimestamp && maxTimestamp != 0) {
+                        err1 = true;
+                    }
+                }
+                var mt = _this.arrayMax(layer.timestamps);
+                var maxPosition = _this.checkChildTimestamps(layer, mt);
+                var secondMax = 0;
+                layer.getAllKeyframes().forEach(function (item, index) {
+                    if (item.timestamp > secondMax && item.timestamp != mt) {
+                        secondMax = item.timestamp;
+                    }
+                });
+
+                if ((mt == layer.getKeyframe(keyframeID).timestamp) && (secondMax < maxPosition && ms < maxPosition && maxPosition != 0)) {
+                    err2 = true;
+                }
+
+                if (err1) {
+                    alert('Doba animace je omezena animací nadřazeného prvku na ' + maxTimestamp / 1000 + 's. Snímek nebude přesunut.');
+                } else if (err2) {
+                    alert('Nelze přesunout snímek, protože výsledná animace by byla kratší než animace vnořených elementů. Upravte dobu animací vnořených elementů.');
+                } else {
+                    layer.updatePosition(keyframeID, ms);
+                }
+
+                var countK = ms / _this.miliSecPerFrame;
+                if (countK > (_this.keyframeCount - _this.expandTimelineBound)) {
+                    _this.expandFrames();
+                }
 
                 _this.renderKeyframes(layerID);
             },
@@ -1267,6 +1609,7 @@ var Timeline = (function () {
                 }
             }
         });
+        $('.tooltip-bottom').tooltipster({ position: 'bottom' });
     };
 
     Timeline.prototype.renderLayers = function () {
@@ -1283,6 +1626,7 @@ var Timeline = (function () {
         this.layers.forEach(function (item, index) {
             if (_this.app.workspace.scope == item.parent) {
                 var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
+                layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
                 layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
                 if (item.idEl) {
                     layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
@@ -1317,13 +1661,15 @@ var Timeline = (function () {
         }, {
             width: 150,
             onblur: 'submit',
-            event: 'dblclick'
+            event: 'dblclick',
+            cssClass: 'editable-input'
         });
     };
 
     Timeline.prototype.renderSingleLayer = function (layer, index) {
         if (this.app.workspace.scope == layer.parent) {
             var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', layer.id);
+            layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
             layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(layer.name));
             if (layer.idEl) {
                 layerItem.append($('<span>').addClass('div-id').html('#' + layer.idEl));
@@ -1347,7 +1693,8 @@ var Timeline = (function () {
             }, {
                 width: 150,
                 onblur: 'submit',
-                event: 'dblclick'
+                event: 'dblclick',
+                cssClass: 'editable-input'
             });
         }
     };
@@ -1383,7 +1730,7 @@ var Timeline = (function () {
             head.append('<th colspan="' + this.groupKeyframes + '">' + milisec / 1000 + ' s</th>');
         }
 
-        this.keyframesTableEl.find('thead').append(head);
+        this.keyframesTableEl.find('thead').empty().append(head);
     };
 
     Timeline.prototype.addLayer = function (layer) {
@@ -1535,6 +1882,7 @@ var Timeline = (function () {
         this.selectLayer(firstSelectedEl.data('id'));
     };
 
+    //on click name layer
     Timeline.prototype.onClickLayer = function (e, ui) {
         //select row by selected layer
         var id = parseInt($(e.target).closest('.layer').data('id'));
@@ -1566,13 +1914,14 @@ var Timeline = (function () {
         this.layersFooterEl.css('left', posX);
         this.keyframesFooterEl.css('left', posX);
         this.timelineFooterEl.css('bottom', 0 - posY);
-        this.pointerEl.find('.pointer-top').css('top', posY);
+        //this.pointerEl.find('.pointer-top-wrapper').css('top', posY);
     };
 
     Timeline.prototype.onReady = function (e) {
         var _this = this;
         this.layersEl.multisortable({
             items: '> div.layer:not(.disabled)',
+            handle: '.handle',
             axis: 'y', delay: 150,
             scroll: true,
             stop: function (e) {
@@ -1585,10 +1934,11 @@ var Timeline = (function () {
         this.pointerEl.draggable({
             axis: 'x',
             containment: 'parent',
-            handle: '.pointer-top',
+            handle: '.pointer-top-wrapper',
             start: function (event, ui) {
                 _this.keyframesTableEl.find('.keyframe').removeClass('selected');
                 _this.keyframesTableEl.find('.timing-function').removeClass('selected');
+                _this.app.controlPanel.displayMainPanel(false, 'bezier');
             },
             drag: function (event, ui) {
                 _this.pointerPosition = ui.position.left + 1;
@@ -1608,8 +1958,25 @@ var Timeline = (function () {
     Timeline.prototype.onClickTable = function (e) {
         this.app.controlPanel.displayMainPanel(false, 'bezier');
         if (!$(e.target).hasClass('pointer')) {
-            this.keyframesTableEl.find('.keyframe').removeClass('selected');
             this.keyframesTableEl.find('.timing-function').removeClass('selected');
+            this.keyframesTableEl.find('.keyframe').removeClass('selected');
+        }
+    };
+
+    Timeline.prototype.onClickChangePosition = function (e) {
+        if (!$(e.target).hasClass('pointer')) {
+            if (!$(e.target).hasClass('keyframe')) {
+                this.keyframesTableEl.find('.timing-function').removeClass('selected');
+                this.keyframesTableEl.find('.keyframe').removeClass('selected');
+                this.app.controlPanel.displayMainPanel(false, 'bezier');
+            } else {
+                if (!$(e.target).is(':last-child')) {
+                    this.app.controlPanel.displayMainPanel(true, 'bezier');
+                } else {
+                    this.app.controlPanel.displayMainPanel(false, 'bezier');
+                    $('.delete-keyframe').removeClass('disabled');
+                }
+            }
             var n = $(e.target).parents('table');
             var posX = e.pageX - $(n).offset().left;
             posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
@@ -1655,24 +2022,43 @@ var Timeline = (function () {
 
     Timeline.prototype.onCreateKeyframe = function (e) {
         console.log('Creating keyframe...');
+        var idLayer = parseInt($(e.target).closest('tr.selected').data('id'));
+        var n = $('body').find('.keyframes > table');
+        var posX = e.pageX - $(n).offset().left;
+        posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
+        var position = this.pxToMilisec(posX);
 
-        //nejblizsi tr -> vytanout data-id -> najit layer podle id ->vlozit novy keyframe (pouzit  position, nejprve prevest na ms, pouzit shape z workspace)
-        var id = parseInt($(e.target).closest('tr.selected').data('id'));
-        if ($.isNumeric(id)) {
-            var layer = this.getLayer(id);
-            var ms = this.pxToMilisec(this.pointerPosition);
-            if (layer.getKeyframeByTimestamp(ms) === null) {
-                layer.addKeyframe(this.app.workspace.getCurrentShape(id), ms, this.app.workspace.getBezier());
+        this.createKeyframe(idLayer, position);
+    };
 
-                //for check
-                layer.getAllKeyframes().forEach(function (item, index) {
-                    console.log(item);
-                });
+    Timeline.prototype.createKeyframe = function (idLayer, position) {
+        if ($.isNumeric(idLayer)) {
+            var layer = this.getLayer(idLayer);
 
-                //for check
-                this.renderKeyframes(id);
-                this.app.workspace.transformShapes();
+            /*if (layer.parent != null) {
+            var arrayMax = Function.prototype.apply.bind(Math.max, null);
+            var parentLayer: Layer = this.getLayer(layer.parent);
+            var maxTimestamp: number = arrayMax(parentLayer.timestamps);
+            if (position > maxTimestamp && maxTimestamp != 0) {
+            position = maxTimestamp;
+            alert('Doba animace je omezena animací nadřazeného prvku na ' + maxTimestamp / 1000 + 's. Snímek bude posunut na tuto pozici.');
             }
+            }
+            if (layer.getKeyframeByTimestamp(position) === null) {
+            
+            layer.addKeyframe(this.app.workspace.getCurrentShape(idLayer), position, this.app.workspace.getBezier());
+            
+            var countK = position / this.miliSecPerFrame;
+            if (countK > (this.keyframeCount - this.expandTimelineBound)) {
+            this.expandFrames();
+            }
+            
+            this.renderKeyframes(idLayer);
+            this.app.workspace.transformShapes();
+            }*/
+            this.app.workspace.addKeyframe(layer, this.app.workspace.getCurrentShape(idLayer), position, this.app.workspace.getBezier());
+
+            this.app.workspace.transformShapes();
         }
     };
 
@@ -1691,6 +2077,7 @@ var Timeline = (function () {
 
     Timeline.prototype.onDeleteKeyframe = function (e) {
         var _this = this;
+        console.log('onDeleteKEyframe');
         if (this.deleteKeyframeEl.hasClass('disabled')) {
             e.preventDefault();
             return false;
@@ -1705,7 +2092,19 @@ var Timeline = (function () {
                     var keyframeEl = _this.keyframesTableEl.find('tbody .keyframe.selected');
 
                     if (keyframeEl.length) {
-                        _this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
+                        var layer = _this.getLayer(keyframeEl.data('layer'));
+
+                        var k = layer.getKeyframe(keyframeEl.data('index'));
+                        if (layer.getAllKeyframes().length > 2) {
+                            var maxPosition = _this.checkChildTimestamps(layer, _this.arrayMax(layer.timestamps));
+                            if (k.timestamp > maxPosition && maxPosition != 0) {
+                                alert('Nelze smazat snímek, protože výsledná animace by byla kratší než animace vnořených elementů. Upravte dobu animací vnořených elementů.');
+                            } else {
+                                layer.deleteKeyframe(keyframeEl.data('index'));
+                            }
+                        } else {
+                            layer.deleteKeyframe(keyframeEl.data('index'));
+                        }
 
                         _this.renderKeyframes(keyframeEl.data('layer'));
                         _this.app.workspace.transformShapes();
@@ -1718,6 +2117,22 @@ var Timeline = (function () {
                 }
             }
         });
+    };
+
+    Timeline.prototype.checkChildTimestamps = function (layer, limit, maxTimestamp) {
+        var _this = this;
+        if (typeof maxTimestamp === "undefined") { maxTimestamp = 0; }
+        var ret = maxTimestamp;
+        this.layers.forEach(function (child, index) {
+            if (child.parent == layer.id) {
+                var localMax = _this.arrayMax(child.timestamps);
+
+                var tmp = _this.checkChildTimestamps(child, limit, localMax);
+                if (tmp > ret)
+                    ret = tmp;
+            }
+        });
+        return ret;
     };
 
     Object.defineProperty(Timeline.prototype, "repeat", {
@@ -1852,6 +2267,13 @@ var Shape = (function () {
         this._parameters.borderRadius[3] = val;
     };
 
+    Shape.prototype.setBorderRadius = function (val) {
+        this.setBorderRadiusBottomLeft(val);
+        this.setBorderRadiusBottomRight(val);
+        this.setBorderRadiusTopLeft(val);
+        this.setBorderRadiusTopRight(val);
+    };
+
     Shape.prototype.setRotateX = function (val) {
         this._parameters.rotate.x = val;
     };
@@ -1906,6 +2328,7 @@ var Workspace = (function () {
         this.menuItemMoveTo = $('<a>').addClass('menu-item menu-moveto').attr('href', '#').html('<i class="fa fa-file"></i> Přesunout do...');
         this.menuItemMoveHere = $('<a>').addClass('menu-item menu-movehere').attr('href', '#').html('<i class="fa fa-file-o"></i> ...Přesunout tady');
         this.menuItemMoveCancel = $('<a>').addClass('menu-item menu-movecancel').attr('href', '#').html('<i class="fa fa-times"></i> Zrušit přesun');
+        this.menuSetScope = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-level-down"></i> Zanořit');
         this.dialogEl = $('<div>').attr('id', 'dialog');
         this.tooltip = $('<span>').addClass('tooltip-text').html('Dvojklikem umístětě textové pole');
         this.app = app;
@@ -2004,7 +2427,11 @@ var Workspace = (function () {
         $('html').on('keyup', function (e) {
             if (e.keyCode == 46) {
                 if (e.target.nodeName === 'BODY') {
-                    _this.app.timeline.deleteLayers(e);
+                    if ($('body').find('.keyframe.selected').length != 0) {
+                        _this.app.timeline.onDeleteKeyframe(e);
+                    } else {
+                        _this.app.timeline.deleteLayers(e);
+                    }
                 }
             }
         });
@@ -2172,6 +2599,15 @@ var Workspace = (function () {
             _this.contextMenuEl.find('ul').append($('<li class="separator"></li>'));
             _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemDuplicate.attr('data-id', targetID)));
             _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuItemDelete.attr('data-id', targetID)));
+            if ($(event.target).hasClass('square-helper')) {
+                _this.contextMenuEl.find('ul').append($('<li class="separator"></li>'));
+                _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuSetScope.attr('data-id', targetID)));
+
+                _this.menuSetScope.on('click', function (e) {
+                    _this.setScope(parseInt($(e.target).data('id')));
+                    _this.contextMenuEl.remove();
+                });
+            }
 
             _this.contextMenuEl.appendTo($('body'));
             _this.contextMenuEl.css({
@@ -2412,12 +2848,10 @@ var Workspace = (function () {
 
     Workspace.prototype.onDrawSquare = function (e) {
         var _this = this;
-        var new_object = $('<div>').addClass('shape-helper tmp-shape');
+        var new_object = $('<div>').addClass('shape-helper rect tmp-shape');
         console.log(e);
         var click_y = e.pageY - this.workspaceContainer.offset().top;
         var click_x = e.pageX - this.workspaceContainer.offset().left;
-        console.log(this.workspaceContainer.offset().top);
-        console.log(this.workspaceContainer.offset().left);
         new_object.css({
             'top': click_y,
             'left': click_x,
@@ -2832,10 +3266,13 @@ var Workspace = (function () {
             stop: function (event, ui) {
                 var layer = _this.app.timeline.getLayer($(event.target).data('id'));
                 var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
+                var currentShape = _this.getCurrentShape(layer.id);
                 if (keyframe == null) {
-                    //keyframe = layer.getKeyframe(0);
-                    layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
-                    _this.app.timeline.renderKeyframes(layer.id);
+                    if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                        //layer.addKeyframe(currentShape, this.app.timeline.pxToMilisec(), this.bezier);
+                        //this.app.timeline.renderKeyframes(layer.id);
+                        _this.addKeyframe(layer, currentShape, _this.app.timeline.pxToMilisec(), _this.bezier);
+                    }
                 } else {
                     keyframe.shape.setPosition({
                         top: ui.position.top + 1,
@@ -2872,8 +3309,11 @@ var Workspace = (function () {
                 var layer = _this.app.timeline.getLayer($(event.target).data('id'));
                 var keyframe = layer.getKeyframeByTimestamp(_this.app.timeline.pxToMilisec());
                 if (keyframe == null) {
-                    layer.addKeyframe(_this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
-                    _this.app.timeline.renderKeyframes(layer.id);
+                    if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                        //layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                        //this.app.timeline.renderKeyframes(layer.id);
+                        _this.addKeyframe(layer, _this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
+                    }
                 } else {
                     keyframe.shape.setPosition({
                         top: ui.position.top + 1,
@@ -2996,7 +3436,8 @@ var Workspace = (function () {
                     height: (shapeEl.height() / shapeEl.parent().height() * 100)
                 },
                 background: c,
-                opacity: parseFloat(shapeEl.css('opacity')),
+                //opacity: parseFloat(shapeEl.css('opacity')),
+                opacity: parseFloat(shapeEl.attr('data-opacity')),
                 zindex: parseInt(shapeEl.css('z-index')),
                 borderRadius: [
                     parseInt(shapeEl.css('border-top-left-radius')),
@@ -3019,6 +3460,7 @@ var Workspace = (function () {
                 }
             };
 
+            //console.log(shapeEl.attr('data-opacity'));
             //if background is transparent
             if (c.a == 0) {
                 params['background']['r'] = this.color.r;
@@ -3113,10 +3555,14 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                this.app.timeline.renderKeyframes(layer.id);
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
             }
-            keyframe.shape.setBackground(this.color);
+            if (keyframe != null)
+                keyframe.shape.setBackground(this.color);
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
@@ -3130,8 +3576,11 @@ var Workspace = (function () {
         if (layer && layer.getKeyframe(0).shape instanceof TextField) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null && newKeyframe) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                this.app.timeline.renderKeyframes(layer.id);
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
             }
 
             if (keyframe != null) {
@@ -3152,10 +3601,14 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                this.app.timeline.renderKeyframes(layer.id);
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
             }
-            keyframe.shape.setOpacity(opacity);
+            if (keyframe != null)
+                keyframe.shape.setOpacity(opacity);
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
@@ -3167,15 +3620,20 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                this.app.timeline.renderKeyframes(layer.id);
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
             }
-            if (axis === 'x') {
-                keyframe.shape.setX(dimension);
-                keyframe.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
-            } else if (axis === 'y') {
-                keyframe.shape.setY(dimension);
-                keyframe.shape.setRelativeY((dimension / this.workspaceContainer.height()) * 100);
+            if (keyframe != null) {
+                if (axis === 'x') {
+                    keyframe.shape.setX(dimension);
+                    keyframe.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
+                } else if (axis === 'y') {
+                    keyframe.shape.setY(dimension);
+                    keyframe.shape.setRelativeY((dimension / this.workspaceContainer.height()) * 100);
+                }
             }
 
             this.transformShapes();
@@ -3189,17 +3647,24 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                this.app.timeline.renderKeyframes(layer.id);
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
             }
-            if (type === 'tl') {
-                keyframe.shape.setBorderRadiusTopLeft(value);
-            } else if (type === 'tr') {
-                keyframe.shape.setBorderRadiusTopRight(value);
-            } else if (type === 'bl') {
-                keyframe.shape.setBorderRadiusBottomLeft(value);
-            } else if (type === 'br') {
-                keyframe.shape.setBorderRadiusBottomRight(value);
+            if (keyframe != null) {
+                if (type === 'tl') {
+                    keyframe.shape.setBorderRadiusTopLeft(value);
+                } else if (type === 'tr') {
+                    keyframe.shape.setBorderRadiusTopRight(value);
+                } else if (type === 'bl') {
+                    keyframe.shape.setBorderRadiusBottomLeft(value);
+                } else if (type === 'br') {
+                    keyframe.shape.setBorderRadiusBottomRight(value);
+                } else if (type === 'all') {
+                    keyframe.shape.setBorderRadius(value);
+                }
             }
 
             this.transformShapes();
@@ -3213,15 +3678,20 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                this.app.timeline.renderKeyframes(layer.id);
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
             }
-            if (type === 'x') {
-                keyframe.shape.setRotateX(value);
-            } else if (type === 'y') {
-                keyframe.shape.setRotateY(value);
-            } else if (type === 'z') {
-                keyframe.shape.setRotateZ(value);
+            if (keyframe != null) {
+                if (type === 'x') {
+                    keyframe.shape.setRotateX(value);
+                } else if (type === 'y') {
+                    keyframe.shape.setRotateY(value);
+                } else if (type === 'z') {
+                    keyframe.shape.setRotateZ(value);
+                }
             }
 
             this.transformShapes();
@@ -3235,13 +3705,19 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                this.app.timeline.renderKeyframes(layer.id);
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
             }
-            if (type === 'x') {
-                keyframe.shape.setOriginX(value);
-            } else if (type === 'y') {
-                keyframe.shape.setOriginY(value);
+
+            if (keyframe != null) {
+                if (type === 'x') {
+                    keyframe.shape.setOriginX(value);
+                } else if (type === 'y') {
+                    keyframe.shape.setOriginY(value);
+                }
             }
 
             this.transformShapes();
@@ -3255,14 +3731,19 @@ var Workspace = (function () {
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                this.app.timeline.renderKeyframes(layer.id);
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
             }
-            if (type === 'x') {
-                keyframe.shape.setSkewX(value);
-                console.log(value);
-            } else if (type === 'y') {
-                keyframe.shape.setSkewY(value);
+            if (keyframe != null) {
+                if (type === 'x') {
+                    keyframe.shape.setSkewX(value);
+                    console.log(value);
+                } else if (type === 'y') {
+                    keyframe.shape.setSkewY(value);
+                }
             }
 
             this.transformShapes();
@@ -3985,6 +4466,32 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.addKeyframe = function (layer, shape, timestamp, timing_function) {
+        if (layer.parent != null) {
+            var arrayMax = Function.prototype.apply.bind(Math.max, null);
+            var parentLayer = this.app.timeline.getLayer(layer.parent);
+            var maxTimestamp = arrayMax(parentLayer.timestamps);
+            if (timestamp > maxTimestamp && maxTimestamp != 0) {
+                timestamp = maxTimestamp;
+                alert('Doba animace je omezena animací nadřazeného prvku na ' + maxTimestamp / 1000 + 's. Snímek bude posunut na tuto pozici.');
+            }
+        }
+
+        if (layer.getKeyframeByTimestamp(timestamp) === null) {
+            var newKeyframe = layer.addKeyframe(shape, timestamp, this.app.workspace.getBezier());
+
+            var countK = timestamp / this.app.timeline.miliSecPerFrame;
+            if (countK > (this.app.timeline.keyframeCount - this.app.timeline.expandTimelineBound)) {
+                this.app.timeline.expandFrames();
+            }
+
+            this.app.timeline.renderKeyframes(layer.id);
+            return newKeyframe;
+        } else {
+            return null;
+        }
+    };
+
     Workspace.prototype.setScope = function (id) {
         this._scope = id;
         this.scopeOverlay.remove();
@@ -4081,6 +4588,28 @@ var Workspace = (function () {
         this.transformShapes();
         this.highlightShape([idLayer]);
     };
+
+    Workspace.prototype.confirmNewKeyframe = function () {
+        var def = $.Deferred();
+        var deleteConfirmEl = $('<div>').attr('id', 'delete-confirm').css({ 'display': 'none' });
+        deleteConfirmEl.attr('title', 'Vytvořit nový snímek?').html('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?');
+        deleteConfirmEl.dialog({
+            dialogClass: 'delete-confirm',
+            resizable: false,
+            buttons: {
+                "Ano": function () {
+                    $(this).dialog("close");
+                    def.resolve(true);
+                },
+                Cancel: function () {
+                    $(this).dialog("close");
+                    def.resolve(false);
+                }
+            }
+        });
+
+        return def.promise();
+    };
     return Workspace;
 })();
 ///<reference path="Workspace.ts" />
@@ -4093,6 +4622,7 @@ var ControlPanel = (function () {
         this.initFontSize = 16;
         this.initTextColor = { r: 0, g: 0, b: 0 };
         this.isOriginVisible = false;
+        this.isLockedBorderRadius = true;
         this.fontFamily = ['Segoe UI', 'Georgia', 'Times', 'Arial', 'Calibri', 'Verdana', 'serif', 'sans-serif'];
         this.toolPanelEl = $('<div>').addClass('tool-panel');
         this.selectToolEl = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
@@ -4118,6 +4648,7 @@ var ControlPanel = (function () {
         this.borderRadiusTREl = $('<input type="text"></input').attr('id', 'radius-tr').addClass('border-radius-input').attr('data-type', 'tr');
         this.borderRadiusBLEl = $('<input type="text"></input').attr('id', 'radius-bl').addClass('border-radius-input').attr('data-type', 'bl');
         this.borderRadiusBREl = $('<input type="text"></input').attr('id', 'radius-br').addClass('border-radius-input').attr('data-type', 'br');
+        this.borderRadiusSwitch = $('<span>').addClass('border-radius-switch locked tooltip').html('<a href="#"><i class="fa fa-lock"></i></a>').attr('title', 'Budou všechny okraje stejné?');
         this.borderRadiusHelperEl = $('<div>').addClass('border-radius-helper');
         this.graph = $('<div>').addClass('graph');
         this.point0 = $('<a>').addClass('point p0').attr('href', '#');
@@ -4162,9 +4693,31 @@ var ControlPanel = (function () {
         this.controlPanelEl.append(this.mainPanel);
         this.controlPanelEl.append($('<div>').addClass('clearfix'));
 
+        //NEW NEW NEW
+        /*var propery1: IProperty = new WorkspaceDimension(this.app);
+        this.controlPanelEl.append(propery1.renderPropery(this.itemControlEl.clone()));
+        var propery2: IProperty = new Background();
+        this.controlPanelEl.append(propery2.renderPropery(this.itemControlEl.clone()));
+        var propery3: IProperty = new Opacity();
+        this.controlPanelEl.append(propery3.renderPropery(this.itemControlEl.clone()));
+        var propery4: IProperty = new ObjectDimension();
+        this.controlPanelEl.append(propery4.renderPropery(this.itemControlEl.clone()));
+        var propery5: IProperty = new BorderRadius();
+        this.controlPanelEl.append(propery5.renderPropery(this.itemControlEl.clone()));
+        var propery6: IProperty = new Font();
+        this.controlPanelEl.append(propery6.renderPropery(this.itemControlEl.clone()));
+        var propery7: IProperty = new TransformOrigin();
+        this.controlPanelEl.append(propery7.renderPropery(this.itemControlEl.clone()));
+        var propery8: IProperty = new Rotate();
+        this.controlPanelEl.append(propery8.renderPropery(this.itemControlEl.clone()));
+        var propery9: IProperty = new Skew();
+        this.controlPanelEl.append(propery9.renderPropery(this.itemControlEl.clone()));
+        var propery10: IProperty = new BezierCurve();
+        this.controlPanelEl.append(propery10.renderPropery(this.itemControlEl.clone()));*/
+        //NEW NEW NEW /end
         //Workspace dimensions
         var workspaceXY = this.itemControlEl.clone();
-        workspaceXY.html('<h2>Rozměry plátna</h2>');
+        workspaceXY.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Rozměry plátna</h2></a>');
         var row = $('<div>').addClass('row');
         var w = $('<div>').html('width: ').addClass('group half');
         w.append(this.workspaceWidthEl.val(this.app.workspace.workspaceSize.width.toString()));
@@ -4174,28 +4727,36 @@ var ControlPanel = (function () {
         h.append(this.workspaceHeightEl.val(this.app.workspace.workspaceSize.height.toString()));
         h.append((' px'));
         row.append(h);
-        workspaceXY.append(row);
+        var expand = $('<div>').addClass('expand');
+        expand.append(row);
+        workspaceXY.append(expand);
         this.controlPanelEl.append(workspaceXY);
 
         var idElement = this.itemControlEl.clone();
-        idElement.html('<h2>ID elementu</h2>');
+        idElement.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>ID elementu</h2></a>');
         var row = $('<div>').addClass('row');
         var g = $('<div>').html('#').addClass('group full');
         g.append(this.idEl);
         row.append(g);
-        idElement.append(row);
+        var expand = $('<div>').addClass('expand');
+        expand.append(row);
+        idElement.append(expand);
         this.controlPanelEl.append(idElement);
 
         //Bezier curve
         var curve = this.itemControlEl.clone();
-        curve.html('<h2>Časový průběh animace</h2>');
+        curve.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Časový průběh animace</h2></a>');
         this.graph.append(this.point0);
         this.graph.append(this.point1);
         this.graph.append(this.point2);
         this.graph.append(this.point3);
         this.graph.append(this.canvas);
-        curve.append(this.graph);
-        curve.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
+        var expand = $('<div>').addClass('expand init-visible expand-bezier');
+
+        expand.append(this.graph);
+        expand.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
+        curve.append(expand);
+
         this.curve = curve;
 
         //this.displayMainPanel(true, 'bezier');
@@ -4204,7 +4765,7 @@ var ControlPanel = (function () {
         //this.controlPanelEl.append(curve);
         //background
         var newItem = this.itemControlEl.clone();
-        newItem.html('<h2>Barva pozadí elementu</h2>');
+        newItem.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Barva pozadí elementu</h2></a>');
         var row = $('<div>').addClass('row');
         var s = $('<div>').html('#').addClass('group quarter');
         s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
@@ -4214,20 +4775,24 @@ var ControlPanel = (function () {
         a.append(this.bgOpacitySliderEl);
         a.append(this.bgOpacityEl);
         row.append(a);
-        newItem.append(row);
+        var expand = $('<div>').addClass('expand init-visible');
+        expand.append(row);
+        newItem.append(expand);
         this.controlPanelEl.append(newItem);
 
         //opacity
         var opacity = this.itemControlEl.clone();
-        opacity.html('<h2>Průhlednost elementu</h2>');
+        opacity.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Průhlednost elementu</h2></a>');
         this.opacityEl.val('1');
-        opacity.append(this.opacitySliderEl);
-        opacity.append(this.opacityEl);
+        var expand = $('<div>').addClass('expand');
+        expand.append(this.opacitySliderEl);
+        expand.append(this.opacityEl);
+        opacity.append(expand);
         this.controlPanelEl.append(opacity);
 
         //dimensions
         var dim = this.itemControlEl.clone();
-        dim.html('<h2>Rozměry elementu</h2>');
+        dim.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Rozměry elementu</h2></a>');
         var row = $('<div>').addClass('row');
         var w = $('<div>').html('width: ').addClass('group half');
         w.append(this.dimensionXEl);
@@ -4237,24 +4802,29 @@ var ControlPanel = (function () {
         h.append(this.dimensionYEl);
         h.append(' px');
         row.append(h);
-        dim.append(row);
+        var expand = $('<div>').addClass('expand');
+        expand.append(row);
+        dim.append(expand);
         this.controlPanelEl.append(dim);
 
         //border-radius
         var radius = this.itemControlEl.clone();
-        radius.html('<h2>Border-radius</h2>');
+        radius.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Border-radius</h2></a>');
         this.borderRadiusHelperEl.append(this.borderRadiusTLEl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusTREl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusBLEl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusBREl.val('0'));
-        radius.append(this.borderRadiusHelperEl);
+        this.borderRadiusHelperEl.append(this.borderRadiusSwitch);
+        var expand = $('<div>').addClass('expand');
+        expand.append(this.borderRadiusHelperEl);
+        radius.append(expand);
         this.controlPanelEl.append(radius);
 
         //Font
         var font = this.itemControlEl.clone();
         this.fontSizeEl.val(this.initFontSize.toString());
         this.fontColorEl.val($.colpick.rgbToHex(this.initTextColor));
-        font.html('<h2>Text</h2>');
+        font.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Nastavení textu</h2></a>');
         var row = $('<div>').addClass('row');
         this.fontFamily.forEach(function (val, index) {
             _this.fontFamilyEl.append($("<option>").attr('value', val).text(val));
@@ -4269,7 +4839,9 @@ var ControlPanel = (function () {
         size.append(this.fontSizeEl);
         size.append(' px');
         row.append(size);
-        font.append(row);
+        var expand = $('<div>').addClass('expand');
+        expand.append(row);
+        font.append(expand);
 
         this.controlPanelEl.append(font);
 
@@ -4277,9 +4849,9 @@ var ControlPanel = (function () {
         this.transformOriginXEl.val(this.initOrigin[0].toString());
         this.transformOriginYEl.val(this.initOrigin[1].toString());
         var origin = this.itemControlEl.clone();
-        origin.html('<h2>Transform-origin</h2>').addClass('control-origin');
+        origin.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Transform-origin</h2></a>').addClass('control-origin');
         var row = $('<div>').addClass('row');
-        var visibleLabel = $('<label>').html('Zobrazit polohu na plátně');
+        var visibleLabel = $('<label>').html('Zobrazit polohu na plátně').addClass('tooltip').attr('title', 'Poloha bodu umístění transform-origin se zobrazí spolu s elementem. Táhnutím bodu lze transform-origin měnit.');
         visibleLabel.prepend(this.transformOriginVisibleEl);
         row.append(visibleLabel);
         var x = $('<div>').html('poz. x: ').addClass('group half');
@@ -4290,43 +4862,49 @@ var ControlPanel = (function () {
         y.append(this.transformOriginYEl);
         y.append(' %');
         row.append(y);
-        origin.append(row);
+        var expand = $('<div>').addClass('expand');
+        expand.append(row);
+        origin.append(expand);
 
         this.controlPanelEl.append(origin);
 
         //3D Rotate
         var rotate = this.itemControlEl.clone();
-        rotate.html('<h2>3D rotace</h2>').addClass('control-rotate');
+        rotate.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>3D Rotace</h2></a>').addClass('control-rotate');
+        var expand = $('<div>').addClass('expand');
         var x = $('<span>').html('<p>x:</p>').addClass('group-form');
         x.append(this.rotateXSliderEl);
         x.append(this.rotateXEl);
         x.append(' deg');
-        rotate.append(x);
+        expand.append(x);
         var y = $('<span>').html('<p>y:</p>').addClass('group-form');
         y.append(this.rotateYSliderEl);
         y.append(this.rotateYEl);
         y.append(' deg');
-        rotate.append(y);
+        expand.append(y);
         var z = $('<span>').html('<p>z:</p>').addClass('group-form');
         z.append(this.rotateZSliderEl);
         z.append(this.rotateZEl);
         z.append(' deg');
-        rotate.append(z);
+        expand.append(z);
+        rotate.append(expand);
         this.controlPanelEl.append(rotate);
 
         //skew
         var skew = this.itemControlEl.clone();
-        skew.html('<h2>Zkosení</h2>').addClass('control-rotate');
+        skew.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Zkosení</h2></a>').addClass('control-rotate');
+        var expand = $('<div>').addClass('expand');
         var x = $('<span>').html('<p>x:</p>').addClass('group-form');
         x.append(this.skewXSliderEl);
         x.append(this.skewXEl);
         x.append(' deg');
-        skew.append(x);
+        expand.append(x);
         var y = $('<span>').html('<p>y:</p>').addClass('group-form');
         y.append(this.skewYSliderEl);
         y.append(this.skewYEl);
         y.append(' deg');
-        skew.append(y);
+        expand.append(y);
+        skew.append(expand);
         this.controlPanelEl.append(skew);
 
         this.containerEl.append(this.controlPanelEl);
@@ -4339,9 +4917,10 @@ var ControlPanel = (function () {
 
         this.colorPicker = this.bgPickerEl.colpick({
             layout: 'hex',
-            submit: 0,
+            submit: true,
             color: this.initColor,
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
+            onSubmit: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).colpickHide();
                 $(el).css('border-color', '#' + hex);
                 if (!bySetColor)
                     $(el).val(hex);
@@ -4357,9 +4936,10 @@ var ControlPanel = (function () {
 
         this.textColorPicker = this.fontColorEl.colpick({
             layout: 'hex',
-            submit: 0,
+            submit: true,
             color: this.initTextColor,
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
+            onSubmit: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).colpickHide();
                 $(el).css('border-color', '#' + hex);
                 if (!bySetColor)
                     $(el).val(hex);
@@ -4513,12 +5093,31 @@ var ControlPanel = (function () {
         });
 
         $(document).on('change', '.border-radius-input', function (e) {
-            _this.app.workspace.setBorderRadius($(e.target).data('type'), parseInt($(e.target).val()));
+            if (_this.isLockedBorderRadius == true) {
+                _this.app.workspace.setBorderRadius('all', parseInt($(e.target).val()));
+            } else {
+                _this.app.workspace.setBorderRadius($(e.target).data('type'), parseInt($(e.target).val()));
+            }
         });
 
         $(document).on('keyup', '.border-radius-input', function (e) {
             if (e.which == 13) {
                 $(e.target).trigger('change');
+            }
+            if (_this.isLockedBorderRadius == true) {
+                $('.border-radius-input').val($(e.target).val());
+            }
+        });
+
+        $(document).on('click', '.border-radius-switch a', function (e) {
+            if (_this.isLockedBorderRadius == true) {
+                _this.isLockedBorderRadius = false;
+                _this.borderRadiusSwitch.removeClass('locked').addClass('unlocked');
+                _this.borderRadiusSwitch.find('i').removeClass('fa-lock').addClass('fa-unlock');
+            } else {
+                _this.isLockedBorderRadius = true;
+                _this.borderRadiusSwitch.removeClass('unlocked').addClass('locked');
+                _this.borderRadiusSwitch.find('i').removeClass('fa-unlock').addClass('fa-lock');
             }
         });
 
@@ -4633,6 +5232,20 @@ var ControlPanel = (function () {
 
         $(document).ready(function () {
             _this.selectToolEl.trigger('click');
+            $('.expand').hide();
+            $('.expand.init-visible').show();
+            $('a.expand-link').on('click', function (e) {
+                console.log('expand');
+                if ($(e.target).parents('.control-item').find('.expand').is(':visible')) {
+                    $(this).find('i').addClass('fa-caret-right');
+                    $(this).find('i').removeClass('fa-caret-down');
+                } else {
+                    $(this).find('i').removeClass('fa-caret-right');
+                    $(this).find('i').addClass('fa-caret-down');
+                }
+                $(e.target).parents('.control-item').find('.expand').slideToggle(100);
+                return false;
+            });
             _this.displayMainPanel(true, 'bezier');
             _this.ctx = _this.canvas.get(0).getContext('2d');
             _this.renderWrap(_this.ctx);
@@ -4678,6 +5291,7 @@ var ControlPanel = (function () {
     ControlPanel.prototype.updateColor = function (color, alpha) {
         this.colorPicker.colpickSetColor(color, false);
         this.bgPickerEl.val($.colpick.rgbToHex(color));
+        this.bgPickerEl.css({ 'border-color': 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')' });
         this.bgOpacityEl.val(alpha.toFixed(2).toString());
         this.bgOpacitySliderEl.slider('option', 'value', Number(alpha));
     };
@@ -4692,6 +5306,7 @@ var ControlPanel = (function () {
     ControlPanel.prototype.updateFont = function (color, size, family) {
         this.textColorPicker.colpickSetColor(color, false);
         this.fontColorEl.val($.colpick.rgbToHex(color));
+        this.textColorPicker.css({ 'border-color': 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')' });
         this.fontSizeEl.val(size.toString());
         this.fontFamilyEl.val(family);
     };
@@ -4756,6 +5371,7 @@ var ControlPanel = (function () {
     };
 
     ControlPanel.prototype.updateBezierCurve = function (fn) {
+        $('.expand-bezier').show();
         this.point1.css({
             'left': fn.p0 * 200,
             'top': (1 - fn.p1) * 200
@@ -4813,7 +5429,7 @@ var ControlPanel = (function () {
         if (visible) {
             this.mainPanel.show();
             $('.clearfix').show();
-            $('.clearfix').css({ 'margin-top': this.mainPanel.height() });
+            $('.clearfix').css({ 'margin-top': '40px' });
             $('.delete-keyframe').removeClass('disabled');
         } else {
             this.mainPanel.hide();
@@ -4893,9 +5509,13 @@ var Application = (function () {
 $(document).ready(function () {
     console.log('DOM Loaded');
     new Application();
-    $('.tooltip').tooltipster({ position: 'right' });
+    $('.tooltip').tooltipster({ position: 'right', maxWidth: 200 });
     $('.tooltip-top').tooltipster({ position: 'top' });
     $('.workspace-wrapper').perfectScrollbar({ includePadding: true });
+
+    window.onbeforeunload = function () {
+        return "Opravdu chcete opustit stránku? Neuložený projekt bude ztracený!";
+    };
 });
 var GenerateCode = (function () {
     function GenerateCode(app, l) {
@@ -5348,6 +5968,9 @@ var Keyframe = (function () {
         get: function () {
             return this._shape;
         },
+        set: function (shape) {
+            this._shape = shape;
+        },
         enumerable: true,
         configurable: true
     });
@@ -5375,7 +5998,442 @@ var Keyframe = (function () {
         configurable: true
     });
 
+
     return Keyframe;
+})();
+var Background = (function () {
+    function Background() {
+        this.initColor = { r: 44, g: 208, b: 219 };
+        this.bgPickerEl = $('<input type="text" id="picker"></input>');
+        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
+        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
+    }
+    Background.prototype.renderPropery = function (container) {
+        container.html('<h2>Barva pozadí elementu</h2>');
+        var row = $('<div>').addClass('row');
+        var s = $('<div>').html('#').addClass('group quarter');
+        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
+        row.append(s);
+        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
+        this.bgOpacityEl.val('0');
+        a.append(this.bgOpacitySliderEl);
+        a.append(this.bgOpacityEl);
+        row.append(a);
+        container.append(row);
+        this.initColorPicker();
+        this.initSlider();
+        return container;
+    };
+
+    Background.prototype.initSlider = function () {
+        var _this = this;
+        this.bgOpacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 0,
+            slide: function (event, ui) {
+                _this.bgOpacityEl.val(ui.value).change();
+            }
+        });
+    };
+
+    Background.prototype.initColorPicker = function () {
+        var _this = this;
+        this.colorPicker = this.bgPickerEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
+                }
+            }
+        }).on('change', function (e) {
+            _this.colorPicker.colpickSetColor($(e.target).val());
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
+        });
+    };
+
+    Background.prototype.getInitColor = function () {
+        return this.initColor;
+    };
+    return Background;
+})();
+var BezierCurve = (function () {
+    function BezierCurve() {
+        var _this = this;
+        this.graph = $('<div>').addClass('graph');
+        this.point0 = $('<a>').addClass('point p0').attr('href', '#');
+        this.point1 = $('<a>').addClass('point p1').attr('href', '#');
+        this.point2 = $('<a>').addClass('point p2').attr('href', '#');
+        this.point3 = $('<a>').addClass('point p3').attr('href', '#');
+        this.canvas = $('<canvas id="bezierCurve" width="200" height="200"></canvas>');
+        $(document).ready(function () {
+            _this.ctx = _this.canvas.get(0).getContext('2d');
+            _this.renderWrap(_this.ctx);
+        });
+    }
+    BezierCurve.prototype.renderPropery = function (container) {
+        container.html('<h2>Časový průběh animace</h2>');
+        this.graph.append(this.point0);
+        this.graph.append(this.point1);
+        this.graph.append(this.point2);
+        this.graph.append(this.point3);
+        this.graph.append(this.canvas);
+        container.append(this.graph);
+        container.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
+        this.curve = container;
+        return container;
+    };
+
+    BezierCurve.prototype.initCanvas = function () {
+        var _this = this;
+        this.ctx = this.canvas.get(0).getContext('2d');
+
+        //init coordinates
+        this.point1.css({ top: '100px', left: '100px' });
+        this.point2.css({ top: '50px', left: '50px' });
+
+        var options = {
+            containment: 'parent',
+            drag: function (event, ui) {
+                _this.renderWrap(_this.ctx);
+            },
+            stop: function (event, ui) {
+                //this.app.workspace.setBezier(this.renderWrap(this.ctx));
+            }
+        };
+
+        this.point1.draggable(options);
+
+        this.point2.draggable(options);
+    };
+
+    BezierCurve.prototype.renderWrap = function (ctx) {
+        var p1 = this.point1.position(), p2 = this.point2.position();
+        return this.renderLines(ctx, {
+            x: p1.left,
+            y: p1.top
+        }, {
+            x: p2.left,
+            y: p2.top
+        });
+    };
+
+    BezierCurve.prototype.renderLines = function (ctx, p1, p2) {
+        ctx.clearRect(0, 0, 200, 200);
+
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#333";
+        ctx.moveTo(0, 200);
+        ctx.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, 200, 0);
+        ctx.stroke();
+        ctx.closePath();
+
+        ctx.beginPath();
+        ctx.strokeStyle = "#999";
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, 200);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+
+        ctx.moveTo(200, 0);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+        ctx.closePath();
+
+        //compute
+        var fn = {
+            p0: Number(((p1.x) / 200).toFixed(2)),
+            p1: Number((1 - (p1.y) / 200).toFixed(2)),
+            p2: Number(((p2.x) / 200).toFixed(2)),
+            p3: Number((1 - (p2.y) / 200).toFixed(2))
+        };
+
+        $('#p0').html(fn.p0.toString());
+        $('#p1').html(fn.p1.toString());
+        $('#p2').html(fn.p2.toString());
+        $('#p3').html(fn.p3.toString());
+
+        return fn;
+    };
+    return BezierCurve;
+})();
+var BorderRadius = (function () {
+    function BorderRadius() {
+        this.borderRadiusTLEl = $('<input type="text"></input').attr('id', 'radius-tl').addClass('border-radius-input').attr('data-type', 'tl');
+        this.borderRadiusTREl = $('<input type="text"></input').attr('id', 'radius-tr').addClass('border-radius-input').attr('data-type', 'tr');
+        this.borderRadiusBLEl = $('<input type="text"></input').attr('id', 'radius-bl').addClass('border-radius-input').attr('data-type', 'bl');
+        this.borderRadiusBREl = $('<input type="text"></input').attr('id', 'radius-br').addClass('border-radius-input').attr('data-type', 'br');
+        this.borderRadiusHelperEl = $('<div>').addClass('border-radius-helper');
+    }
+    BorderRadius.prototype.renderPropery = function (container) {
+        container.html('<h2>Border-radius</h2>');
+        this.borderRadiusHelperEl.append(this.borderRadiusTLEl.val('0'));
+        this.borderRadiusHelperEl.append(this.borderRadiusTREl.val('0'));
+        this.borderRadiusHelperEl.append(this.borderRadiusBLEl.val('0'));
+        this.borderRadiusHelperEl.append(this.borderRadiusBREl.val('0'));
+        container.append(this.borderRadiusHelperEl);
+        return container;
+    };
+    return BorderRadius;
+})();
+var Font = (function () {
+    function Font() {
+        this.initFontSize = 16;
+        this.initTextColor = { r: 0, g: 0, b: 0 };
+        this.fontFamily = ['Segoe UI', 'Georgia', 'Times', 'Arial', 'Calibri', 'Verdana', 'serif', 'sans-serif'];
+        this.fontColorEl = $('<input>').attr('type', 'text').attr('id', 'text-color').addClass('font-attr');
+        this.fontSizeEl = $('<input>').attr('type', 'text').attr('id', 'text-size').addClass('number font-attr');
+        this.fontFamilyEl = $('<select>').attr('id', 'text-family').addClass('font-attr');
+    }
+    Font.prototype.renderPropery = function (container) {
+        var _this = this;
+        this.fontSizeEl.val(this.initFontSize.toString());
+        this.fontColorEl.val($.colpick.rgbToHex(this.initTextColor));
+        container.html('<h2>Text</h2>');
+        var row = $('<div>').addClass('row');
+        this.fontFamily.forEach(function (val, index) {
+            _this.fontFamilyEl.append($("<option>").attr('value', val).text(val));
+        });
+        var family = $('<div>').html('font-family: ').addClass('group full font-family last');
+        family.append(this.fontFamilyEl);
+        row.append(family);
+        var color = $('<div>').html('color: #').addClass('group quarter-3');
+        color.append(this.fontColorEl);
+        row.append(color);
+        var size = $('<div>').html('size: ').addClass('group quarter last');
+        size.append(this.fontSizeEl);
+        size.append(' px');
+        row.append(size);
+        container.append(row);
+        this.initColorPicker();
+        return container;
+    };
+
+    Font.prototype.initColorPicker = function () {
+        var _this = this;
+        this.textColorPicker = this.fontColorEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initTextColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb);
+                    /*this.app.workspace.setFont({
+                    color: rgb,
+                    fontFamily: this.fontFamilyEl.val(),
+                    size: parseFloat(this.fontSizeEl.val()),
+                    });*/
+                }
+            }
+        }).on('change', function (e) {
+            _this.textColorPicker.colpickSetColor($(e.target).val());
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()));
+            /*this.app.workspace.setFont({
+            color: $.colpick.hexToRgb($(e.target).val()),
+            fontFamily: this.fontFamilyEl.val(),
+            size: parseFloat(this.fontSizeEl.val()),
+            });*/
+        });
+    };
+    return Font;
+})();
+var ObjectDimension = (function () {
+    function ObjectDimension() {
+        this.dimensionXEl = $('<input type="text"></input').attr('id', 'dimension-x');
+        this.dimensionYEl = $('<input type="text"></input').attr('id', 'dimension-y');
+    }
+    ObjectDimension.prototype.renderPropery = function (container) {
+        container.html('<h2>Rozměry elementu</h2>');
+        var row = $('<div>').addClass('row');
+        var w = $('<div>').html('width: ').addClass('group half');
+        w.append(this.dimensionXEl);
+        w.append(' px');
+        row.append(w);
+        var h = $('<div>').html('height: ').addClass('group half last');
+        h.append(this.dimensionYEl);
+        h.append(' px');
+        row.append(h);
+        container.append(row);
+        return container;
+    };
+    return ObjectDimension;
+})();
+var Opacity = (function () {
+    function Opacity() {
+        this.opacityEl = $('<input>').attr('id', 'opacity-input');
+        this.opacitySliderEl = $('<div>').addClass('opacity-slider');
+    }
+    Opacity.prototype.renderPropery = function (container) {
+        container.html('<h2>Průhlednost elementu</h2>');
+        this.opacityEl.val('1');
+        container.append(this.opacitySliderEl);
+        container.append(this.opacityEl);
+        this.initSlider();
+        return container;
+    };
+
+    Opacity.prototype.initSlider = function () {
+        var _this = this;
+        this.opacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 1,
+            slide: function (event, ui) {
+                _this.opacityEl.val(ui.value).change();
+            }
+        });
+    };
+    return Opacity;
+})();
+var Rotate = (function () {
+    function Rotate() {
+        this.rotateXEl = $('<input>').attr('id', 'rx').addClass('number rotate');
+        this.rotateXSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rx');
+        this.rotateYEl = $('<input>').attr('id', 'ry').addClass('number rotate');
+        this.rotateYSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'ry');
+        this.rotateZEl = $('<input>').attr('id', 'rz').addClass('number rotate');
+        this.rotateZSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rz');
+    }
+    Rotate.prototype.renderPropery = function (container) {
+        container.html('<h2>3D rotace</h2>').addClass('control-rotate');
+        var x = $('<span>').html('<p>x:</p>').addClass('group-form');
+        x.append(this.rotateXSliderEl);
+        x.append(this.rotateXEl);
+        x.append(' deg');
+        container.append(x);
+        var y = $('<span>').html('<p>y:</p>').addClass('group-form');
+        y.append(this.rotateYSliderEl);
+        y.append(this.rotateYEl);
+        y.append(' deg');
+        container.append(y);
+        var z = $('<span>').html('<p>z:</p>').addClass('group-form');
+        z.append(this.rotateZSliderEl);
+        z.append(this.rotateZEl);
+        z.append(' deg');
+        container.append(z);
+
+        //this.initSlider();
+        return container;
+    };
+
+    Rotate.prototype.initSlider = function () {
+        $('.rotate-slider').slider({
+            min: -180,
+            max: 180,
+            step: 1,
+            value: 0,
+            slide: function (event, ui) {
+                $('input#' + $(event.target).attr('id')).val(ui.value).change();
+            }
+        });
+
+        $('.rotate').val('0');
+    };
+    return Rotate;
+})();
+var Skew = (function () {
+    function Skew() {
+        this.skewXEl = $('<input>').attr('id', 'skewx').addClass('number skew');
+        this.skewXSliderEl = $('<div>').addClass('skew-slider').attr('id', 'skewx');
+        this.skewYEl = $('<input>').attr('id', 'skewy').addClass('number skew');
+        this.skewYSliderEl = $('<div>').addClass('skew-slider').attr('id', 'skewy');
+    }
+    Skew.prototype.renderPropery = function (container) {
+        container.html('<h2>Zkosení</h2>').addClass('control-rotate');
+        var x = $('<span>').html('<p>x:</p>').addClass('group-form');
+        x.append(this.skewXSliderEl);
+        x.append(this.skewXEl);
+        x.append(' deg');
+        container.append(x);
+        var y = $('<span>').html('<p>y:</p>').addClass('group-form');
+        y.append(this.skewYSliderEl);
+        y.append(this.skewYEl);
+        y.append(' deg');
+        container.append(y);
+        return container;
+    };
+
+    Skew.prototype.initSlider = function () {
+        $('.skew-slider').slider({
+            min: -90,
+            max: 90,
+            step: 1,
+            value: 0,
+            slide: function (event, ui) {
+                $('input#' + $(event.target).attr('id')).val(ui.value).change();
+            }
+        });
+
+        $('.skew').val('0');
+    };
+    return Skew;
+})();
+var TransformOrigin = (function () {
+    function TransformOrigin() {
+        this.initOrigin = { x: 50, y: 50 };
+        this.transformOriginVisibleEl = $('<input>').attr('type', 'checkbox').attr('id', 'visible').prop('checked', false);
+        this.transformOriginXEl = $('<input>').attr('id', 'originx').addClass('number origin');
+        this.transformOriginYEl = $('<input>').attr('id', 'originy').addClass('number origin');
+    }
+    TransformOrigin.prototype.renderPropery = function (container) {
+        this.transformOriginXEl.val(this.initOrigin.x.toString());
+        this.transformOriginYEl.val(this.initOrigin.y.toString());
+        container.html('<h2>Transform-origin</h2>').addClass('control-origin');
+        var row = $('<div>').addClass('row');
+        var visibleLabel = $('<label>').html('Zobrazit polohu na plátně');
+        visibleLabel.prepend(this.transformOriginVisibleEl);
+        row.append(visibleLabel);
+        var x = $('<div>').html('poz. x: ').addClass('group half');
+        x.append(this.transformOriginXEl);
+        x.append(' %');
+        row.append(x);
+        var y = $('<div>').html('poz. y: ').addClass('group half last');
+        y.append(this.transformOriginYEl);
+        y.append(' %');
+        row.append(y);
+        container.append(row);
+        return container;
+    };
+    return TransformOrigin;
+})();
+var WorkspaceDimension = (function () {
+    function WorkspaceDimension(app) {
+        this.workspaceWidthEl = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
+        this.workspaceHeightEl = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
+        this.workspaceHeightEl.on('change', function (event) {
+            app.workspace.setWorkspaceDimension(null, parseInt($(event.target).val()));
+        });
+
+        this.workspaceWidthEl.on('change', function (event) {
+            app.workspace.setWorkspaceDimension(parseInt($(event.target).val()), null);
+        });
+    }
+    WorkspaceDimension.prototype.renderPropery = function (container) {
+        container.html('<h2>Rozměry plátna</h2>');
+        var row = $('<div>').addClass('row');
+        var w = $('<div>').html('width: ').addClass('group half');
+        w.append(this.workspaceWidthEl);
+        w.append(' px');
+        row.append(w);
+        var h = $('<div>').html('height: ').addClass('group half last');
+        h.append(this.workspaceHeightEl);
+        h.append((' px'));
+        row.append(h);
+        container.append(row);
+        return container;
+    };
+    return WorkspaceDimension;
 })();
 var Rectangle = (function (_super) {
     __extends(Rectangle, _super);
@@ -5425,7 +6483,8 @@ var RectangleLayer = (function (_super) {
 
     RectangleLayer.prototype.renderShape = function (container, position, currentScope) {
         var shape = $('<div>').addClass('shape square');
-        shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope);
+        var helper = $('<div>').addClass('shape-helper square-helper');
+        shape = _super.prototype.renderShapeCore.call(this, shape, container, position, currentScope, helper);
 
         return shape;
     };

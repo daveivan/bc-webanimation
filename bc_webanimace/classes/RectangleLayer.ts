@@ -39,7 +39,8 @@
 
     renderShape(container: JQuery, position: number, currentScope: number): JQuery {
         var shape: JQuery = $('<div>').addClass('shape square');
-        shape = super.renderShapeCore(shape, container, position, currentScope);
+        var helper: JQuery = $('<div>').addClass('shape-helper square-helper');
+        shape = super.renderShapeCore(shape, container, position, currentScope, helper);
 
         return shape;
     }

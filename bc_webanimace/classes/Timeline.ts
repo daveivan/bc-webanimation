@@ -11,12 +11,13 @@ class Timeline
     //init number of keyframes
     keyframeCount: number = 100;
     //minimum free frames, when exceed, append another
-    expandTimelineBound: number = 10;
+    expandTimelineBound: number = 5;
     //convert frame to time
     miliSecPerFrame: number = 100;
     groupKeyframes: number = 5;
     playInterval: any;
     playMode: Animation_playing = Animation_playing.STOP;
+    copyKeyframe: keyframeFrom = null;
 
     private _repeat: boolean = false;
     private absoluteMax: number = 0;
@@ -24,6 +25,8 @@ class Timeline
     private app: Application;
     start;
     stop;
+
+    arrayMax = Function.prototype.apply.bind(Math.max, null);
 
     deleteLayerEl: JQuery = $('<a class="delete-layer disabled" href="#">Smazat vrstvu/y <i class="fa fa-trash"></i></a>');
     repeatEl: JQuery = $('<label for="repeat" class="repeat-label">Opakovat celou animaci <i class="fa fa-repeat"></i><input type="checkbox" id="repeat"></label>');
@@ -38,13 +41,22 @@ class Timeline
     layersFooterEl: JQuery = $('<div class="layers-footer"></div>');
     keyframesFooterEl: JQuery = $('<div class="keyframes-footer"></div>');
     keyframesTableEl: JQuery = $('<table><thead></thead><tbody></tbody>');
-    pointerEl: JQuery = $('<div class="pointer"><div class="pointer-top"></div></div>');
+    pointerEl: JQuery = $('<div class="pointer"><div class="pointer-top-wrapper"><div class="pointer-top"></div></div></div>');
     deleteConfirmEl: JQuery = $('<div>').attr('id', 'delete-confirm').css({ 'display': 'none' });
 
     playEl: JQuery = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
     stopEl: JQuery = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
     pauseEl: JQuery = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
 
+    private contextMenuEl: JQuery = $('<div>').addClass('context-menu');
+    private menuCreateKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Vytvořit nový snímek');
+    private menuDeleteKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat snímek');
+    private menuCopyKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-copy"></i> Kopírovat snímek');
+    private menuPasteKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Vložit snímekze schránky');
+    private menuReplaceKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Nahradit snímkem ze schránky');
+
+    private menuRenameLayer: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-pencil"></i> Přejmenovat vrstvu');
+    private menuDeleteLayer: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat vrstvu');
     constructor(app: Application, timelineContainer: JQuery) {
         this.app = app;
         this.timelineContainer = timelineContainer;
@@ -55,6 +67,14 @@ class Timeline
         this.renderTimeline();
 
         this.buildBreadcrumb(null);
+
+        $(document).on('mousedown', (e: JQueryEventObject) => {
+            //hide context menu
+            if (!$(e.target).parents().hasClass('context-menu')) {
+                this.contextMenuEl.removeClass('active');
+                this.contextMenuEl.remove();
+            }
+        });
 
         this.deleteLayerEl.on('click', (event: JQueryEventObject) => {
             if (!this.deleteLayerEl.hasClass('disabled')) {
@@ -119,26 +139,185 @@ class Timeline
         });
 
         $(document).on('mousedown', 'td', (event: JQueryEventObject) => {
+            console.log('onClickRow');
             this.onClickRow(event);
         });
 
         $(document).on('dblclick', 'td', (event: JQueryEventObject) => {
+            console.log('onDblClick');
             this.onCreateKeyframe(event);
         });
 
-        $(document).on('mousedown', '.keyframes > table', (event: JQueryEventObject) => {
+        $(document).on('mousedown', '.keyframes > table > tbody', (event: JQueryEventObject) => {
+            console.log('mousedown tbody');
             this.onClickTable(event);
         });
 
-        this.keyframesTableEl.on('click', '.keyframe', (event: JQueryEventObject) => {
+        $(document).on('mousedown', '.keyframes > table > thead', (event: JQueryEventObject) => {
+            console.log('mousedown thead');
+            this.onClickChangePosition(event);
+        });
+
+        $(document).on('contextmenu', '#layers > .layer', (e: JQueryEventObject) => {
+            if (!$(e.target).hasClass('disabled')) {
+                this.contextMenuEl.empty();
+
+                this.contextMenuEl.append('<ul></ul>');
+                this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuRenameLayer.attr('data-id', $(e.target).closest('.layer').data('id'))));
+                this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuDeleteLayer.attr('data-id', $(e.target).closest('.layer').data('id'))));
+
+                this.contextMenuEl.appendTo($('body'));
+                this.contextMenuEl.css({
+                    'top': e.pageY - $('body').offset().top,
+                    'left': e.pageX - $('body').offset().left,
+                });
+                this.contextMenuEl.focus();
+
+                this.menuRenameLayer.on('click', (event: JQueryEventObject) => {
+                    $(e.target).closest('.layer').find('.editable').trigger('dblclick');
+                    this.contextMenuEl.remove();
+                });
+
+                this.menuDeleteLayer.on('click', (event: JQueryEventObject) => {
+                    var id: number = parseInt($(e.target).data('id'));
+                    var index: number = this.getLayerIndex(id);
+                    this.deleteOneLayer(index);
+                    this.contextMenuEl.remove();
+                });
+
+                this.contextMenuEl.addClass('active');
+                e.preventDefault();
+                return false;   
+            }
+        });
+
+        $(document).on('contextmenu', '.keyframes > table > tbody', (e: JQueryEventObject) => {
+            if (!$(e.target).closest('tr').hasClass('disabled')) {
+                if (!$(e.target).hasClass('keyframe')) {
+                    this.contextMenuEl.empty();
+
+                    this.contextMenuEl.append('<ul></ul>');
+                    this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuCreateKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+                    this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuPasteKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+
+                    if (this.copyKeyframe != null && this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
+                        this.menuPasteKeyframe.removeClass('disabled');
+                    } else {
+                        this.menuPasteKeyframe.addClass('disabled');
+                    }
+
+                    this.contextMenuEl.appendTo($('body'));
+                    this.contextMenuEl.css({
+                        'top': e.pageY - $('body').offset().top,
+                        'left': e.pageX - $('body').offset().left,
+                    });
+                    this.contextMenuEl.focus();
+
+                    this.menuCreateKeyframe.on('click', (event: JQueryEventObject) => {
+                        var idLayer: number = parseInt($(event.target).data('id'));
+                        var n = $('body').find('.keyframes > table');
+                        var posX = e.pageX - $(n).offset().left;
+                        posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
+                        var position: number = this.pxToMilisec(posX);
+                        this.createKeyframe(idLayer, position);
+                        this.contextMenuEl.remove();
+                    });
+
+                    this.menuPasteKeyframe.on('click', (event: JQueryEventObject) => {
+                        if (!$(event.target).hasClass('disabled')) {
+                            if (this.copyKeyframe != null && this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
+                                var n = $('body').find('.keyframes > table');
+                                var posX = e.pageX - $(n).offset().left;
+                                posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
+                                var position: number = this.pxToMilisec(posX);
+
+                                this.pasteKeyframe(position);
+                            } else {
+                                alert('Klíčový snímek je možné zkopírovat jen v rámci vrstvy.');
+                            }
+                        }
+                        this.copyKeyframe = null;
+                        this.app.workspace.transformShapes();
+                        this.contextMenuEl.remove();
+                    });
+
+                    this.contextMenuEl.addClass('active');
+                    e.preventDefault();
+                    return false;
+                } else {
+                    //context menu for keyframe
+                    this.contextMenuEl.empty();
+
+                    this.contextMenuEl.append('<ul></ul>');
+                    //data-id = idLayer
+                    this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuDeleteKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+                    this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuCopyKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+                    this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuReplaceKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+
+                    if (this.copyKeyframe != null && this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
+                        this.menuReplaceKeyframe.removeClass('disabled');
+                    } else {
+                        this.menuReplaceKeyframe.addClass('disabled');
+                    }
+
+                    this.contextMenuEl.appendTo($('body'));
+                    this.contextMenuEl.css({
+                        'top': e.pageY - $('body').offset().top,
+                        'left': e.pageX - $('body').offset().left,
+                    });
+                    this.contextMenuEl.focus();
+
+                    this.menuDeleteKeyframe.on('click', (event: JQueryEventObject) => {
+                        $(e.target).addClass('selected');
+                        $(e.target).next('.timing-function').addClass('selected');
+                        this.onDeleteKeyframe(e);
+                    });
+
+                    this.menuCopyKeyframe.on('click', (event: JQueryEventObject) => {
+                        var idLayer: number = $(event.target).data('id');
+                        var indexKeyframe: number = $(e.target).data('index');
+                        this.copyKeyframe = { layer: idLayer, keyframe: indexKeyframe };
+                        this.contextMenuEl.remove();
+                    });
+
+                    this.menuReplaceKeyframe.on('click', (event: JQueryEventObject) => {
+                        if (!$(event.target).hasClass('disabled')) {
+                            if (this.copyKeyframe != null && this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
+                                var n = $('body').find('.keyframes > table');
+                                var posX = e.pageX - $(n).offset().left;
+                                posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
+                                var position: number = this.pxToMilisec(posX);
+
+                                this.pasteKeyframe(position);
+                            } else {
+                                alert('Klíčový snímek je možné zkopírovat jen v rámci vrstvy.');
+                            }
+                        }
+                        this.copyKeyframe = null;
+                        this.app.workspace.transformShapes();
+                        this.contextMenuEl.remove();
+                    });
+
+                    this.contextMenuEl.addClass('active');
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+        });
+
+        this.keyframesTableEl.on('mouseup', '.keyframe', (event: JQueryEventObject) => {
+            console.log('keyframe click');
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
             this.keyframesTableEl.find('.timing-function').removeClass('selected');
             $(event.target).addClass('selected');
             $(event.target).next('.timing-function').addClass('selected');
             this.app.workspace.updateBezierCurve(this.getLayer($(event.target).data('layer')));
+            this.onClickChangePosition(event);
         });
 
         this.keyframesTableEl.on('click', '.timing-function p', (event: JQueryEventObject) => {
+            console.log('timing function click');
             var keyframeEl: JQuery = $(event.target).parent('.timing-function').prev('.keyframe');
 
 
@@ -153,6 +332,76 @@ class Timeline
         this.timelineContainer.ready((event: JQueryEventObject) => {
             this.onReady(event);
         });
+    }
+
+    pasteKeyframe(position: number) {
+        var layer: Layer = this.getLayer(this.copyKeyframe.layer);
+        if (layer) {
+            var k: Keyframe = layer.getKeyframe(this.copyKeyframe.keyframe);
+            if (k) {
+                var p: Parameters = {
+                    top: k.shape.parameters.top,
+                    left: k.shape.parameters.left,
+                    width: k.shape.parameters.width,
+                    height: k.shape.parameters.height,
+                    relativePosition: {
+                        top: k.shape.parameters.relativePosition.top,
+                        left: k.shape.parameters.relativePosition.left,
+                    },
+                    relativeSize: {
+                        width: k.shape.parameters.relativeSize.width,
+                        height: k.shape.parameters.relativeSize.height,
+                    },
+                    background: k.shape.parameters.background,
+                    opacity: k.shape.parameters.opacity,
+                    zindex: k.shape.parameters.zindex,
+                    borderRadius: [
+                        k.shape.parameters.borderRadius[0],
+                        k.shape.parameters.borderRadius[1],
+                        k.shape.parameters.borderRadius[2],
+                        k.shape.parameters.borderRadius[3],
+                    ],
+                    rotate: {
+                        x: k.shape.parameters.rotate.x,
+                        y: k.shape.parameters.rotate.y, 
+                        z: k.shape.parameters.rotate.z,
+                    },
+                    skew: {
+                        x: k.shape.parameters.skew.x,
+                        y: k.shape.parameters.skew.y,
+                    },
+                    origin: {
+                        x: k.shape.parameters.origin.x,
+                        y: k.shape.parameters.origin.y,
+                    },
+                }
+
+                if (layer.type == Type.DIV) {
+                    var shape: IShape = new Rectangle(p);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                } else if (layer.type == Type.IMAGE) {
+                    var shape: IShape = new Img(p, layer.globalShape.getSrc());
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                } else if (layer.type == Type.SVG) {
+                    var shape: IShape = new Svg(p, layer.globalShape.getSrc());
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                } else if (layer.type == Type.TEXT) {
+                    var g: TextField = layer.globalShape;
+                    var shape: IShape = new TextField(p, g.getContent(), k.shape.getColor(), k.shape.getSize(), g.getFamily());
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                }
+
+                if (newKeyframe == null) {
+                    var currentKeyframe: Keyframe = layer.getKeyframeByTimestamp(position);
+                    if (currentKeyframe) {
+                        if (confirm('Stávající snímek na pozici ' + position / 1000 + ' s bude nahrazen.')) {
+                            currentKeyframe.shape = shape;
+                            currentKeyframe.timing_function = k.timing_function;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     showPause() {
@@ -179,7 +428,16 @@ class Timeline
             var tmp: number = arrayMax(item.timestamps);
             if (tmp > absoluteMax) absoluteMax = tmp;
         });
-        absoluteMax = this.milisecToPx(absoluteMax);
+        var absoluteMaxPx: number = this.milisecToPx(absoluteMax);
+
+        if (absoluteMax == 0) {
+            this.playMode = Animation_playing.STOP;
+            $('.shape-helper').show();
+            this.showPlay();
+            $('tr.first').removeClass('to-background');
+            return false;
+        }
+
         var time;
         this.start = new Date();
         var draw = () => {
@@ -188,8 +446,8 @@ class Timeline
             var dt = now - (time || now);
 
             time = now;
-            this.pointerPosition += 2;
-            if (this.pointerPosition >= absoluteMax) {
+            this.pointerPosition += (absoluteMaxPx / absoluteMax) * dt;;
+            if (this.pointerPosition >= absoluteMaxPx) {
                 cancelAnimationFrame(this.playInterval);
                 if (this.repeat) {
                     this.pointerPosition = 0;
@@ -274,6 +532,27 @@ class Timeline
         }
     }
 
+    expandFrames() {
+        var trEl: JQuery = $('body').find('.keyframes > table > tbody > tr');
+
+        //render frames
+        for (var i: number = 0; i < 10; i++) {
+            var tdEl: JQuery = $('<td>').attr('class', i + this.keyframeCount);
+
+            //every n-th highlighted
+            if ((i + 1) % this.groupKeyframes == 0) {
+                tdEl.addClass('highlight');
+            }
+
+            tdEl.appendTo(trEl);
+        }        
+
+        this.keyframeCount += 10;
+        this.fixedWidthEl.width((this.keyframeWidth) * this.keyframeCount + 350 + 15);
+        this.renderHeader();
+
+    }
+
     renderAnimationRange() {
         this.keyframesTableEl.find('.range').remove();
         if (this.repeat) {
@@ -329,7 +608,8 @@ class Timeline
                 }));
 
                 if (index != (keyframes.length - 1)) {
-                    keyframesTdEl.append($('<div>').addClass('timing-function').html('<p>(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 +')</p>').css({
+                   
+                    keyframesTdEl.append($('<div>').addClass('timing-function').html('<p class="tooltip-bottom" title="Kliknutím editujte časovou funkci">(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 +')</p>').css({
                         'left': this.milisecToPx(keyframe.timestamp) + 5,
                         'width': this.milisecToPx(keyframes[index+1].timestamp - keyframe.timestamp) - 10,
                     }));   
@@ -352,7 +632,42 @@ class Timeline
                 var layerID = $(event.target).data('layer');
                 var keyframeID = $(event.target).data('index');
 
-                this.getLayer(layerID).updatePosition(keyframeID, ms);
+                var layer: Layer = this.getLayer(layerID);
+
+                var err1: boolean = false;
+                var err2: boolean = false;
+                if (layer.parent != null) {
+                    var parentLayer: Layer = this.getLayer(layer.parent);
+                    var maxTimestamp: number = this.arrayMax(parentLayer.timestamps);
+                    if (ms > maxTimestamp && maxTimestamp != 0) {
+                        err1 = true;
+                    }
+                }
+                var mt: number = this.arrayMax(layer.timestamps);
+                var maxPosition: number = this.checkChildTimestamps(layer, mt);
+                var secondMax: number = 0;
+                layer.getAllKeyframes().forEach((item: Keyframe, index: number) => {
+                    if (item.timestamp > secondMax && item.timestamp != mt) {
+                        secondMax = item.timestamp;
+                    }
+                });
+
+                if ((mt == layer.getKeyframe(keyframeID).timestamp) && (secondMax < maxPosition && ms < maxPosition && maxPosition != 0)) {
+                    err2 = true;
+                }
+
+                if (err1) {
+                    alert('Doba animace je omezena animací nadřazeného prvku na ' + maxTimestamp / 1000 + 's. Snímek nebude přesunut.');
+                } else if (err2) {
+                    alert('Nelze přesunout snímek, protože výsledná animace by byla kratší než animace vnořených elementů. Upravte dobu animací vnořených elementů.');
+                } else {
+                    layer.updatePosition(keyframeID, ms);
+                }
+
+                var countK = ms / this.miliSecPerFrame;
+                if (countK > (this.keyframeCount - this.expandTimelineBound)) {
+                    this.expandFrames();
+                }
 
                 this.renderKeyframes(layerID);
             },
@@ -364,6 +679,7 @@ class Timeline
                 }
             },
         });
+        $('.tooltip-bottom').tooltipster({ position: 'bottom' });
     }
 
     renderLayers() {
@@ -379,6 +695,7 @@ class Timeline
         this.layers.forEach((item: Layer, index: number) => {
             if (this.app.workspace.scope == item.parent) {
                 var layerItem: JQuery = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
+                layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
                 layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
                 if (item.idEl) {
                     layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
@@ -411,13 +728,15 @@ class Timeline
         }, {
             width: 150,
             onblur: 'submit',
-           event: 'dblclick',
+            event: 'dblclick',
+                cssClass: 'editable-input'
             });
     }
 
     renderSingleLayer(layer: Layer, index: number) {
         if (this.app.workspace.scope == layer.parent) {
             var layerItem: JQuery = $('<div>').addClass('layer').attr('id', index).attr('data-id', layer.id);
+            layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
             layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(layer.name));
             if (layer.idEl) {
                 layerItem.append($('<span>').addClass('div-id').html('#' + layer.idEl));
@@ -440,6 +759,7 @@ class Timeline
                     width: 150,
                     onblur: 'submit',
                     event: 'dblclick',
+                    cssClass: 'editable-input'
                 });
         }       
     }
@@ -475,7 +795,7 @@ class Timeline
             head.append('<th colspan="' + this.groupKeyframes + '">'+ milisec/1000 +' s</th>');
         }
 
-        this.keyframesTableEl.find('thead').append(head);
+        this.keyframesTableEl.find('thead').empty().append(head);
     }
 
     public addLayer(layer): number {
@@ -620,6 +940,7 @@ class Timeline
         this.selectLayer(firstSelectedEl.data('id'));
     }
 
+    //on click name layer
     private onClickLayer(e: JQueryEventObject, ui)
     {
         //select row by selected layer
@@ -650,12 +971,13 @@ class Timeline
         this.layersFooterEl.css('left', posX);
         this.keyframesFooterEl.css('left', posX);
         this.timelineFooterEl.css('bottom', 0 - posY);
-        this.pointerEl.find('.pointer-top').css('top', posY);
+        //this.pointerEl.find('.pointer-top-wrapper').css('top', posY);
     }
 
     private onReady(e: JQueryEventObject) {
         this.layersEl.multisortable({
             items: '> div.layer:not(.disabled)',
+            handle: '.handle',
             axis: 'y', delay: 150,
             scroll: true,
             stop: (e: JQueryEventObject) => {
@@ -668,10 +990,11 @@ class Timeline
         this.pointerEl.draggable({
             axis: 'x',
             containment: 'parent',
-            handle: '.pointer-top',
+            handle: '.pointer-top-wrapper',
             start: (event: JQueryEventObject, ui) => {
                 this.keyframesTableEl.find('.keyframe').removeClass('selected');
                 this.keyframesTableEl.find('.timing-function').removeClass('selected');
+                this.app.controlPanel.displayMainPanel(false, 'bezier');
             },
             drag: (event: JQueryEventObject, ui) => {
                 this.pointerPosition = ui.position.left + 1;
@@ -691,8 +1014,25 @@ class Timeline
     private onClickTable(e: JQueryEventObject) {
         this.app.controlPanel.displayMainPanel(false, 'bezier');
         if (!$(e.target).hasClass('pointer')) {
-            this.keyframesTableEl.find('.keyframe').removeClass('selected');
             this.keyframesTableEl.find('.timing-function').removeClass('selected');
+            this.keyframesTableEl.find('.keyframe').removeClass('selected');
+        }
+    }
+
+    private onClickChangePosition(e: JQueryEventObject) {
+        if (!$(e.target).hasClass('pointer')) {
+            if (!$(e.target).hasClass('keyframe')) {
+                this.keyframesTableEl.find('.timing-function').removeClass('selected');
+                this.keyframesTableEl.find('.keyframe').removeClass('selected');
+                this.app.controlPanel.displayMainPanel(false, 'bezier');
+            } else {
+                if (!$(e.target).is(':last-child')) {
+                    this.app.controlPanel.displayMainPanel(true, 'bezier');
+                } else {
+                    this.app.controlPanel.displayMainPanel(false, 'bezier');
+                    $('.delete-keyframe').removeClass('disabled');
+                }   
+            }
             var n = $(e.target).parents('table');
             var posX = e.pageX - $(n).offset().left;
             posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
@@ -738,24 +1078,44 @@ class Timeline
 
     onCreateKeyframe(e: JQueryEventObject) {
         console.log('Creating keyframe...');
-        //nejblizsi tr -> vytanout data-id -> najit layer podle id ->vlozit novy keyframe (pouzit  position, nejprve prevest na ms, pouzit shape z workspace)
-        var id: number = parseInt($(e.target).closest('tr.selected').data('id'));
-        if ($.isNumeric(id)) {
-            var layer: Layer = this.getLayer(id);
-            var ms: number = this.pxToMilisec(this.pointerPosition);
-            if (layer.getKeyframeByTimestamp(ms) === null) {
-                layer.addKeyframe(this.app.workspace.getCurrentShape(id), ms, this.app.workspace.getBezier());
+        var idLayer: number = parseInt($(e.target).closest('tr.selected').data('id'));
+        var n = $('body').find('.keyframes > table');
+        var posX = e.pageX - $(n).offset().left;
+        posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
+        var position: number = this.pxToMilisec(posX);
 
-                //for check
-                layer.getAllKeyframes().forEach((item: Keyframe, index: number) => {
-                    console.log(item);
-                });
-                //for check
+        this.createKeyframe(idLayer, position);
+    }
 
-                this.renderKeyframes(id);
-                this.app.workspace.transformShapes();
+    createKeyframe(idLayer: number, position: number) {
+        if ($.isNumeric(idLayer)) {
+            var layer: Layer = this.getLayer(idLayer);
+            /*if (layer.parent != null) {
+                var arrayMax = Function.prototype.apply.bind(Math.max, null);
+                var parentLayer: Layer = this.getLayer(layer.parent);
+                var maxTimestamp: number = arrayMax(parentLayer.timestamps);
+                if (position > maxTimestamp && maxTimestamp != 0) {
+                    position = maxTimestamp;
+                    alert('Doba animace je omezena animací nadřazeného prvku na ' + maxTimestamp / 1000 + 's. Snímek bude posunut na tuto pozici.');
+                }
             }
-        }
+            if (layer.getKeyframeByTimestamp(position) === null) {
+
+                layer.addKeyframe(this.app.workspace.getCurrentShape(idLayer), position, this.app.workspace.getBezier());
+
+                var countK = position / this.miliSecPerFrame;
+                if (countK > (this.keyframeCount - this.expandTimelineBound)) {
+                    this.expandFrames();
+                }
+
+                this.renderKeyframes(idLayer);
+                this.app.workspace.transformShapes();
+            }*/
+
+            this.app.workspace.addKeyframe(layer, this.app.workspace.getCurrentShape(idLayer), position, this.app.workspace.getBezier());
+
+            this.app.workspace.transformShapes();
+        }      
     }
 
     pxToMilisec(px: number = null): number {
@@ -771,6 +1131,7 @@ class Timeline
     }
 
     onDeleteKeyframe(e: JQueryEventObject) {
+        console.log('onDeleteKEyframe');
         if (this.deleteKeyframeEl.hasClass('disabled')) {
             e.preventDefault();
             return false;
@@ -785,7 +1146,20 @@ class Timeline
                     var keyframeEl = this.keyframesTableEl.find('tbody .keyframe.selected');
 
                     if (keyframeEl.length) {
-                        this.getLayer(keyframeEl.data('layer')).deleteKeyframe(keyframeEl.data('index'));
+                        var layer: Layer = this.getLayer(keyframeEl.data('layer'));
+                        
+                        var k: Keyframe = layer.getKeyframe(keyframeEl.data('index'));
+                        if (layer.getAllKeyframes().length > 2) {
+
+                            var maxPosition: number = this.checkChildTimestamps(layer, this.arrayMax(layer.timestamps));
+                            if (k.timestamp > maxPosition && maxPosition != 0) {
+                                alert('Nelze smazat snímek, protože výsledná animace by byla kratší než animace vnořených elementů. Upravte dobu animací vnořených elementů.');
+                            } else {
+                                layer.deleteKeyframe(keyframeEl.data('index'));
+                            }
+                        } else {
+                            layer.deleteKeyframe(keyframeEl.data('index'));
+                        }
 
                         this.renderKeyframes(keyframeEl.data('layer'));
                         this.app.workspace.transformShapes();
@@ -798,6 +1172,20 @@ class Timeline
                 }
             }
         });
+    }
+
+    checkChildTimestamps(layer: Layer, limit: number, maxTimestamp: number = 0) {
+        var ret: number = maxTimestamp;
+        this.layers.forEach((child: Layer, index: number) => {
+            if (child.parent == layer.id) {
+                var localMax: number = this.arrayMax(child.timestamps);
+
+                var tmp: number = this.checkChildTimestamps(child, limit, localMax);
+                if (tmp > ret)
+                    ret = tmp;
+            }   
+        });
+        return ret;
     }
 
     get repeat() {

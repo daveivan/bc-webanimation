@@ -51,6 +51,8 @@ interface IShape {
 
     setBorderRadiusBottomLeft(val: number);
 
+    setBorderRadius(val: number);
+
     setRotateX(val: number);
 
     setRotateY(val: number);

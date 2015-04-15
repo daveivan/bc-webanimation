@@ -86,6 +86,13 @@
         this._parameters.borderRadius[3] = val;
     }
 
+    setBorderRadius(val: number) {
+        this.setBorderRadiusBottomLeft(val);
+        this.setBorderRadiusBottomRight(val);
+        this.setBorderRadiusTopLeft(val);
+        this.setBorderRadiusTopRight(val);
+    }
+
     setRotateX(val: number) {
         this._parameters.rotate.x = val;
     }

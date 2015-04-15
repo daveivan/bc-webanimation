@@ -9,6 +9,7 @@ class ControlPanel {
     private initFontSize: number = 16;
     private initTextColor: rgb = { r: 0, g: 0, b: 0 };
     private isOriginVisible: boolean = false;
+    private isLockedBorderRadius:boolean = true;
     private fontFamily: Array<string> = ['Segoe UI', 'Georgia', 'Times', 'Arial', 'Calibri', 'Verdana', 'serif', 'sans-serif'];
 
     private toolPanelEl: JQuery = $('<div>').addClass('tool-panel');
@@ -40,6 +41,7 @@ class ControlPanel {
     private borderRadiusTREl: JQuery = $('<input type="text"></input').attr('id', 'radius-tr').addClass('border-radius-input').attr('data-type', 'tr');
     private borderRadiusBLEl: JQuery = $('<input type="text"></input').attr('id', 'radius-bl').addClass('border-radius-input').attr('data-type', 'bl');
     private borderRadiusBREl: JQuery = $('<input type="text"></input').attr('id', 'radius-br').addClass('border-radius-input').attr('data-type', 'br');
+    private borderRadiusSwitch: JQuery = $('<span>').addClass('border-radius-switch locked tooltip').html('<a href="#"><i class="fa fa-lock"></i></a>').attr('title', 'Budou všechny okraje stejné?');
     private borderRadiusHelperEl: JQuery = $('<div>').addClass('border-radius-helper');
 
     private graph: JQuery = $('<div>').addClass('graph');
@@ -97,9 +99,33 @@ class ControlPanel {
         this.controlPanelEl.append(this.mainPanel);
         this.controlPanelEl.append($('<div>').addClass('clearfix'));
 
+
+        //NEW NEW NEW
+        /*var propery1: IProperty = new WorkspaceDimension(this.app);
+        this.controlPanelEl.append(propery1.renderPropery(this.itemControlEl.clone()));
+        var propery2: IProperty = new Background();
+        this.controlPanelEl.append(propery2.renderPropery(this.itemControlEl.clone()));
+        var propery3: IProperty = new Opacity();
+        this.controlPanelEl.append(propery3.renderPropery(this.itemControlEl.clone()));
+        var propery4: IProperty = new ObjectDimension();
+        this.controlPanelEl.append(propery4.renderPropery(this.itemControlEl.clone()));
+        var propery5: IProperty = new BorderRadius();
+        this.controlPanelEl.append(propery5.renderPropery(this.itemControlEl.clone()));
+        var propery6: IProperty = new Font();
+        this.controlPanelEl.append(propery6.renderPropery(this.itemControlEl.clone()));
+        var propery7: IProperty = new TransformOrigin();
+        this.controlPanelEl.append(propery7.renderPropery(this.itemControlEl.clone()));
+        var propery8: IProperty = new Rotate();
+        this.controlPanelEl.append(propery8.renderPropery(this.itemControlEl.clone()));
+        var propery9: IProperty = new Skew();
+        this.controlPanelEl.append(propery9.renderPropery(this.itemControlEl.clone()));
+        var propery10: IProperty = new BezierCurve();
+        this.controlPanelEl.append(propery10.renderPropery(this.itemControlEl.clone()));*/
+        //NEW NEW NEW /end
+
         //Workspace dimensions
         var workspaceXY: JQuery = this.itemControlEl.clone();
-        workspaceXY.html('<h2>Rozměry plátna</h2>');
+        workspaceXY.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Rozměry plátna</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         var w: JQuery = $('<div>').html('width: ').addClass('group half');
         w.append(this.workspaceWidthEl.val(this.app.workspace.workspaceSize.width.toString()));
@@ -109,28 +135,36 @@ class ControlPanel {
         h.append(this.workspaceHeightEl.val(this.app.workspace.workspaceSize.height.toString()));
         h.append((' px'));
         row.append(h);
-        workspaceXY.append(row);
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(row);
+        workspaceXY.append(expand);
         this.controlPanelEl.append(workspaceXY);
 
         var idElement: JQuery = this.itemControlEl.clone();
-        idElement.html('<h2>ID elementu</h2>');
+        idElement.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>ID elementu</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         var g: JQuery = $('<div>').html('#').addClass('group full');
         g.append(this.idEl);
         row.append(g);
-        idElement.append(row);
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(row);
+        idElement.append(expand);
         this.controlPanelEl.append(idElement);
 
         //Bezier curve
         var curve: JQuery = this.itemControlEl.clone();
-        curve.html('<h2>Časový průběh animace</h2>');
+        curve.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Časový průběh animace</h2></a>');
         this.graph.append(this.point0);
         this.graph.append(this.point1);
         this.graph.append(this.point2);
         this.graph.append(this.point3);
         this.graph.append(this.canvas);
-        curve.append(this.graph);
-        curve.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
+        var expand: JQuery = $('<div>').addClass('expand init-visible expand-bezier');
+
+        expand.append(this.graph);
+        expand.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
+        curve.append(expand);
+        
         this.curve = curve;
         //this.displayMainPanel(true, 'bezier');
         this.mainPanel.append(curve);
@@ -138,7 +172,7 @@ class ControlPanel {
 
         //background
         var newItem: JQuery = this.itemControlEl.clone();
-        newItem.html('<h2>Barva pozadí elementu</h2>');
+        newItem.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Barva pozadí elementu</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         var s: JQuery = $('<div>').html('#').addClass('group quarter');
         s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
@@ -148,20 +182,24 @@ class ControlPanel {
         a.append(this.bgOpacitySliderEl);
         a.append(this.bgOpacityEl);
         row.append(a);
-        newItem.append(row);
+        var expand: JQuery = $('<div>').addClass('expand init-visible');
+        expand.append(row);
+        newItem.append(expand);
         this.controlPanelEl.append(newItem);
 
         //opacity
         var opacity: JQuery = this.itemControlEl.clone();
-        opacity.html('<h2>Průhlednost elementu</h2>');
+        opacity.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Průhlednost elementu</h2></a>');
         this.opacityEl.val('1');
-        opacity.append(this.opacitySliderEl);
-        opacity.append(this.opacityEl);
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(this.opacitySliderEl);
+        expand.append(this.opacityEl);
+        opacity.append(expand);
         this.controlPanelEl.append(opacity);
 
         //dimensions
         var dim: JQuery = this.itemControlEl.clone();
-        dim.html('<h2>Rozměry elementu</h2>');
+        dim.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Rozměry elementu</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         var w: JQuery = $('<div>').html('width: ').addClass('group half');
         w.append(this.dimensionXEl);
@@ -171,24 +209,29 @@ class ControlPanel {
         h.append(this.dimensionYEl);
         h.append(' px');
         row.append(h);
-        dim.append(row);
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(row);
+        dim.append(expand);
         this.controlPanelEl.append(dim);
 
         //border-radius
         var radius: JQuery = this.itemControlEl.clone();
-        radius.html('<h2>Border-radius</h2>');
+        radius.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Border-radius</h2></a>');
         this.borderRadiusHelperEl.append(this.borderRadiusTLEl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusTREl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusBLEl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusBREl.val('0'));
-        radius.append(this.borderRadiusHelperEl);
+        this.borderRadiusHelperEl.append(this.borderRadiusSwitch);
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(this.borderRadiusHelperEl);
+        radius.append(expand);
         this.controlPanelEl.append(radius);
 
         //Font
         var font: JQuery = this.itemControlEl.clone();
         this.fontSizeEl.val(this.initFontSize.toString());
         this.fontColorEl.val($.colpick.rgbToHex(this.initTextColor));
-        font.html('<h2>Text</h2>');
+        font.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Nastavení textu</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         this.fontFamily.forEach((val, index) => {
             this.fontFamilyEl.append($("<option>").attr('value', val).text(val));
@@ -203,7 +246,9 @@ class ControlPanel {
         size.append(this.fontSizeEl);
         size.append(' px');
         row.append(size);
-        font.append(row);
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(row);
+        font.append(expand);
 
         this.controlPanelEl.append(font);
 
@@ -211,9 +256,9 @@ class ControlPanel {
         this.transformOriginXEl.val(this.initOrigin[0].toString());
         this.transformOriginYEl.val(this.initOrigin[1].toString());
         var origin: JQuery = this.itemControlEl.clone();
-        origin.html('<h2>Transform-origin</h2>').addClass('control-origin');
+        origin.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Transform-origin</h2></a>').addClass('control-origin');
         var row: JQuery = $('<div>').addClass('row');
-        var visibleLabel: JQuery = $('<label>').html('Zobrazit polohu na plátně');
+        var visibleLabel: JQuery = $('<label>').html('Zobrazit polohu na plátně').addClass('tooltip').attr('title', 'Poloha bodu umístění transform-origin se zobrazí spolu s elementem. Táhnutím bodu lze transform-origin měnit.');
         visibleLabel.prepend(this.transformOriginVisibleEl);
         row.append(visibleLabel);
         var x: JQuery = $('<div>').html('poz. x: ').addClass('group half');
@@ -224,43 +269,49 @@ class ControlPanel {
         y.append(this.transformOriginYEl);
         y.append(' %');
         row.append(y);
-        origin.append(row);
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(row);
+        origin.append(expand);
 
         this.controlPanelEl.append(origin);
 
         //3D Rotate
         var rotate: JQuery = this.itemControlEl.clone();
-        rotate.html('<h2>3D rotace</h2>').addClass('control-rotate');
+        rotate.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>3D Rotace</h2></a>').addClass('control-rotate');
+        var expand: JQuery = $('<div>').addClass('expand');
         var x: JQuery = $('<span>').html('<p>x:</p>').addClass('group-form');
         x.append(this.rotateXSliderEl);
         x.append(this.rotateXEl);
         x.append(' deg');
-        rotate.append(x);
+        expand.append(x);
         var y: JQuery = $('<span>').html('<p>y:</p>').addClass('group-form');
         y.append(this.rotateYSliderEl);
         y.append(this.rotateYEl);
         y.append(' deg');
-        rotate.append(y);
+        expand.append(y);
         var z: JQuery = $('<span>').html('<p>z:</p>').addClass('group-form');
         z.append(this.rotateZSliderEl);
         z.append(this.rotateZEl);
         z.append(' deg');
-        rotate.append(z);
+        expand.append(z);
+        rotate.append(expand);
         this.controlPanelEl.append(rotate);
 
         //skew
         var skew: JQuery = this.itemControlEl.clone();
-        skew.html('<h2>Zkosení</h2>').addClass('control-rotate');
+        skew.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Zkosení</h2></a>').addClass('control-rotate');
+        var expand: JQuery = $('<div>').addClass('expand');
         var x: JQuery = $('<span>').html('<p>x:</p>').addClass('group-form');
         x.append(this.skewXSliderEl);
         x.append(this.skewXEl);
         x.append(' deg');
-        skew.append(x);
+        expand.append(x);
         var y: JQuery = $('<span>').html('<p>y:</p>').addClass('group-form');
         y.append(this.skewYSliderEl);
         y.append(this.skewYEl);
         y.append(' deg');
-        skew.append(y);
+        expand.append(y);
+        skew.append(expand);
         this.controlPanelEl.append(skew);
 
         this.containerEl.append(this.controlPanelEl);
@@ -274,9 +325,10 @@ class ControlPanel {
   
         this.colorPicker = this.bgPickerEl.colpick({
             layout: 'hex',
-            submit: 0,
+            submit: true,
             color: this.initColor,
-            onChange: (hsb, hex, rgb, el, bySetColor) => {
+            onSubmit: (hsb, hex, rgb, el, bySetColor) => {
+                $(el).colpickHide();
                 $(el).css('border-color', '#' + hex);
                 if (!bySetColor) $(el).val(hex);
                 if (!bySetColor) {
@@ -291,9 +343,10 @@ class ControlPanel {
 
         this.textColorPicker = this.fontColorEl.colpick({
             layout: 'hex',
-            submit: 0,
+            submit: true,
             color: this.initTextColor,
-            onChange: (hsb, hex, rgb, el, bySetColor) => {
+            onSubmit: (hsb, hex, rgb, el, bySetColor) => {
+                $(el).colpickHide();
                 $(el).css('border-color', '#' + hex);
                 if (!bySetColor) $(el).val(hex);
                 if (!bySetColor) {
@@ -447,12 +500,31 @@ class ControlPanel {
         });
 
         $(document).on('change', '.border-radius-input', (e: JQueryEventObject) => {
-            this.app.workspace.setBorderRadius($(e.target).data('type'), parseInt($(e.target).val()));
+            if (this.isLockedBorderRadius == true) {
+                this.app.workspace.setBorderRadius('all', parseInt($(e.target).val()));
+            } else {
+                this.app.workspace.setBorderRadius($(e.target).data('type'), parseInt($(e.target).val()));
+            }
         });
 
         $(document).on('keyup', '.border-radius-input', (e: JQueryEventObject) => {
             if (e.which == 13) {
                 $(e.target).trigger('change');
+            }
+            if (this.isLockedBorderRadius == true) {
+                $('.border-radius-input').val($(e.target).val());
+            }
+        });
+
+        $(document).on('click', '.border-radius-switch a', (e: JQueryEventObject) => {
+            if (this.isLockedBorderRadius == true) {
+                this.isLockedBorderRadius = false;
+                this.borderRadiusSwitch.removeClass('locked').addClass('unlocked');
+                this.borderRadiusSwitch.find('i').removeClass('fa-lock').addClass('fa-unlock');
+            } else {
+                this.isLockedBorderRadius = true;
+                this.borderRadiusSwitch.removeClass('unlocked').addClass('locked');
+                this.borderRadiusSwitch.find('i').removeClass('fa-unlock').addClass('fa-lock');        
             }
         });
 
@@ -567,6 +639,20 @@ class ControlPanel {
 
         $(document).ready(() => {
             this.selectToolEl.trigger('click');
+            $('.expand').hide();
+            $('.expand.init-visible').show();
+            $('a.expand-link').on('click', function(e: JQueryEventObject) {
+                console.log('expand');
+                if ($(e.target).parents('.control-item').find('.expand').is(':visible')) {
+                    $(this).find('i').addClass('fa-caret-right');
+                    $(this).find('i').removeClass('fa-caret-down');
+                } else {
+                    $(this).find('i').removeClass('fa-caret-right');
+                    $(this).find('i').addClass('fa-caret-down');
+                }
+                $(e.target).parents('.control-item').find('.expand').slideToggle(100);
+                return false;
+            });
             this.displayMainPanel(true, 'bezier');
             this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
             this.renderWrap(this.ctx);
@@ -585,6 +671,7 @@ class ControlPanel {
             });
 
             $('.rotate').val('0');
+
 
             $('.skew-slider').slider({
                 min: -90,
@@ -614,6 +701,7 @@ class ControlPanel {
     updateColor(color: rgb, alpha: number) {
         this.colorPicker.colpickSetColor(color, false);
         this.bgPickerEl.val($.colpick.rgbToHex(color));
+        this.bgPickerEl.css({ 'border-color': 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')' });
         this.bgOpacityEl.val(alpha.toFixed(2).toString());
         this.bgOpacitySliderEl.slider('option', 'value', Number(alpha));
     }
@@ -628,6 +716,7 @@ class ControlPanel {
     updateFont(color: rgb, size: number, family: string) {
         this.textColorPicker.colpickSetColor(color, false);
         this.fontColorEl.val($.colpick.rgbToHex(color));
+        this.textColorPicker.css({ 'border-color': 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')' });
         this.fontSizeEl.val(size.toString());
         this.fontFamilyEl.val(family);
     }
@@ -694,6 +783,7 @@ class ControlPanel {
     }
 
     updateBezierCurve(fn: Bezier_points) {
+        $('.expand-bezier').show();
         this.point1.css({
             'left': fn.p0 * 200,
             'top': (1 - fn.p1) * 200,
@@ -751,7 +841,7 @@ class ControlPanel {
         if (visible) {
             this.mainPanel.show();
             $('.clearfix').show();
-            $('.clearfix').css({ 'margin-top': this.mainPanel.height() });
+            $('.clearfix').css({ 'margin-top': '40px' });
             $('.delete-keyframe').removeClass('disabled');
         } else {
             this.mainPanel.hide();

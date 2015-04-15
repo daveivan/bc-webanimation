@@ -79,3 +79,8 @@ interface fontParameters {
     color: rgb;
     size: number;
 }
+
+interface keyframeFrom {
+    layer: number;
+    keyframe: number;
+}

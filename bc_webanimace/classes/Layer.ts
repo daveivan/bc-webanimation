@@ -10,6 +10,8 @@
     private _parent: number = null;
     private _type: Type = null;
     nesting: number = 0;
+    isVisibleOnWorkspace: boolean;
+    isMultipleEdit: boolean;
 
     constructor(name: string, fn: Bezier_points, type: Type, shape: IShape = null) {
         this.name = name;
@@ -24,6 +26,8 @@
         this.idEl = null;
         this.globalShape = shape;
         this._type = type;
+        this.isVisibleOnWorkspace = true;
+        this.isMultipleEdit = false;
     }
 
     get order(): number {
@@ -142,7 +146,7 @@
         return this._type;
     }
 
-    transformOld(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
+    transformOld(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application, showHelpers: boolean = true) {
         //find interval between position
         var rangeData = this.getRange(position);
         var left: number = rangeData.left;
@@ -188,6 +192,7 @@
                 top: rangeData.params.relativePosition.top,
                 left: rangeData.params.relativePosition.left,
             },
+            scale: rangeData.params.scale,
         }
         var cssStyles = new Array();
         /*var isChange = {
@@ -412,11 +417,452 @@
         }
     }
 
-    transform2(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
-        //nedelej nic
+    transformLepsi(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application, showHelpers: boolean = true) {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left: number = rangeData.left;
+        var right: number = rangeData.right;
+        var rng: Array<Keyframe> = rangeData.rng;
+        var params: Parameters = rangeData.params;
+
+        var topParam = params.top;
+        var leftParam = params.left;
+        var rTopParam = params.relativePosition.top;
+        var rLeftParam = params.relativePosition.left;
+        var widthParam = params.width;
+        var rWidthParam = params.relativeSize.width;
+        var heightParam = params.height;
+        var rHeightParam = params.relativeSize.height;
+        var bgParam: rgba = params.background;
+        var opacityParam = params.opacity;
+        var brParam: Array<number> = new Array<number>();
+        brParam[0] = params.borderRadius[0];
+        brParam[1] = params.borderRadius[1];
+        brParam[2] = params.borderRadius[2];
+        brParam[3] = params.borderRadius[3];
+        var rotatexParam = params.rotate.x;
+        var rotateyParam = params.rotate.y;
+        var rotatezParam = params.rotate.z;
+        var skewxParam = params.skew.x;
+        var skewyParam = params.skew.y;
+        var scaleParam = params.scale;
+        var originxParam = params.origin.x;
+        var originyParam = params.origin.y;
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn: Bezier_points = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p: number = (position - left) / (right - left);
+
+            var paramsLeft: Parameters = rng['l'].shape.parameters;
+            var paramsRight: Parameters = rng['r'].shape.parameters;
+
+            if (paramsLeft.top != paramsRight.top) {
+                rTopParam = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
+                topParam = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
+                shape.css({ 'top': rTopParam + '%' });
+                helper.css({ 'top': rTopParam + '%' });
+            }
+            if (paramsLeft.left != paramsRight.left) {
+                rLeftParam = this.computeAttr(paramsLeft.relativePosition.left, paramsRight.relativePosition.left, bezier(p));
+                leftParam = Math.round(this.computeAttr(paramsLeft.left, paramsRight.left, bezier(p)));
+                shape.css({ 'left': rLeftParam + '%' });
+                helper.css({ 'left': rLeftParam + '%' });
+            }
+            if (paramsLeft.width != paramsRight.width) {
+                rWidthParam = this.computeAttr(paramsLeft.relativeSize.width, paramsRight.relativeSize.width, bezier(p));
+                widthParam = Math.round(this.computeAttr(paramsLeft.width, paramsRight.width, bezier(p)));
+                shape.css({ 'width': rWidthParam + '%' });
+                helper.css({ 'width': rWidthParam + '%' });
+            }
+            if (paramsLeft.height != paramsRight.height) {
+                rHeightParam = this.computeAttr(paramsLeft.relativeSize.height, paramsRight.relativeSize.height, bezier(p));
+                heightParam = Math.round(this.computeAttr(paramsLeft.height, paramsRight.height, bezier(p)));
+                shape.css({ 'height': rHeightParam + '%' });
+                helper.css({ 'height': rHeightParam + '%' });
+            }
+            var isBg = false;
+            if (paramsLeft.background.r != paramsRight.background.r) {
+                isBg = true;
+                bgParam.r = Math.round(this.computeAttr(paramsLeft.background.r, paramsRight.background.r, bezier(p)));
+            }
+            if (paramsLeft.background.g != paramsRight.background.g) {
+                isBg = true;
+                bgParam.g = Math.round(this.computeAttr(paramsLeft.background.g, paramsRight.background.g, bezier(p)));
+            }
+            if (paramsLeft.background.b != paramsRight.background.b) {
+                isBg = true;
+                bgParam.b = Math.round(this.computeAttr(paramsLeft.background.b, paramsRight.background.b, bezier(p)));
+            }
+            if (paramsLeft.background.a != paramsRight.background.a) {
+                isBg = true;
+                bgParam.a = this.computeAttr(paramsLeft.background.a, paramsRight.background.a, bezier(p));
+            }
+
+            if (isBg) {
+                shape.css({ 'background': 'rgba(' + bgParam.r + ',' + bgParam.g + ',' + bgParam.b + ',' + bgParam.a + ')' });
+            }
+
+            if (paramsLeft.opacity != paramsRight.opacity) {
+                opacityParam = this.computeAttr(paramsLeft.opacity, paramsRight.opacity, bezier(p));
+                shape.css({ 'opacity': opacityParam });
+            }
+            if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0]) {
+                brParam[0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
+                shape.css({ 'border-top-left-radius': brParam[0] });
+            }
+            if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1]) {
+                brParam[1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
+                shape.css({ 'border-top-right-radius': brParam[1] });
+            }
+            if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2]) {
+                brParam[2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
+                shape.css({ 'border-bottom-right-radius': brParam[2] });
+            }
+            if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3]) {
+                brParam[3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
+                shape.css({ 'border-bottom-left-radius': brParam[3] });
+            }
+
+            var isTransform = false;
+            if (paramsLeft.rotate.x != paramsRight.rotate.x) {
+                isTransform = true;
+                rotatexParam = Math.round(this.computeAttr(paramsLeft.rotate.x, paramsRight.rotate.x, bezier(p)));
+            }
+            if (paramsLeft.rotate.y != paramsRight.rotate.y) {
+                isTransform = true;
+                rotateyParam = Math.round(this.computeAttr(paramsLeft.rotate.y, paramsRight.rotate.y, bezier(p)));
+            }
+            if (paramsLeft.rotate.z != paramsRight.rotate.z) {
+                isTransform = true;
+                rotatezParam = Math.round(this.computeAttr(paramsLeft.rotate.z, paramsRight.rotate.z, bezier(p)));
+            }
+            if (paramsLeft.skew.x != paramsRight.skew.x) {
+                isTransform = true;
+                skewxParam = Math.round(this.computeAttr(paramsLeft.skew.x, paramsRight.skew.x, bezier(p)));
+            }
+            if (paramsLeft.skew.y != paramsRight.skew.y) {
+                isTransform = true;
+                skewyParam = Math.round(this.computeAttr(paramsLeft.skew.y, paramsRight.skew.y, bezier(p)));
+            }
+
+            var isOrigin = false;
+            if (paramsLeft.origin.x != paramsRight.origin.x) {
+                isOrigin = true;
+                originxParam = this.computeAttr(paramsLeft.origin.x, paramsRight.origin.x, bezier(p));
+            }
+            if (paramsLeft.origin.y != paramsRight.origin.y) {
+                isOrigin = true;
+                originyParam = this.computeAttr(paramsLeft.origin.y, paramsRight.origin.y, bezier(p));
+            }
+            if (paramsLeft.scale != paramsRight.scale) {
+                isTransform = true;
+                scaleParam = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
+            }
+
+            if (isOrigin) {
+                shape.css({ 'transform-origin': originxParam + '% ' + originyParam + '%' });
+                helper.css({ 'transform-origin': originxParam + '% ' + originyParam + '%' });
+            }
+
+            if (isTransform) {
+                shape.css({ 'transform': 'scale(' + scaleParam + ') rotateX(' + rotatexParam + 'deg) rotateY(' + rotateyParam + 'deg) rotateZ(' + rotatezParam + 'deg) skew(' +skewxParam + 'deg , ' + skewyParam + 'deg)' });
+                helper.css({ 'transform': 'scale(' + scaleParam + ') rotateX(' + rotatexParam + 'deg) rotateY(' + rotateyParam + 'deg) rotateZ(' + rotatezParam + 'deg) skew(' + skewxParam + 'deg , ' + skewyParam + 'deg)' });
+            }
+            shape.removeClass('novisible');
+            helper.removeClass('novisible');
+        } else {
+            if (this._keyframes.length == 1) {
+                var parent: Layer = app.timeline.getLayer(this.parent);
+                if (parent) {
+                    if (parent.isVisible(position, app.timeline)) {
+                        shape.removeClass('novisible');
+                        helper.removeClass('novisible');
+                    } else {
+                        shape.addClass('novisible');
+                        helper.addClass('novisible');
+                    }
+                } else {
+                    shape.removeClass('novisible');
+                    helper.removeClass('novisible');
+                }
+            } else {
+                shape.addClass('novisible');
+                helper.addClass('novisible');
+            }
+        }
+
+        if (this.idEl != null) {
+            shape.attr('id', this.idEl);
+        } else {
+            shape.removeAttr('id');
+        }
+
+        if (currentLayerId == this.id) {
+            //app.controlPanel.updateDimensions({ width: params.width, height: params.height });
+        }
     }
 
-    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
+    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application, showHelpers: boolean = true) {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left: number = rangeData.left;
+        var right: number = rangeData.right;
+        var rng: Array<Keyframe> = rangeData.rng;
+
+        var params: Parameters = {
+            top: rangeData.params.top,
+            left: rangeData.params.left,
+            width: rangeData.params.width,
+            height: rangeData.params.height,
+            background: {
+                r: rangeData.params.background.r,
+                g: rangeData.params.background.g,
+                b: rangeData.params.background.b,
+                a: rangeData.params.background.a,
+            },
+            opacity: rangeData.params.opacity,
+            borderRadius: [
+                rangeData.params.borderRadius[0],
+                rangeData.params.borderRadius[1],
+                rangeData.params.borderRadius[2],
+                rangeData.params.borderRadius[3]
+            ],
+            rotate: {
+                x: rangeData.params.rotate.x,
+                y: rangeData.params.rotate.y,
+                z: rangeData.params.rotate.z,
+            },
+            skew: {
+                x: rangeData.params.skew.x,
+                y: rangeData.params.skew.y,
+            },
+            origin: {
+                x: rangeData.params.origin.x,
+                y: rangeData.params.origin.y,
+            },
+            zindex: this.globalShape.parameters.zindex,
+            relativeSize: {
+                width: rangeData.params.relativeSize.width,
+                height: rangeData.params.relativeSize.height,
+            },
+            relativePosition: {
+                top: rangeData.params.relativePosition.top,
+                left: rangeData.params.relativePosition.left,
+            },
+            scale: rangeData.params.scale,
+        }
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn: Bezier_points = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p: number = (position - left) / (right - left);
+
+            var paramsLeft: Parameters = rng['l'].shape.parameters;
+            var paramsRight: Parameters = rng['r'].shape.parameters;
+
+            if (paramsLeft.top != paramsRight.top) {
+                params['relativePosition']['top'] = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
+                params['top'] = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
+                shape.css({ 'top': params.relativePosition.top + '%' });
+                helper.css({ 'top': params.relativePosition.top + '%' });
+                //if (showHelpers) //helper.css("top", "-=1");
+                    //helper.css({ 'margin': '-1px' });
+            }
+            if (paramsLeft.left != paramsRight.left) {
+                params['relativePosition']['left'] = this.computeAttr(paramsLeft.relativePosition.left, paramsRight.relativePosition.left, bezier(p));
+                params['left'] = Math.round(this.computeAttr(paramsLeft.left, paramsRight.left, bezier(p)));
+                shape.css({ 'left': params.relativePosition.left + '%' });
+                helper.css({ 'left': params.relativePosition.left + '%' });
+                //if (showHelpers) //helper.css("left", "-=1");
+                    //helper.css({ 'margin': '-1px' });
+            }
+            if (paramsLeft.width != paramsRight.width) {
+                params['relativeSize']['width'] = this.computeAttr(paramsLeft.relativeSize.width, paramsRight.relativeSize.width, bezier(p));
+                params['width'] = Math.round(this.computeAttr(paramsLeft.width, paramsRight.width, bezier(p)));
+                shape.css({ 'width': params.relativeSize.width + '%' });
+                helper.css({ 'width': params.relativeSize.width + '%' });
+                //if (showHelpers) helper.css("width", "+=2");
+            }
+            if (paramsLeft.height != paramsRight.height) {
+                params['relativeSize']['height'] = this.computeAttr(paramsLeft.relativeSize.height, paramsRight.relativeSize.height, bezier(p));
+                params['height'] = Math.round(this.computeAttr(paramsLeft.height, paramsRight.height, bezier(p)));
+                shape.css({ 'height': params.relativeSize.height + '%' });
+                helper.css({ 'height': params.relativeSize.height + '%' });
+                //if (showHelpers) helper.css("height", "+=2");
+            }
+            var isBg = false;
+            if (paramsLeft.background.r != paramsRight.background.r) {
+                isBg = true;
+                params.background.r = Math.round(this.computeAttr(paramsLeft.background.r, paramsRight.background.r, bezier(p)));
+            }
+            if (paramsLeft.background.g != paramsRight.background.g) {
+                isBg = true;
+                params.background.g = Math.round(this.computeAttr(paramsLeft.background.g, paramsRight.background.g, bezier(p)));
+            }
+            if (paramsLeft.background.b != paramsRight.background.b) {
+                isBg = true;
+                params.background.b = Math.round(this.computeAttr(paramsLeft.background.b, paramsRight.background.b, bezier(p)));
+            }
+            if (paramsLeft.background.a != paramsRight.background.a) {
+                isBg = true;
+                params.background.a = this.computeAttr(paramsLeft.background.a, paramsRight.background.a, bezier(p));
+            }
+
+            if (isBg) {
+                shape.css({ 'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')' });
+            }
+
+            if (paramsLeft.opacity != paramsRight.opacity) {
+                params['opacity'] = this.computeAttr(paramsLeft.opacity, paramsRight.opacity, bezier(p));
+                shape.css({ 'opacity': params.opacity });
+            }
+            if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0]) {
+                params['borderRadius'][0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
+                shape.css({ 'border-top-left-radius': params.borderRadius[0] });
+            }
+            if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1]) {
+                params['borderRadius'][1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
+                shape.css({ 'border-top-right-radius': params.borderRadius[1] });
+            }
+            if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2]) {
+                params['borderRadius'][2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
+                shape.css({ 'border-bottom-right-radius': params.borderRadius[2] });
+            }
+            if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3]) {
+                params['borderRadius'][3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
+                shape.css({ 'border-bottom-left-radius': params.borderRadius[3] });
+            }
+
+            var isTransform = false;
+            if (paramsLeft.rotate.x != paramsRight.rotate.x) {
+                isTransform = true;
+                params['rotate']['x'] = Math.round(this.computeAttr(paramsLeft.rotate.x, paramsRight.rotate.x, bezier(p)));
+            }
+            if (paramsLeft.rotate.y != paramsRight.rotate.y) {
+                isTransform = true;
+                params['rotate']['y'] = Math.round(this.computeAttr(paramsLeft.rotate.y, paramsRight.rotate.y, bezier(p)));
+            }
+            if (paramsLeft.rotate.z != paramsRight.rotate.z) {
+                isTransform = true;
+                params['rotate']['z'] = Math.round(this.computeAttr(paramsLeft.rotate.z, paramsRight.rotate.z, bezier(p)));
+            }
+            if (paramsLeft.skew.x != paramsRight.skew.x) {
+                isTransform = true;
+                params['skew']['x'] = Math.round(this.computeAttr(paramsLeft.skew.x, paramsRight.skew.x, bezier(p)));
+            }
+            if (paramsLeft.skew.y != paramsRight.skew.y) {
+                isTransform = true;
+                params['skew']['y'] = Math.round(this.computeAttr(paramsLeft.skew.y, paramsRight.skew.y, bezier(p)));
+            }
+
+            var isOrigin = false;
+            if (paramsLeft.origin.x != paramsRight.origin.x) {
+                isOrigin = true;
+                params['origin']['x'] = this.computeAttr(paramsLeft.origin.x, paramsRight.origin.x, bezier(p));
+            }
+            if (paramsLeft.origin.y != paramsRight.origin.y) {
+                isOrigin = true;
+                params['origin']['y'] = this.computeAttr(paramsLeft.origin.y, paramsRight.origin.y, bezier(p));
+            }
+            if (paramsLeft.scale != paramsRight.scale) {
+                isTransform = true;
+                params['scale'] = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
+            }
+
+            if (isOrigin) {
+                shape.css({ 'transform-origin': params.origin.x + '% ' + params.origin.y + '%' });
+                helper.css({ 'transform-origin': params.origin.x + '% ' + params.origin.y + '%' });
+            }
+
+            if (isTransform) {
+                shape.css({ 'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                helper.css({ 'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            }
+            shape.removeClass('novisible');
+            helper.removeClass('novisible');
+        } else {
+            //Apply nearest keyframe styles
+            shape.css({
+                'left': params.relativePosition.left + '%',
+                'top': params.relativePosition.top + '%',
+                'width': params.relativeSize.width + '%',
+                'height': params.relativeSize.height + '%',
+                'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
+                'border': params.border,
+                'z-index': params.zindex,
+                'opacity': params.opacity,
+                'border-top-left-radius': params.borderRadius[0],
+                'border-top-right-radius': params.borderRadius[1],
+                'border-bottom-right-radius': params.borderRadius[2],
+                'border-bottom-left-radius': params.borderRadius[3],
+                'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
+            });
+
+            if (showHelpers) {
+                helper.css({
+                    'left': params.relativePosition.left + '%',
+                    'top': params.relativePosition.top + '%',
+                    'width': params.relativeSize.width + '%',
+                    'height': params.relativeSize.height + '%',
+                    'z-index': (params.zindex + 1000),
+                    'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
+                });
+
+                helper.css("left", "-=1");
+                helper.css("top", "-=1");
+                helper.css("width", "+=2");
+                helper.css("height", "+=2");                
+            }
+
+            if (this._keyframes.length == 1) {
+                var parent: Layer = app.timeline.getLayer(this.parent);
+                if (parent) {
+                    if (parent.isVisible(position, app.timeline)) {
+                        shape.removeClass('novisible');
+                        helper.removeClass('novisible');
+                    } else {
+                        shape.addClass('novisible');
+                        helper.addClass('novisible');
+                    }
+                } else {
+                    shape.removeClass('novisible');
+                    helper.removeClass('novisible');
+                }
+            } else {
+                shape.addClass('novisible');
+                helper.addClass('novisible');
+            }
+        }
+
+        shape.attr('data-opacity', params.opacity);
+
+        if (this.idEl != null) {
+            shape.attr('id', this.idEl);
+        } else {
+            shape.removeAttr('id');
+        }
+
+        if (currentLayerId == this.id) {
+            app.controlPanel.updateDimensions({ width: params.width, height: params.height });
+            app.controlPanel.updateOpacity(params.opacity);
+            app.controlPanel.updateColor({ r: params.background.r, g: params.background.g, b: params.background.b }, params.background.a);
+            app.controlPanel.updateBorderRadius(params.borderRadius);
+            app.controlPanel.update3DRotate({ x: params.rotate.x, y: params.rotate.y, z: params.rotate.z });
+            app.controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
+            app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
+            app.controlPanel.updateScale(params.scale);
+            $('.shape-helper.highlight').first().find('.origin-point').css({
+                'left': params.origin.x + '%',
+                'top': params.origin.y + '%',
+            });
+        }
+    }
+
+    transformOriginal(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
         //find interval between position
         var rangeData = this.getRange(position);
         var left: number = rangeData.left;
@@ -471,6 +917,7 @@
                     top: this.computeAttr(rng['l'].shape.parameters.relativePosition.top, rng['r'].shape.parameters.relativePosition.top, bezier(p)),
                     left: this.computeAttr(rng['l'].shape.parameters.relativePosition.left, rng['r'].shape.parameters.relativePosition.left, bezier(p)),
                 },
+                scale: this.computeAttr(rng['l'].shape.parameters.scale, rng['r'].shape.parameters.scale, bezier(p)),
             }
             //shape.css("visibility", "visible");  
             //helper.css("visibility", "visible");
@@ -532,9 +979,9 @@
             'border-top-right-radius': (params.borderRadius[1] / rng['r'].shape.parameters.width) * 100 + '%',
             'border-bottom-right-radius': (params.borderRadius[2] / rng['r'].shape.parameters.width) * 100 + '%',
             'border-bottom-left-radius': (params.borderRadius[3] / rng['r'].shape.parameters.width) * 100 + '%',*/
-            'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+            'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
-        });
+    });
 
         shape.attr('data-opacity', params.opacity);
 
@@ -552,7 +999,7 @@
             'height': params.relativeSize.height + '%',
             //'z-index': helper.css('z-index'),
             'z-index': (params.zindex + 1000),
-            'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+            'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
         });
         helper.css("left", "-=1");
@@ -574,6 +1021,7 @@
             app.controlPanel.update3DRotate({ x: params.rotate.x, y: params.rotate.y, z: params.rotate.z });
             app.controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
             app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
+            app.controlPanel.updateScale(params.scale);
             $('.shape-helper.highlight').first().find('.origin-point').css({
                 'left': params.origin.x + '%',
                 'top': params.origin.y + '%',
@@ -694,14 +1142,28 @@
             cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
         }
 
-        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0) {
-            if ((p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) && (p.skew.x != 0 || p.skew.y != 0)) {
-                cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
+        /*if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1) {
+            if ((p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) && (p.skew.x != 0 || p.skew.y != 0) && (p.scale != 1)) {
+                cssObject['transform'] = 'scale(' + p.scale + ') rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
             } else if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) {
                 cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg)';
             } else if (p.skew.x != 0 || p.skew.y != 0) {
                 cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
             }
+        }*/
+
+        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1) {
+            var t: string = "";
+            if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
+                t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
+            }
+            if (p.skew.x != 0 || p.skew.y != 0) {
+                t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
+            }
+            if (p.scale != 1) {
+                t += 'scale(' + p.scale + ')';
+            }
+            cssObject['transform'] = t;
         }
 
         cssObject['transform-origin'] = p.origin.x + '% ' + p.origin.y + '%';
@@ -722,6 +1184,7 @@
             radius: false,
             rotate: false,
             skew: false,
+            scale: false,
             origin: false,
         }
         var initP: Parameters = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
@@ -747,6 +1210,7 @@
             if (initP.skew.y != p.skew.y) change.skew = true;
             if (initP.origin.x != p.origin.x) change.origin = true;
             if (initP.origin.y != p.origin.y) change.origin = true;
+            if (initP.scale != p.scale) change.scale = true;
         });
 
         var p: Parameters = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
@@ -794,7 +1258,21 @@
             cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         }
 
-        if ((change.rotate || change.skew) && change.origin) {
+        if (change.rotate || change.skew || change.scale) {
+            var t: string = "";
+            if (change.rotate) {
+                t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
+            }
+            if (change.skew) {
+                t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
+            }
+            if (change.scale) {
+                t += 'scale(' + p.scale + ')';
+            }
+            cssObject['transform'] = t;
+        }
+
+        if ((change.rotate || change.skew || change.scale) && change.origin) {
             if (change.origin) cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
 
@@ -840,6 +1318,8 @@
                 'border-top-right-radius': params.borderRadius[1],
                 'border-bottom-right-radius': params.borderRadius[2],
                 'border-bottom-left-radius': params.borderRadius[3],
+                'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             }
             shape.css(css);
 
@@ -875,6 +1355,8 @@
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
+                    'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
 
 

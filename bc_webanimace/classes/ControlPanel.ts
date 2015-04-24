@@ -57,6 +57,9 @@ class ControlPanel {
 
     private idEl: JQuery = $('<input type="text"></input>').attr('id', 'id-el');
 
+    private scaleEl: JQuery = $('<input>').attr('id', 'scale-input');
+    private scaleSliderEl: JQuery = $('<div>').addClass('scale-slider');
+
     private rotateXEl: JQuery = $('<input>').attr('id', 'rx').addClass('number rotate');
     private rotateXSliderEl: JQuery = $('<div>').addClass('rotate-slider').attr('id', 'rx');
     private rotateYEl: JQuery = $('<input>').attr('id', 'ry').addClass('number rotate');
@@ -252,6 +255,16 @@ class ControlPanel {
 
         this.controlPanelEl.append(font);
 
+        //opacity
+        var scale: JQuery = this.itemControlEl.clone();
+        scale.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>CSS3 Scale</h2></a>');
+        this.scaleEl.val('1');
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(this.scaleSliderEl);
+        expand.append(this.scaleEl);
+        scale.append(expand);
+        this.controlPanelEl.append(scale);
+
         //Transform-origin
         this.transformOriginXEl.val(this.initOrigin[0].toString());
         this.transformOriginYEl.val(this.initOrigin[1].toString());
@@ -383,6 +396,16 @@ class ControlPanel {
             },
         });
 
+        this.scaleSliderEl.slider({
+            min: 0,
+            max: 2,
+            step: 0.1,
+            value: 1,
+            slide: (event, ui) => {
+                this.scaleEl.val(ui.value).change();
+            },
+        });
+
         this.bgOpacitySliderEl.slider({
             min: 0,
             max: 1,
@@ -417,6 +440,11 @@ class ControlPanel {
         this.opacityEl.on('change', (e: JQueryEventObject) => {
             this.opacitySliderEl.slider('value', $(e.target).val());
             this.app.workspace.setOpacity($(e.target).val());
+        });
+
+        this.scaleEl.on('change', (e: JQueryEventObject) => {
+            this.scaleSliderEl.slider('value', $(e.target).val());
+            this.app.workspace.setScale($(e.target).val());
         });
 
         this.bgOpacityEl.on('change', (e: JQueryEventObject) => {
@@ -696,6 +724,11 @@ class ControlPanel {
     updateOpacity(opacity: number) {
         this.opacitySliderEl.slider('option', 'value', Number(opacity));
         this.opacityEl.val(opacity.toString());
+    }
+
+    updateScale(scale: number) {
+        this.scaleSliderEl.slider('option', 'value', Number(scale));
+        this.scaleEl.val(scale.toString());
     }
 
     updateColor(color: rgb, alpha: number) {

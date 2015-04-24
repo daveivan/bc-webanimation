@@ -3,8 +3,8 @@
         super(name, fn, Type.SVG, shape);
     }
 
-    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
-        super.transform(position, shape, helper, currentLayerId, app);
+    transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application, showHelper: boolean) {
+        super.transform(position, shape, helper, currentLayerId, app, showHelper);
     }
 
     jsem() {

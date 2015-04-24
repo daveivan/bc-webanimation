@@ -17,6 +17,8 @@
         this.idEl = null;
         this.globalShape = shape;
         this._type = type;
+        this.isVisibleOnWorkspace = true;
+        this.isMultipleEdit = false;
     }
     Object.defineProperty(Layer.prototype, "order", {
         get: function () {
@@ -164,7 +166,8 @@
         configurable: true
     });
 
-    Layer.prototype.transformOld = function (position, shape, helper, currentLayerId, app) {
+    Layer.prototype.transformOld = function (position, shape, helper, currentLayerId, app, showHelpers) {
+        if (typeof showHelpers === "undefined") { showHelpers = true; }
         //find interval between position
         var rangeData = this.getRange(position);
         var left = rangeData.left;
@@ -209,7 +212,8 @@
             relativePosition: {
                 top: rangeData.params.relativePosition.top,
                 left: rangeData.params.relativePosition.left
-            }
+            },
+            scale: rangeData.params.scale
         };
         var cssStyles = new Array();
 
@@ -435,11 +439,455 @@
         }
     };
 
-    Layer.prototype.transform2 = function (position, shape, helper, currentLayerId, app) {
-        //nedelej nic
+    Layer.prototype.transformLepsi = function (position, shape, helper, currentLayerId, app, showHelpers) {
+        if (typeof showHelpers === "undefined") { showHelpers = true; }
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left = rangeData.left;
+        var right = rangeData.right;
+        var rng = rangeData.rng;
+        var params = rangeData.params;
+
+        var topParam = params.top;
+        var leftParam = params.left;
+        var rTopParam = params.relativePosition.top;
+        var rLeftParam = params.relativePosition.left;
+        var widthParam = params.width;
+        var rWidthParam = params.relativeSize.width;
+        var heightParam = params.height;
+        var rHeightParam = params.relativeSize.height;
+        var bgParam = params.background;
+        var opacityParam = params.opacity;
+        var brParam = new Array();
+        brParam[0] = params.borderRadius[0];
+        brParam[1] = params.borderRadius[1];
+        brParam[2] = params.borderRadius[2];
+        brParam[3] = params.borderRadius[3];
+        var rotatexParam = params.rotate.x;
+        var rotateyParam = params.rotate.y;
+        var rotatezParam = params.rotate.z;
+        var skewxParam = params.skew.x;
+        var skewyParam = params.skew.y;
+        var scaleParam = params.scale;
+        var originxParam = params.origin.x;
+        var originyParam = params.origin.y;
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p = (position - left) / (right - left);
+
+            var paramsLeft = rng['l'].shape.parameters;
+            var paramsRight = rng['r'].shape.parameters;
+
+            if (paramsLeft.top != paramsRight.top) {
+                rTopParam = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
+                topParam = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
+                shape.css({ 'top': rTopParam + '%' });
+                helper.css({ 'top': rTopParam + '%' });
+            }
+            if (paramsLeft.left != paramsRight.left) {
+                rLeftParam = this.computeAttr(paramsLeft.relativePosition.left, paramsRight.relativePosition.left, bezier(p));
+                leftParam = Math.round(this.computeAttr(paramsLeft.left, paramsRight.left, bezier(p)));
+                shape.css({ 'left': rLeftParam + '%' });
+                helper.css({ 'left': rLeftParam + '%' });
+            }
+            if (paramsLeft.width != paramsRight.width) {
+                rWidthParam = this.computeAttr(paramsLeft.relativeSize.width, paramsRight.relativeSize.width, bezier(p));
+                widthParam = Math.round(this.computeAttr(paramsLeft.width, paramsRight.width, bezier(p)));
+                shape.css({ 'width': rWidthParam + '%' });
+                helper.css({ 'width': rWidthParam + '%' });
+            }
+            if (paramsLeft.height != paramsRight.height) {
+                rHeightParam = this.computeAttr(paramsLeft.relativeSize.height, paramsRight.relativeSize.height, bezier(p));
+                heightParam = Math.round(this.computeAttr(paramsLeft.height, paramsRight.height, bezier(p)));
+                shape.css({ 'height': rHeightParam + '%' });
+                helper.css({ 'height': rHeightParam + '%' });
+            }
+            var isBg = false;
+            if (paramsLeft.background.r != paramsRight.background.r) {
+                isBg = true;
+                bgParam.r = Math.round(this.computeAttr(paramsLeft.background.r, paramsRight.background.r, bezier(p)));
+            }
+            if (paramsLeft.background.g != paramsRight.background.g) {
+                isBg = true;
+                bgParam.g = Math.round(this.computeAttr(paramsLeft.background.g, paramsRight.background.g, bezier(p)));
+            }
+            if (paramsLeft.background.b != paramsRight.background.b) {
+                isBg = true;
+                bgParam.b = Math.round(this.computeAttr(paramsLeft.background.b, paramsRight.background.b, bezier(p)));
+            }
+            if (paramsLeft.background.a != paramsRight.background.a) {
+                isBg = true;
+                bgParam.a = this.computeAttr(paramsLeft.background.a, paramsRight.background.a, bezier(p));
+            }
+
+            if (isBg) {
+                shape.css({ 'background': 'rgba(' + bgParam.r + ',' + bgParam.g + ',' + bgParam.b + ',' + bgParam.a + ')' });
+            }
+
+            if (paramsLeft.opacity != paramsRight.opacity) {
+                opacityParam = this.computeAttr(paramsLeft.opacity, paramsRight.opacity, bezier(p));
+                shape.css({ 'opacity': opacityParam });
+            }
+            if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0]) {
+                brParam[0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
+                shape.css({ 'border-top-left-radius': brParam[0] });
+            }
+            if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1]) {
+                brParam[1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
+                shape.css({ 'border-top-right-radius': brParam[1] });
+            }
+            if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2]) {
+                brParam[2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
+                shape.css({ 'border-bottom-right-radius': brParam[2] });
+            }
+            if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3]) {
+                brParam[3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
+                shape.css({ 'border-bottom-left-radius': brParam[3] });
+            }
+
+            var isTransform = false;
+            if (paramsLeft.rotate.x != paramsRight.rotate.x) {
+                isTransform = true;
+                rotatexParam = Math.round(this.computeAttr(paramsLeft.rotate.x, paramsRight.rotate.x, bezier(p)));
+            }
+            if (paramsLeft.rotate.y != paramsRight.rotate.y) {
+                isTransform = true;
+                rotateyParam = Math.round(this.computeAttr(paramsLeft.rotate.y, paramsRight.rotate.y, bezier(p)));
+            }
+            if (paramsLeft.rotate.z != paramsRight.rotate.z) {
+                isTransform = true;
+                rotatezParam = Math.round(this.computeAttr(paramsLeft.rotate.z, paramsRight.rotate.z, bezier(p)));
+            }
+            if (paramsLeft.skew.x != paramsRight.skew.x) {
+                isTransform = true;
+                skewxParam = Math.round(this.computeAttr(paramsLeft.skew.x, paramsRight.skew.x, bezier(p)));
+            }
+            if (paramsLeft.skew.y != paramsRight.skew.y) {
+                isTransform = true;
+                skewyParam = Math.round(this.computeAttr(paramsLeft.skew.y, paramsRight.skew.y, bezier(p)));
+            }
+
+            var isOrigin = false;
+            if (paramsLeft.origin.x != paramsRight.origin.x) {
+                isOrigin = true;
+                originxParam = this.computeAttr(paramsLeft.origin.x, paramsRight.origin.x, bezier(p));
+            }
+            if (paramsLeft.origin.y != paramsRight.origin.y) {
+                isOrigin = true;
+                originyParam = this.computeAttr(paramsLeft.origin.y, paramsRight.origin.y, bezier(p));
+            }
+            if (paramsLeft.scale != paramsRight.scale) {
+                isTransform = true;
+                scaleParam = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
+            }
+
+            if (isOrigin) {
+                shape.css({ 'transform-origin': originxParam + '% ' + originyParam + '%' });
+                helper.css({ 'transform-origin': originxParam + '% ' + originyParam + '%' });
+            }
+
+            if (isTransform) {
+                shape.css({ 'transform': 'scale(' + scaleParam + ') rotateX(' + rotatexParam + 'deg) rotateY(' + rotateyParam + 'deg) rotateZ(' + rotatezParam + 'deg) skew(' + skewxParam + 'deg , ' + skewyParam + 'deg)' });
+                helper.css({ 'transform': 'scale(' + scaleParam + ') rotateX(' + rotatexParam + 'deg) rotateY(' + rotateyParam + 'deg) rotateZ(' + rotatezParam + 'deg) skew(' + skewxParam + 'deg , ' + skewyParam + 'deg)' });
+            }
+            shape.removeClass('novisible');
+            helper.removeClass('novisible');
+        } else {
+            if (this._keyframes.length == 1) {
+                var parent = app.timeline.getLayer(this.parent);
+                if (parent) {
+                    if (parent.isVisible(position, app.timeline)) {
+                        shape.removeClass('novisible');
+                        helper.removeClass('novisible');
+                    } else {
+                        shape.addClass('novisible');
+                        helper.addClass('novisible');
+                    }
+                } else {
+                    shape.removeClass('novisible');
+                    helper.removeClass('novisible');
+                }
+            } else {
+                shape.addClass('novisible');
+                helper.addClass('novisible');
+            }
+        }
+
+        if (this.idEl != null) {
+            shape.attr('id', this.idEl);
+        } else {
+            shape.removeAttr('id');
+        }
+
+        if (currentLayerId == this.id) {
+            //app.controlPanel.updateDimensions({ width: params.width, height: params.height });
+        }
     };
 
-    Layer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
+    Layer.prototype.transform = function (position, shape, helper, currentLayerId, app, showHelpers) {
+        if (typeof showHelpers === "undefined") { showHelpers = true; }
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left = rangeData.left;
+        var right = rangeData.right;
+        var rng = rangeData.rng;
+
+        var params = {
+            top: rangeData.params.top,
+            left: rangeData.params.left,
+            width: rangeData.params.width,
+            height: rangeData.params.height,
+            background: {
+                r: rangeData.params.background.r,
+                g: rangeData.params.background.g,
+                b: rangeData.params.background.b,
+                a: rangeData.params.background.a
+            },
+            opacity: rangeData.params.opacity,
+            borderRadius: [
+                rangeData.params.borderRadius[0],
+                rangeData.params.borderRadius[1],
+                rangeData.params.borderRadius[2],
+                rangeData.params.borderRadius[3]
+            ],
+            rotate: {
+                x: rangeData.params.rotate.x,
+                y: rangeData.params.rotate.y,
+                z: rangeData.params.rotate.z
+            },
+            skew: {
+                x: rangeData.params.skew.x,
+                y: rangeData.params.skew.y
+            },
+            origin: {
+                x: rangeData.params.origin.x,
+                y: rangeData.params.origin.y
+            },
+            zindex: this.globalShape.parameters.zindex,
+            relativeSize: {
+                width: rangeData.params.relativeSize.width,
+                height: rangeData.params.relativeSize.height
+            },
+            relativePosition: {
+                top: rangeData.params.relativePosition.top,
+                left: rangeData.params.relativePosition.left
+            },
+            scale: rangeData.params.scale
+        };
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p = (position - left) / (right - left);
+
+            var paramsLeft = rng['l'].shape.parameters;
+            var paramsRight = rng['r'].shape.parameters;
+
+            if (paramsLeft.top != paramsRight.top) {
+                params['relativePosition']['top'] = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
+                params['top'] = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
+                shape.css({ 'top': params.relativePosition.top + '%' });
+                helper.css({ 'top': params.relativePosition.top + '%' });
+                //if (showHelpers) //helper.css("top", "-=1");
+                //helper.css({ 'margin': '-1px' });
+            }
+            if (paramsLeft.left != paramsRight.left) {
+                params['relativePosition']['left'] = this.computeAttr(paramsLeft.relativePosition.left, paramsRight.relativePosition.left, bezier(p));
+                params['left'] = Math.round(this.computeAttr(paramsLeft.left, paramsRight.left, bezier(p)));
+                shape.css({ 'left': params.relativePosition.left + '%' });
+                helper.css({ 'left': params.relativePosition.left + '%' });
+                //if (showHelpers) //helper.css("left", "-=1");
+                //helper.css({ 'margin': '-1px' });
+            }
+            if (paramsLeft.width != paramsRight.width) {
+                params['relativeSize']['width'] = this.computeAttr(paramsLeft.relativeSize.width, paramsRight.relativeSize.width, bezier(p));
+                params['width'] = Math.round(this.computeAttr(paramsLeft.width, paramsRight.width, bezier(p)));
+                shape.css({ 'width': params.relativeSize.width + '%' });
+                helper.css({ 'width': params.relativeSize.width + '%' });
+                //if (showHelpers) helper.css("width", "+=2");
+            }
+            if (paramsLeft.height != paramsRight.height) {
+                params['relativeSize']['height'] = this.computeAttr(paramsLeft.relativeSize.height, paramsRight.relativeSize.height, bezier(p));
+                params['height'] = Math.round(this.computeAttr(paramsLeft.height, paramsRight.height, bezier(p)));
+                shape.css({ 'height': params.relativeSize.height + '%' });
+                helper.css({ 'height': params.relativeSize.height + '%' });
+                //if (showHelpers) helper.css("height", "+=2");
+            }
+            var isBg = false;
+            if (paramsLeft.background.r != paramsRight.background.r) {
+                isBg = true;
+                params.background.r = Math.round(this.computeAttr(paramsLeft.background.r, paramsRight.background.r, bezier(p)));
+            }
+            if (paramsLeft.background.g != paramsRight.background.g) {
+                isBg = true;
+                params.background.g = Math.round(this.computeAttr(paramsLeft.background.g, paramsRight.background.g, bezier(p)));
+            }
+            if (paramsLeft.background.b != paramsRight.background.b) {
+                isBg = true;
+                params.background.b = Math.round(this.computeAttr(paramsLeft.background.b, paramsRight.background.b, bezier(p)));
+            }
+            if (paramsLeft.background.a != paramsRight.background.a) {
+                isBg = true;
+                params.background.a = this.computeAttr(paramsLeft.background.a, paramsRight.background.a, bezier(p));
+            }
+
+            if (isBg) {
+                shape.css({ 'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')' });
+            }
+
+            if (paramsLeft.opacity != paramsRight.opacity) {
+                params['opacity'] = this.computeAttr(paramsLeft.opacity, paramsRight.opacity, bezier(p));
+                shape.css({ 'opacity': params.opacity });
+            }
+            if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0]) {
+                params['borderRadius'][0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
+                shape.css({ 'border-top-left-radius': params.borderRadius[0] });
+            }
+            if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1]) {
+                params['borderRadius'][1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
+                shape.css({ 'border-top-right-radius': params.borderRadius[1] });
+            }
+            if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2]) {
+                params['borderRadius'][2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
+                shape.css({ 'border-bottom-right-radius': params.borderRadius[2] });
+            }
+            if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3]) {
+                params['borderRadius'][3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
+                shape.css({ 'border-bottom-left-radius': params.borderRadius[3] });
+            }
+
+            var isTransform = false;
+            if (paramsLeft.rotate.x != paramsRight.rotate.x) {
+                isTransform = true;
+                params['rotate']['x'] = Math.round(this.computeAttr(paramsLeft.rotate.x, paramsRight.rotate.x, bezier(p)));
+            }
+            if (paramsLeft.rotate.y != paramsRight.rotate.y) {
+                isTransform = true;
+                params['rotate']['y'] = Math.round(this.computeAttr(paramsLeft.rotate.y, paramsRight.rotate.y, bezier(p)));
+            }
+            if (paramsLeft.rotate.z != paramsRight.rotate.z) {
+                isTransform = true;
+                params['rotate']['z'] = Math.round(this.computeAttr(paramsLeft.rotate.z, paramsRight.rotate.z, bezier(p)));
+            }
+            if (paramsLeft.skew.x != paramsRight.skew.x) {
+                isTransform = true;
+                params['skew']['x'] = Math.round(this.computeAttr(paramsLeft.skew.x, paramsRight.skew.x, bezier(p)));
+            }
+            if (paramsLeft.skew.y != paramsRight.skew.y) {
+                isTransform = true;
+                params['skew']['y'] = Math.round(this.computeAttr(paramsLeft.skew.y, paramsRight.skew.y, bezier(p)));
+            }
+
+            var isOrigin = false;
+            if (paramsLeft.origin.x != paramsRight.origin.x) {
+                isOrigin = true;
+                params['origin']['x'] = this.computeAttr(paramsLeft.origin.x, paramsRight.origin.x, bezier(p));
+            }
+            if (paramsLeft.origin.y != paramsRight.origin.y) {
+                isOrigin = true;
+                params['origin']['y'] = this.computeAttr(paramsLeft.origin.y, paramsRight.origin.y, bezier(p));
+            }
+            if (paramsLeft.scale != paramsRight.scale) {
+                isTransform = true;
+                params['scale'] = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
+            }
+
+            if (isOrigin) {
+                shape.css({ 'transform-origin': params.origin.x + '% ' + params.origin.y + '%' });
+                helper.css({ 'transform-origin': params.origin.x + '% ' + params.origin.y + '%' });
+            }
+
+            if (isTransform) {
+                shape.css({ 'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                helper.css({ 'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            }
+            shape.removeClass('novisible');
+            helper.removeClass('novisible');
+        } else {
+            //Apply nearest keyframe styles
+            shape.css({
+                'left': params.relativePosition.left + '%',
+                'top': params.relativePosition.top + '%',
+                'width': params.relativeSize.width + '%',
+                'height': params.relativeSize.height + '%',
+                'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
+                'border': params.border,
+                'z-index': params.zindex,
+                'opacity': params.opacity,
+                'border-top-left-radius': params.borderRadius[0],
+                'border-top-right-radius': params.borderRadius[1],
+                'border-bottom-right-radius': params.borderRadius[2],
+                'border-bottom-left-radius': params.borderRadius[3],
+                'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
+            });
+
+            if (showHelpers) {
+                helper.css({
+                    'left': params.relativePosition.left + '%',
+                    'top': params.relativePosition.top + '%',
+                    'width': params.relativeSize.width + '%',
+                    'height': params.relativeSize.height + '%',
+                    'z-index': (params.zindex + 1000),
+                    'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
+                });
+
+                helper.css("left", "-=1");
+                helper.css("top", "-=1");
+                helper.css("width", "+=2");
+                helper.css("height", "+=2");
+            }
+
+            if (this._keyframes.length == 1) {
+                var parent = app.timeline.getLayer(this.parent);
+                if (parent) {
+                    if (parent.isVisible(position, app.timeline)) {
+                        shape.removeClass('novisible');
+                        helper.removeClass('novisible');
+                    } else {
+                        shape.addClass('novisible');
+                        helper.addClass('novisible');
+                    }
+                } else {
+                    shape.removeClass('novisible');
+                    helper.removeClass('novisible');
+                }
+            } else {
+                shape.addClass('novisible');
+                helper.addClass('novisible');
+            }
+        }
+
+        shape.attr('data-opacity', params.opacity);
+
+        if (this.idEl != null) {
+            shape.attr('id', this.idEl);
+        } else {
+            shape.removeAttr('id');
+        }
+
+        if (currentLayerId == this.id) {
+            app.controlPanel.updateDimensions({ width: params.width, height: params.height });
+            app.controlPanel.updateOpacity(params.opacity);
+            app.controlPanel.updateColor({ r: params.background.r, g: params.background.g, b: params.background.b }, params.background.a);
+            app.controlPanel.updateBorderRadius(params.borderRadius);
+            app.controlPanel.update3DRotate({ x: params.rotate.x, y: params.rotate.y, z: params.rotate.z });
+            app.controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
+            app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
+            app.controlPanel.updateScale(params.scale);
+            $('.shape-helper.highlight').first().find('.origin-point').css({
+                'left': params.origin.x + '%',
+                'top': params.origin.y + '%'
+            });
+        }
+    };
+
+    Layer.prototype.transformOriginal = function (position, shape, helper, currentLayerId, app) {
         //find interval between position
         var rangeData = this.getRange(position);
         var left = rangeData.left;
@@ -493,7 +941,8 @@
                 relativePosition: {
                     top: this.computeAttr(rng['l'].shape.parameters.relativePosition.top, rng['r'].shape.parameters.relativePosition.top, bezier(p)),
                     left: this.computeAttr(rng['l'].shape.parameters.relativePosition.left, rng['r'].shape.parameters.relativePosition.left, bezier(p))
-                }
+                },
+                scale: this.computeAttr(rng['l'].shape.parameters.scale, rng['r'].shape.parameters.scale, bezier(p))
             };
 
             //shape.css("visibility", "visible");
@@ -556,7 +1005,7 @@
             'border-top-right-radius': (params.borderRadius[1] / rng['r'].shape.parameters.width) * 100 + '%',
             'border-bottom-right-radius': (params.borderRadius[2] / rng['r'].shape.parameters.width) * 100 + '%',
             'border-bottom-left-radius': (params.borderRadius[3] / rng['r'].shape.parameters.width) * 100 + '%',*/
-            'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+            'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
         });
 
@@ -576,7 +1025,7 @@
             'height': params.relativeSize.height + '%',
             //'z-index': helper.css('z-index'),
             'z-index': (params.zindex + 1000),
-            'transform': 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+            'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
             'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
         });
         helper.css("left", "-=1");
@@ -598,6 +1047,7 @@
             app.controlPanel.update3DRotate({ x: params.rotate.x, y: params.rotate.y, z: params.rotate.z });
             app.controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
             app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
+            app.controlPanel.updateScale(params.scale);
             $('.shape-helper.highlight').first().find('.origin-point').css({
                 'left': params.origin.x + '%',
                 'top': params.origin.y + '%'
@@ -715,14 +1165,27 @@
             cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
         }
 
-        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0) {
-            if ((p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) && (p.skew.x != 0 || p.skew.y != 0)) {
-                cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
-            } else if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) {
-                cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg)';
-            } else if (p.skew.x != 0 || p.skew.y != 0) {
-                cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
+        /*if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1) {
+        if ((p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) && (p.skew.x != 0 || p.skew.y != 0) && (p.scale != 1)) {
+        cssObject['transform'] = 'scale(' + p.scale + ') rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
+        } else if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) {
+        cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg)';
+        } else if (p.skew.x != 0 || p.skew.y != 0) {
+        cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
+        }
+        }*/
+        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1) {
+            var t = "";
+            if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
+                t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
+            if (p.skew.x != 0 || p.skew.y != 0) {
+                t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
+            }
+            if (p.scale != 1) {
+                t += 'scale(' + p.scale + ')';
+            }
+            cssObject['transform'] = t;
         }
 
         cssObject['transform-origin'] = p.origin.x + '% ' + p.origin.y + '%';
@@ -743,6 +1206,7 @@
             radius: false,
             rotate: false,
             skew: false,
+            scale: false,
             origin: false
         };
         var initP = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
@@ -788,6 +1252,8 @@
                 change.origin = true;
             if (initP.origin.y != p.origin.y)
                 change.origin = true;
+            if (initP.scale != p.scale)
+                change.scale = true;
         });
 
         var p = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
@@ -840,7 +1306,21 @@
             cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         }
 
-        if ((change.rotate || change.skew) && change.origin) {
+        if (change.rotate || change.skew || change.scale) {
+            var t = "";
+            if (change.rotate) {
+                t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
+            }
+            if (change.skew) {
+                t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
+            }
+            if (change.scale) {
+                t += 'scale(' + p.scale + ')';
+            }
+            cssObject['transform'] = t;
+        }
+
+        if ((change.rotate || change.skew || change.scale) && change.origin) {
             if (change.origin)
                 cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
@@ -887,7 +1367,9 @@
                 'border-top-left-radius': params.borderRadius[0],
                 'border-top-right-radius': params.borderRadius[1],
                 'border-bottom-right-radius': params.borderRadius[2],
-                'border-bottom-left-radius': params.borderRadius[3]
+                'border-bottom-left-radius': params.borderRadius[3],
+                'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             };
             shape.css(css);
 
@@ -922,7 +1404,9 @@
                     'width': ((params.width + 2) / container.width()) * 100 + '%',
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
-                    'z-index': this.globalShape.parameters.zindex + 1000
+                    'z-index': this.globalShape.parameters.zindex + 1000,
+                    'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
 
                 helper.attr('data-id', keyframe.shape.id);
@@ -1023,6 +1507,14 @@ var Timeline = (function () {
 
         this.layersEl.on('mousedown', function (event, ui) {
             _this.onClickLayer(event, ui);
+        });
+
+        $('body').on('click', '.action.visibility', function (e) {
+            _this.setVisibility($(e.target).closest('a.action').data('layer'), $(e.target).closest('a.action'));
+        });
+
+        $('body').on('click', '.action.multiple', function (e) {
+            _this.setMultiply($(e.target).closest('a.action').data('layer'), $(e.target).closest('a.action'));
         });
 
         $('body').on('change', '#repeat', function (event) {
@@ -1301,7 +1793,8 @@ var Timeline = (function () {
                     origin: {
                         x: k.shape.parameters.origin.x,
                         y: k.shape.parameters.origin.y
-                    }
+                    },
+                    scale: k.shape.parameters.scale
                 };
 
                 if (layer.type == 0 /* DIV */) {
@@ -1384,7 +1877,7 @@ var Timeline = (function () {
                 if (_this.repeat) {
                     _this.pointerPosition = 0;
                     _this.pointerEl.css('left', _this.pointerPosition - 1);
-                    _this.app.workspace.transformShapes();
+                    _this.app.workspace.transformShapes(false);
                     draw();
                 } else {
                     $('tr.first').removeClass('to-background');
@@ -1396,13 +1889,14 @@ var Timeline = (function () {
             }
 
             _this.pointerEl.css('left', _this.pointerPosition - 1);
-            _this.app.workspace.transformShapes();
+            _this.app.workspace.transformShapes(false);
         };
         draw();
         return true;
     };
 
     Timeline.prototype.renderTimeline = function () {
+        var _this = this;
         $('body').append(this.deleteConfirmEl);
         $(this.timelineHeadEl).append(this.repeatEl);
         $(this.timelineHeadEl).append(this.playEl);
@@ -1413,6 +1907,11 @@ var Timeline = (function () {
         $(this.fixedWidthEl).append(this.keyframesEl);
         $(this.layersFooterEl).append(this.deleteLayerEl);
         $(this.layersFooterEl).append(this.deleteKeyframeEl);
+
+        $(this.layersFooterEl).append($('<a href="#" class="performanceTest">Perf. test</a>').on('click', function (e) {
+            _this.app.workspace.performanceTest(5);
+        }));
+
         $(this.timelineFooterEl).append(this.layersFooterEl);
         $(this.timelineFooterEl).append(this.keyframesFooterEl);
         $(this.fixedWidthEl).append(this.timelineFooterEl);
@@ -1628,6 +2127,10 @@ var Timeline = (function () {
                 var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
                 layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
                 layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
+                var visibleEl = $('<a>').attr('data-layer', item.id).addClass('action tooltip-right visibility').attr('title', 'Viditelnost').html('<i class="fa fa-eye"></i>').attr('href', '#');
+                var multipleEditEl = $('<a>').attr('data-layer', item.id).addClass('action tooltip-right multiple').attr('title', 'Hromadná editace snímků').html('<i class="fa fa-chain-broken"></i>').attr('href', '#');
+                layerItem.append(($('<span>').addClass('layer-actions')).append(multipleEditEl).append(visibleEl));
+
                 if (item.idEl) {
                     layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
                 }
@@ -1639,6 +2142,10 @@ var Timeline = (function () {
                 //render keyframes
                 _this.renderKeyframes(item.id, true);
                 isEmpty = false;
+
+                $('.tooltip-right').tooltipster({ position: 'right' });
+                _this.setVisibility(item.id, visibleEl, false);
+                _this.setMultiply(item.id, multipleEditEl, false);
             }
         });
 
@@ -1671,6 +2178,10 @@ var Timeline = (function () {
             var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', layer.id);
             layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
             layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(layer.name));
+            var visibleEl = $('<a>').attr('data-layer', layer.id).addClass('action tooltip-right visibility').attr('title', 'Viditelnost').html('<i class="fa fa-eye"></i>').attr('href', '#');
+            var multipleEditEl = $('<a>').attr('data-layer', layer.id).addClass('action tooltip-right multiple').attr('title', 'Hromadná editace snímků').html('<i class="fa fa-chain-broken"></i>').attr('href', '#');
+            layerItem.append(($('<span>').addClass('layer-actions')).append(multipleEditEl).append(visibleEl));
+
             if (layer.idEl) {
                 layerItem.append($('<span>').addClass('div-id').html('#' + layer.idEl));
             }
@@ -1696,6 +2207,10 @@ var Timeline = (function () {
                 event: 'dblclick',
                 cssClass: 'editable-input'
             });
+
+            $('.tooltip-right').tooltipster({ position: 'right' });
+            this.setVisibility(layer.id, visibleEl, false);
+            this.setMultiply(layer.id, multipleEditEl, false);
         }
     };
 
@@ -1914,7 +2429,7 @@ var Timeline = (function () {
         this.layersFooterEl.css('left', posX);
         this.keyframesFooterEl.css('left', posX);
         this.timelineFooterEl.css('bottom', 0 - posY);
-        //this.pointerEl.find('.pointer-top-wrapper').css('top', posY);
+        this.pointerEl.find('.pointer-top-wrapper').css('top', posY + 18);
     };
 
     Timeline.prototype.onReady = function (e) {
@@ -2135,6 +2650,69 @@ var Timeline = (function () {
         return ret;
     };
 
+    Timeline.prototype.setVisibility = function (idLayer, link, change) {
+        if (typeof change === "undefined") { change = true; }
+        var layer = this.getLayer(idLayer);
+        if (layer) {
+            if (change) {
+                if (layer.isVisibleOnWorkspace) {
+                    link.html('<i class="fa fa-eye-slash"></i>');
+                    link.tooltipster('content', 'Viditelnost: Zobrazit');
+                    link.addClass('invisible');
+                    layer.isVisibleOnWorkspace = false;
+                } else {
+                    link.html('<i class="fa fa-eye"></i>');
+                    link.removeClass('invisible');
+                    link.tooltipster('content', 'Viditelnost: Schovat');
+                    layer.isVisibleOnWorkspace = true;
+                }
+            } else {
+                //only update current state
+                if (layer.isVisibleOnWorkspace) {
+                    link.html('<i class="fa fa-eye"></i>');
+                    link.removeClass('invisible');
+                    link.tooltipster('content', 'Viditelnost: Schovat');
+                } else {
+                    link.html('<i class="fa fa-eye-slash"></i>');
+                    link.tooltipster('content', 'Viditelnost: Zobrazit');
+                    link.addClass('invisible');
+                }
+            }
+            this.app.workspace.transformShapes();
+        }
+    };
+
+    Timeline.prototype.setMultiply = function (idLayer, link, change) {
+        if (typeof change === "undefined") { change = true; }
+        var layer = this.getLayer(idLayer);
+        if (layer) {
+            if (change) {
+                if (layer.isMultipleEdit) {
+                    link.html('<i class="fa fa-chain-broken"></i>');
+                    link.tooltipster('content', 'Hromadná editace snímků - Vypnuta');
+                    link.removeClass('ismultiple');
+                    layer.isMultipleEdit = false;
+                } else {
+                    link.html('<i class="fa fa-chain"></i>');
+                    link.addClass('ismultiple');
+                    link.tooltipster('content', 'Hromadná editace snímků - Zapnuta');
+                    layer.isMultipleEdit = true;
+                }
+            } else {
+                //only update current state
+                if (layer.isMultipleEdit) {
+                    link.html('<i class="fa fa-chain"></i>');
+                    link.addClass('ismultiple');
+                    link.tooltipster('content', 'Hromadná editace snímků - Zapnuta');
+                } else {
+                    link.html('<i class="fa fa-chain-broken"></i>');
+                    link.tooltipster('content', 'Hromadná editace snímků - Vypnuta');
+                    link.removeClass('ismultiple');
+                }
+            }
+        }
+    };
+
     Object.defineProperty(Timeline.prototype, "repeat", {
         get: function () {
             return this._repeat;
@@ -2300,6 +2878,10 @@ var Shape = (function () {
 
     Shape.prototype.setOriginY = function (val) {
         this._parameters.origin.y = val;
+    };
+
+    Shape.prototype.setScale = function (val) {
+        this._parameters.scale = val;
     };
     return Shape;
 })();
@@ -2907,7 +3489,8 @@ var Workspace = (function () {
             borderRadius: [0, 0, 0, 0],
             rotate: { x: 0, y: 0, z: 0 },
             skew: { x: 0, y: 0 },
-            origin: { x: 50, y: 50 }
+            origin: { x: 50, y: 50 },
+            scale: 1
         };
 
         new_object.css({
@@ -3019,7 +3602,8 @@ var Workspace = (function () {
                     relativeSize: {
                         width: this.computeParameter(interval['left'].shape.parameters.relativeSize.width, interval['right'].shape.parameters.relativeSize.width, bezier(p)),
                         height: this.computeParameter(interval['left'].shape.parameters.relativeSize.height, interval['right'].shape.parameters.relativeSize.height, bezier(p))
-                    }
+                    },
+                    scale: this.computeOpacity(interval['left'].shape.parameters.scale, interval['right'].shape.parameters.scale, bezier(p))
                 };
             }
 
@@ -3029,21 +3613,31 @@ var Workspace = (function () {
         }
     };
 
-    Workspace.prototype.transformShapes = function () {
+    Workspace.prototype.transformShapes = function (showHelpers) {
         var _this = this;
+        if (typeof showHelpers === "undefined") { showHelpers = true; }
         var currentTimestamp = this.app.timeline.pxToMilisec();
         var layers = this.app.timeline.layers;
         layers.forEach(function (layer, index) {
             var shape = _this.workspaceWrapper.find('.shape[data-id="' + layer.id + '"]');
-            if (layer.id == _this.scope) {
-                var helper = _this.workspaceContainer.parent().find('.base-fff');
+            var helper = _this.workspaceWrapper.find('.shape-helper[data-id="' + layer.id + '"]');
+
+            if (layer.isVisibleOnWorkspace) {
+                shape.show();
+                if (showHelpers) {
+                    helper.show();
+                }
+                if (layer.id == _this.scope) {
+                    helper = _this.workspaceContainer.parent().find('.base-fff');
+                }
+
+                var currentLayerId = _this.workspaceWrapper.find('.shape-helper.highlight').first().data('id');
+
+                layer.transform(currentTimestamp, shape, helper, currentLayerId, _this.app, showHelpers);
             } else {
-                var helper = _this.workspaceWrapper.find('.shape-helper[data-id="' + layer.id + '"]');
+                shape.hide();
+                helper.hide();
             }
-
-            var currentLayerId = _this.workspaceWrapper.find('.shape-helper.highlight').first().data('id');
-
-            layer.transform(currentTimestamp, shape, helper, currentLayerId, _this.app);
         });
     };
 
@@ -3271,9 +3865,11 @@ var Workspace = (function () {
                     if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
                         //layer.addKeyframe(currentShape, this.app.timeline.pxToMilisec(), this.bezier);
                         //this.app.timeline.renderKeyframes(layer.id);
-                        _this.addKeyframe(layer, currentShape, _this.app.timeline.pxToMilisec(), _this.bezier);
+                        keyframe = _this.addKeyframe(layer, currentShape, _this.app.timeline.pxToMilisec(), _this.bezier);
                     }
-                } else {
+                }
+
+                if (keyframe) {
                     keyframe.shape.setPosition({
                         top: ui.position.top + 1,
                         left: ui.position.left + 1
@@ -3282,6 +3878,20 @@ var Workspace = (function () {
                         top: ((ui.position.top + 1) / _this.workspaceContainer.height()) * 100,
                         left: ((ui.position.left + 1) / _this.workspaceContainer.width()) * 100
                     });
+
+                    if (layer.isMultipleEdit) {
+                        layer.getAllKeyframes().forEach(function (k, index) {
+                            k.shape.setPosition({
+                                top: ui.position.top + 1,
+                                left: ui.position.left + 1
+                            });
+                            k.shape.setRelativePosition({
+                                top: ((ui.position.top + 1) / _this.workspaceContainer.height()) * 100,
+                                left: ((ui.position.left + 1) / _this.workspaceContainer.width()) * 100
+                            });
+                        });
+                        _this.renderSingleShape(layer.id);
+                    }
                 }
 
                 _this.transformShapes();
@@ -3312,9 +3922,10 @@ var Workspace = (function () {
                     if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
                         //layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                         //this.app.timeline.renderKeyframes(layer.id);
-                        _this.addKeyframe(layer, _this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
+                        keyframe = _this.addKeyframe(layer, _this.getCurrentShape(layer.id), _this.app.timeline.pxToMilisec(), _this.bezier);
                     }
-                } else {
+                }
+                if (keyframe) {
                     keyframe.shape.setPosition({
                         top: ui.position.top + 1,
                         left: ui.position.left + 1
@@ -3331,6 +3942,28 @@ var Workspace = (function () {
                         width: (($(event.target).width()) / _this.workspaceContainer.width()) * 100,
                         height: (($(event.target).height()) / _this.workspaceContainer.height()) * 100
                     });
+
+                    if (layer.isMultipleEdit) {
+                        layer.getAllKeyframes().forEach(function (k, index) {
+                            k.shape.setPosition({
+                                top: ui.position.top + 1,
+                                left: ui.position.left + 1
+                            });
+                            k.shape.setRelativePosition({
+                                top: ((ui.position.top + 1) / _this.workspaceContainer.height()) * 100,
+                                left: ((ui.position.left + 1) / _this.workspaceContainer.width()) * 100
+                            });
+                            k.shape.setDimensions({
+                                width: $(event.target).width(),
+                                height: $(event.target).height()
+                            });
+                            k.shape.setRelativeDimensions({
+                                width: (($(event.target).width()) / _this.workspaceContainer.width()) * 100,
+                                height: (($(event.target).height()) / _this.workspaceContainer.height()) * 100
+                            });
+                        });
+                        _this.renderSingleShape(layer.id);
+                    }
                 }
 
                 _this.transformShapes();
@@ -3457,7 +4090,8 @@ var Workspace = (function () {
                 origin: {
                     x: this.getTransformAttr(id, 'origin').x,
                     y: this.getTransformAttr(id, 'origin').y
-                }
+                },
+                scale: this.getTransformAttr(id, 'scale')
             };
 
             //console.log(shapeEl.attr('data-opacity'));
@@ -3545,6 +4179,7 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.setColor = function (c, alpha) {
+        var _this = this;
         this.color = {
             r: c.r,
             g: c.g,
@@ -3561,8 +4196,17 @@ var Workspace = (function () {
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
-            if (keyframe != null)
+            if (keyframe != null) {
                 keyframe.shape.setBackground(this.color);
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        k.shape.setBackground(_this.color);
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
+            }
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
@@ -3570,6 +4214,7 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.setFont = function (params, newKeyframe) {
+        var _this = this;
         if (typeof newKeyframe === "undefined") { newKeyframe = true; }
         this.fontParameters = params;
         var layer = this.getHighlightedLayer();
@@ -3586,6 +4231,15 @@ var Workspace = (function () {
             if (keyframe != null) {
                 var textField = keyframe.shape;
                 textField.setFont(this.fontParameters);
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        var textField = k.shape;
+                        textField.setFont(_this.fontParameters);
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
             }
             var l = layer;
             l.globalShape.setFamily(this.fontParameters.fontFamily);
@@ -3607,8 +4261,44 @@ var Workspace = (function () {
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
-            if (keyframe != null)
+            if (keyframe != null) {
                 keyframe.shape.setOpacity(opacity);
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        k.shape.setOpacity(opacity);
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
+            }
+
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
+    Workspace.prototype.setScale = function (scale) {
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
+            }
+            if (keyframe != null) {
+                keyframe.shape.setScale(scale);
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        k.shape.setScale(scale);
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
+            }
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
@@ -3616,6 +4306,8 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.setDimension = function (axis, dimension) {
+        var _this = this;
+        console.log('nastavuju dimensions');
         var layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
@@ -3628,11 +4320,30 @@ var Workspace = (function () {
             }
             if (keyframe != null) {
                 if (axis === 'x') {
-                    keyframe.shape.setX(dimension);
-                    keyframe.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
+                    if (layer.isMultipleEdit) {
+                        layer.getAllKeyframes().forEach(function (k, index) {
+                            console.log(k.timestamp);
+                            k.shape.setX(dimension);
+                            k.shape.setRelativeX((dimension / _this.workspaceContainer.width()) * 100);
+                        });
+
+                        this.renderSingleShape(layer.id);
+                    } else {
+                        keyframe.shape.setX(dimension);
+                        keyframe.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
+                    }
                 } else if (axis === 'y') {
                     keyframe.shape.setY(dimension);
                     keyframe.shape.setRelativeY((dimension / this.workspaceContainer.height()) * 100);
+
+                    if (layer.isMultipleEdit) {
+                        layer.getAllKeyframes().forEach(function (k, index) {
+                            k.shape.setY(dimension);
+                            k.shape.setRelativeY((dimension / _this.workspaceContainer.height()) * 100);
+                        });
+
+                        this.renderSingleShape(layer.id);
+                    }
                 }
             }
 
@@ -3665,6 +4376,24 @@ var Workspace = (function () {
                 } else if (type === 'all') {
                     keyframe.shape.setBorderRadius(value);
                 }
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        if (type === 'tl') {
+                            k.shape.setBorderRadiusTopLeft(value);
+                        } else if (type === 'tr') {
+                            k.shape.setBorderRadiusTopRight(value);
+                        } else if (type === 'bl') {
+                            k.shape.setBorderRadiusBottomLeft(value);
+                        } else if (type === 'br') {
+                            k.shape.setBorderRadiusBottomRight(value);
+                        } else if (type === 'all') {
+                            k.shape.setBorderRadius(value);
+                        }
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
             }
 
             this.transformShapes();
@@ -3692,6 +4421,20 @@ var Workspace = (function () {
                 } else if (type === 'z') {
                     keyframe.shape.setRotateZ(value);
                 }
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        if (type === 'x') {
+                            k.shape.setRotateX(value);
+                        } else if (type === 'y') {
+                            k.shape.setRotateY(value);
+                        } else if (type === 'z') {
+                            k.shape.setRotateZ(value);
+                        }
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
             }
 
             this.transformShapes();
@@ -3717,6 +4460,18 @@ var Workspace = (function () {
                     keyframe.shape.setOriginX(value);
                 } else if (type === 'y') {
                     keyframe.shape.setOriginY(value);
+                }
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        if (type === 'x') {
+                            k.shape.setOriginX(value);
+                        } else if (type === 'y') {
+                            k.shape.setOriginY(value);
+                        }
+                    });
+
+                    this.renderSingleShape(layer.id);
                 }
             }
 
@@ -3744,6 +4499,18 @@ var Workspace = (function () {
                 } else if (type === 'y') {
                     keyframe.shape.setSkewY(value);
                 }
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        if (type === 'x') {
+                            k.shape.setSkewX(value);
+                        } else if (type === 'y') {
+                            k.shape.setSkewY(value);
+                        }
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
             }
 
             this.transformShapes();
@@ -3752,6 +4519,7 @@ var Workspace = (function () {
     };
 
     Workspace.prototype.setBezier = function (fn) {
+        var _this = this;
         this.bezier = fn;
         var layer = this.getHighlightedLayer();
         if (layer) {
@@ -3759,6 +4527,15 @@ var Workspace = (function () {
             var keyframe = layer.getKeyframe(keyframeID);
             if (keyframe != null) {
                 keyframe.timing_function = this.bezier;
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        k.timing_function = _this.bezier;
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
+
                 this.app.timeline.renderKeyframes(layer.id);
                 this.app.timeline.selectLayer(layer.id, keyframeID);
             }
@@ -4107,7 +4884,8 @@ var Workspace = (function () {
                     rotate: { x: 0, y: 0, z: 0 },
                     skew: { x: 0, y: 0 },
                     origin: { x: 50, y: 50 },
-                    zindex: _this.app.timeline.layers.length
+                    zindex: _this.app.timeline.layers.length,
+                    scale: 1
                 };
 
                 //var svg: IShape = new Svg(p, doc);
@@ -4242,7 +5020,8 @@ var Workspace = (function () {
                     rotate: { x: 0, y: 0, z: 0 },
                     skew: { x: 0, y: 0 },
                     origin: { x: 50, y: 50 },
-                    zindex: _this.app.timeline.layers.length
+                    zindex: _this.app.timeline.layers.length,
+                    scale: 1
                 };
                 var image = new Img(p, dataurl);
                 var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
@@ -4303,7 +5082,8 @@ var Workspace = (function () {
                             rotate: { x: 0, y: 0, z: 0 },
                             skew: { x: 0, y: 0 },
                             origin: { x: 50, y: 50 },
-                            zindex: _this.app.timeline.layers.length
+                            zindex: _this.app.timeline.layers.length,
+                            scale: 1
                         };
                         var image = new Img(p, e.target.result);
                         var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
@@ -4357,7 +5137,8 @@ var Workspace = (function () {
             rotate: { x: 0, y: 0, z: 0 },
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
-            zindex: this.app.timeline.layers.length
+            zindex: this.app.timeline.layers.length,
+            scale: 1
         };
 
         var shape = new TextField(params, null, this.fontParameters.color, this.fontParameters.size, this.fontParameters.fontFamily);
@@ -4610,6 +5391,73 @@ var Workspace = (function () {
 
         return def.promise();
     };
+
+    Workspace.prototype.performanceTest = function (n) {
+        if (typeof n === "undefined") { n = 5; }
+        function rand(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        for (var i = 0; i < n; i++) {
+            var diameter = rand(10, 30);
+            var params = {
+                top: 0,
+                left: 0,
+                width: diameter,
+                height: diameter,
+                relativePosition: {
+                    top: (0 / this.workspaceContainer.height()) * 100,
+                    left: (0 / this.workspaceContainer.width()) * 100
+                },
+                relativeSize: {
+                    width: (diameter / this.workspaceContainer.width()) * 100,
+                    height: (diameter / this.workspaceContainer.height()) * 100
+                },
+                background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
+                opacity: 1,
+                zindex: this.app.timeline.layers.length,
+                borderRadius: [20, 20, 20, 20],
+                rotate: { x: 0, y: 0, z: 0 },
+                skew: { x: 0, y: 0 },
+                origin: { x: 50, y: 50 },
+                scale: 1
+            };
+
+            var shape = new Rectangle(params);
+            var layer = new RectangleLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), shape);
+            var idLayer = this.app.timeline.addLayer(layer);
+            var t = rand(0, this._workspaceSize.height);
+            var l = rand(0, this._workspaceSize.width);
+            var paramsNew = {
+                top: t,
+                left: l,
+                width: diameter,
+                height: diameter,
+                relativePosition: {
+                    top: (t / this.workspaceContainer.height()) * 100,
+                    left: (l / this.workspaceContainer.width()) * 100
+                },
+                relativeSize: {
+                    width: (diameter / this.workspaceContainer.width()) * 100,
+                    height: (diameter / this.workspaceContainer.height()) * 100
+                },
+                background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
+                opacity: 1,
+                zindex: this.app.timeline.layers.length,
+                borderRadius: [20, 20, 20, 20],
+                rotate: { x: 0, y: 0, z: 0 },
+                skew: { x: 0, y: 0 },
+                origin: { x: 50, y: 50 },
+                scale: 1
+            };
+
+            layer.addKeyframe(new Rectangle(paramsNew), 4000, this.getBezier());
+            this.app.timeline.renderKeyframes(layer.id);
+            this.renderSingleShape(layer.id);
+        }
+
+        //this.renderShapes();
+        this.transformShapes();
+    };
     return Workspace;
 })();
 ///<reference path="Workspace.ts" />
@@ -4659,6 +5507,8 @@ var ControlPanel = (function () {
         this.workspaceWidthEl = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
         this.workspaceHeightEl = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
         this.idEl = $('<input type="text"></input>').attr('id', 'id-el');
+        this.scaleEl = $('<input>').attr('id', 'scale-input');
+        this.scaleSliderEl = $('<div>').addClass('scale-slider');
         this.rotateXEl = $('<input>').attr('id', 'rx').addClass('number rotate');
         this.rotateXSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rx');
         this.rotateYEl = $('<input>').attr('id', 'ry').addClass('number rotate');
@@ -4845,6 +5695,16 @@ var ControlPanel = (function () {
 
         this.controlPanelEl.append(font);
 
+        //opacity
+        var scale = this.itemControlEl.clone();
+        scale.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>CSS3 Scale</h2></a>');
+        this.scaleEl.val('1');
+        var expand = $('<div>').addClass('expand');
+        expand.append(this.scaleSliderEl);
+        expand.append(this.scaleEl);
+        scale.append(expand);
+        this.controlPanelEl.append(scale);
+
         //Transform-origin
         this.transformOriginXEl.val(this.initOrigin[0].toString());
         this.transformOriginYEl.val(this.initOrigin[1].toString());
@@ -4978,6 +5838,16 @@ var ControlPanel = (function () {
             }
         });
 
+        this.scaleSliderEl.slider({
+            min: 0,
+            max: 2,
+            step: 0.1,
+            value: 1,
+            slide: function (event, ui) {
+                _this.scaleEl.val(ui.value).change();
+            }
+        });
+
         this.bgOpacitySliderEl.slider({
             min: 0,
             max: 1,
@@ -5011,6 +5881,11 @@ var ControlPanel = (function () {
         this.opacityEl.on('change', function (e) {
             _this.opacitySliderEl.slider('value', $(e.target).val());
             _this.app.workspace.setOpacity($(e.target).val());
+        });
+
+        this.scaleEl.on('change', function (e) {
+            _this.scaleSliderEl.slider('value', $(e.target).val());
+            _this.app.workspace.setScale($(e.target).val());
         });
 
         this.bgOpacityEl.on('change', function (e) {
@@ -5286,6 +6161,11 @@ var ControlPanel = (function () {
     ControlPanel.prototype.updateOpacity = function (opacity) {
         this.opacitySliderEl.slider('option', 'value', Number(opacity));
         this.opacityEl.val(opacity.toString());
+    };
+
+    ControlPanel.prototype.updateScale = function (scale) {
+        this.scaleSliderEl.slider('option', 'value', Number(scale));
+        this.scaleEl.val(scale.toString());
     };
 
     ControlPanel.prototype.updateColor = function (color, alpha) {
@@ -5872,8 +6752,8 @@ var ImageLayer = (function (_super) {
         if (typeof shape === "undefined") { shape = null; }
         _super.call(this, name, fn, 3 /* IMAGE */, shape);
     }
-    ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app);
+    ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, app, showHelper) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app, showHelper);
     };
 
     ImageLayer.prototype.jsem = function () {
@@ -6000,68 +6880,6 @@ var Keyframe = (function () {
 
 
     return Keyframe;
-})();
-var Background = (function () {
-    function Background() {
-        this.initColor = { r: 44, g: 208, b: 219 };
-        this.bgPickerEl = $('<input type="text" id="picker"></input>');
-        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
-        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
-    }
-    Background.prototype.renderPropery = function (container) {
-        container.html('<h2>Barva pozadí elementu</h2>');
-        var row = $('<div>').addClass('row');
-        var s = $('<div>').html('#').addClass('group quarter');
-        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
-        row.append(s);
-        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
-        this.bgOpacityEl.val('0');
-        a.append(this.bgOpacitySliderEl);
-        a.append(this.bgOpacityEl);
-        row.append(a);
-        container.append(row);
-        this.initColorPicker();
-        this.initSlider();
-        return container;
-    };
-
-    Background.prototype.initSlider = function () {
-        var _this = this;
-        this.bgOpacitySliderEl.slider({
-            min: 0,
-            max: 1,
-            step: 0.05,
-            value: 0,
-            slide: function (event, ui) {
-                _this.bgOpacityEl.val(ui.value).change();
-            }
-        });
-    };
-
-    Background.prototype.initColorPicker = function () {
-        var _this = this;
-        this.colorPicker = this.bgPickerEl.colpick({
-            layout: 'hex',
-            submit: 0,
-            color: this.initColor,
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
-                $(el).css('border-color', '#' + hex);
-                if (!bySetColor)
-                    $(el).val(hex);
-                if (!bySetColor) {
-                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
-                }
-            }
-        }).on('change', function (e) {
-            _this.colorPicker.colpickSetColor($(e.target).val());
-            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
-        });
-    };
-
-    Background.prototype.getInitColor = function () {
-        return this.initColor;
-    };
-    return Background;
 })();
 var BezierCurve = (function () {
     function BezierCurve() {
@@ -6246,6 +7064,68 @@ var Font = (function () {
         });
     };
     return Font;
+})();
+var Background = (function () {
+    function Background() {
+        this.initColor = { r: 44, g: 208, b: 219 };
+        this.bgPickerEl = $('<input type="text" id="picker"></input>');
+        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
+        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
+    }
+    Background.prototype.renderPropery = function (container) {
+        container.html('<h2>Barva pozadí elementu</h2>');
+        var row = $('<div>').addClass('row');
+        var s = $('<div>').html('#').addClass('group quarter');
+        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
+        row.append(s);
+        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
+        this.bgOpacityEl.val('0');
+        a.append(this.bgOpacitySliderEl);
+        a.append(this.bgOpacityEl);
+        row.append(a);
+        container.append(row);
+        this.initColorPicker();
+        this.initSlider();
+        return container;
+    };
+
+    Background.prototype.initSlider = function () {
+        var _this = this;
+        this.bgOpacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 0,
+            slide: function (event, ui) {
+                _this.bgOpacityEl.val(ui.value).change();
+            }
+        });
+    };
+
+    Background.prototype.initColorPicker = function () {
+        var _this = this;
+        this.colorPicker = this.bgPickerEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
+                }
+            }
+        }).on('change', function (e) {
+            _this.colorPicker.colpickSetColor($(e.target).val());
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
+        });
+    };
+
+    Background.prototype.getInitColor = function () {
+        return this.initColor;
+    };
+    return Background;
 })();
 var ObjectDimension = (function () {
     function ObjectDimension() {
@@ -6452,8 +7332,8 @@ var RectangleLayer = (function (_super) {
         console.log('jsem cverec');
     };
 
-    RectangleLayer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app);
+    RectangleLayer.prototype.transform = function (position, shape, helper, currentLayerId, app, showHelper) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app, showHelper);
     };
 
     RectangleLayer.prototype.getInitStyles = function (nameElement, workspaceSize) {
@@ -6579,7 +7459,8 @@ var SvgGallery = (function () {
             rotate: { x: 0, y: 0, z: 0 },
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
-            zindex: this.app.timeline.layers.length
+            zindex: this.app.timeline.layers.length,
+            scale: 1
         };
 
         var xmlString = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><circle fill="#ff0" stroke="#000" stroke-width="10" stroke-miterlimit="10" cx="382.553" cy="306.786" r="217.961"/><path fill="#ff0" stroke="#000" stroke-width="10" stroke-miterlimit="10" d="M244.69 329.602C315.562 498.534 484.494 479.116 531.582 333"/><ellipse cx="337.592" cy="233.485" rx="21.359" ry="49.272"/><ellipse cx="422.592" cy="232.485" rx="21.359" ry="49.272"/></svg>';
@@ -6632,8 +7513,8 @@ var SvgLayer = (function (_super) {
         if (typeof shape === "undefined") { shape = null; }
         _super.call(this, name, fn, 2 /* SVG */, shape);
     }
-    SvgLayer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app);
+    SvgLayer.prototype.transform = function (position, shape, helper, currentLayerId, app, showHelper) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app, showHelper);
     };
 
     SvgLayer.prototype.jsem = function () {
@@ -6756,8 +7637,8 @@ var TextLayer = (function (_super) {
         if (typeof shape === "undefined") { shape = null; }
         _super.call(this, name, fn, 1 /* TEXT */, shape);
     }
-    TextLayer.prototype.transform = function (position, shape, helper, currentLayerId, app) {
-        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app);
+    TextLayer.prototype.transform = function (position, shape, helper, currentLayerId, app, showHelper) {
+        _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app, showHelper);
 
         //find interval between position
         var rangeData = this.getRange(position);

@@ -274,6 +274,11 @@ tr.disabled td {
     position: relative;
     top: 3px;
     font-weight: bold;
+    float: left;
+    white-space: nowrap;
+    width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .editable input {
@@ -557,7 +562,7 @@ td.keyframes-list {
     
 }
 
-#opacity-input, #dimension-x, #dimension-y {
+#opacity-input, #dimension-x, #dimension-y, #scale-input {
     width: 30px;
 }
 
@@ -627,7 +632,7 @@ text-align: center;
     left: 5px;
 }
 
-.opacity-slider {
+.opacity-slider, .scale-slider {
     width: 80%;
     float: left;
     z-index: 1;
@@ -1419,4 +1424,38 @@ a.menu-item.disabled:hover {
 
 .base-fff {
     z-index: 10001 !important;
+}
+
+.layer-actions {
+    display: inline-block;
+    height: 100%;
+    float: right;
+    margin-right: 10px;
+}
+
+.layer-actions .action {
+    color: #4e4e4e;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+.layer-actions .action:hover {
+    color: #000;
+}
+
+.action.invisible {
+    color: #bbbbbb;
+}
+
+.action.invisible:hover {
+    color: #bbbbbb;
+}
+
+.action.multiple {
+    position: relative;
+    top: 1px;
+}
+
+.action.multiple.ismultiple {
+    color: #f61414;
 }

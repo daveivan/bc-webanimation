@@ -120,4 +120,8 @@
     setOriginY(val: number) {
         this._parameters.origin.y = val;
     }
+
+    setScale(val: number) {
+        this._parameters.scale = val;
+    }
 }  

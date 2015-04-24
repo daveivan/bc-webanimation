@@ -57,6 +57,7 @@ interface repeatParams {
     rotate: boolean;
     skew: boolean;
     origin: boolean;
+    scale: boolean;
 }
 
 interface repeatTextParams {

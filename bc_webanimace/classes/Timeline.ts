@@ -95,6 +95,14 @@ class Timeline
             this.onClickLayer(event, ui);
         });
 
+        $('body').on('click', '.action.visibility', (e: JQueryEventObject) => {
+            this.setVisibility($(e.target).closest('a.action').data('layer'), $(e.target).closest('a.action'));
+        });
+
+        $('body').on('click', '.action.multiple', (e: JQueryEventObject) => {
+            this.setMultiply($(e.target).closest('a.action').data('layer'), $(e.target).closest('a.action'));
+        });
+
         $('body').on('change', '#repeat', (event: JQueryEventObject) => {
             console.log('repeat event');
             this._repeat = $('#repeat').is(':checked');
@@ -374,6 +382,7 @@ class Timeline
                         x: k.shape.parameters.origin.x,
                         y: k.shape.parameters.origin.y,
                     },
+                    scale: k.shape.parameters.scale,
                 }
 
                 if (layer.type == Type.DIV) {
@@ -452,7 +461,7 @@ class Timeline
                 if (this.repeat) {
                     this.pointerPosition = 0;
                     this.pointerEl.css('left', this.pointerPosition - 1);
-                    this.app.workspace.transformShapes();
+                    this.app.workspace.transformShapes(false);
                     draw();
                 } else {
                     $('tr.first').removeClass('to-background');
@@ -464,7 +473,7 @@ class Timeline
             }
 
             this.pointerEl.css('left', this.pointerPosition - 1);
-            this.app.workspace.transformShapes();
+            this.app.workspace.transformShapes(false);
 
         }
         draw();
@@ -482,6 +491,11 @@ class Timeline
         $(this.fixedWidthEl).append(this.keyframesEl);
         $(this.layersFooterEl).append(this.deleteLayerEl);
         $(this.layersFooterEl).append(this.deleteKeyframeEl);
+
+        $(this.layersFooterEl).append($('<a href="#" class="performanceTest">Perf. test</a>').on('click', (e: JQueryEventObject) => {
+            this.app.workspace.performanceTest(5);
+        }));
+
         $(this.timelineFooterEl).append(this.layersFooterEl);
         $(this.timelineFooterEl).append(this.keyframesFooterEl);
         $(this.fixedWidthEl).append(this.timelineFooterEl);
@@ -697,6 +711,10 @@ class Timeline
                 var layerItem: JQuery = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
                 layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
                 layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
+                var visibleEl: JQuery = $('<a>').attr('data-layer', item.id).addClass('action tooltip-right visibility').attr('title', 'Viditelnost').html('<i class="fa fa-eye"></i>').attr('href', '#');
+                var multipleEditEl: JQuery = $('<a>').attr('data-layer', item.id).addClass('action tooltip-right multiple').attr('title', 'Hromadná editace snímků').html('<i class="fa fa-chain-broken"></i>').attr('href', '#');
+                layerItem.append(($('<span>').addClass('layer-actions')).append(multipleEditEl).append(visibleEl));
+
                 if (item.idEl) {
                     layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
                 }
@@ -706,6 +724,10 @@ class Timeline
                 //render keyframes
                 this.renderKeyframes(item.id, true);
                 isEmpty = false;
+
+                $('.tooltip-right').tooltipster({ position: 'right' });
+                this.setVisibility(item.id, visibleEl, false);
+                this.setMultiply(item.id, multipleEditEl, false);
             }
         });
 
@@ -738,10 +760,15 @@ class Timeline
             var layerItem: JQuery = $('<div>').addClass('layer').attr('id', index).attr('data-id', layer.id);
             layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
             layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(layer.name));
+            var visibleEl: JQuery = $('<a>').attr('data-layer', layer.id).addClass('action tooltip-right visibility').attr('title', 'Viditelnost').html('<i class="fa fa-eye"></i>').attr('href', '#');
+            var multipleEditEl: JQuery = $('<a>').attr('data-layer', layer.id).addClass('action tooltip-right multiple').attr('title', 'Hromadná editace snímků').html('<i class="fa fa-chain-broken"></i>').attr('href', '#');
+            layerItem.append(($('<span>').addClass('layer-actions')).append(multipleEditEl).append(visibleEl));
+
             if (layer.idEl) {
                 layerItem.append($('<span>').addClass('div-id').html('#' + layer.idEl));
             }
             this.layersEl.append(layerItem);
+
             //and render frames for this layer
             this.renderRow(layer.id);
             //render keyframes
@@ -761,7 +788,11 @@ class Timeline
                     event: 'dblclick',
                     cssClass: 'editable-input'
                 });
-        }       
+
+            $('.tooltip-right').tooltipster({ position: 'right' });
+            this.setVisibility(layer.id, visibleEl, false);
+            this.setMultiply(layer.id, multipleEditEl, false);
+        }
     }
 
     selectLayer(id: number, idKeyframe: number = null) {
@@ -971,7 +1002,7 @@ class Timeline
         this.layersFooterEl.css('left', posX);
         this.keyframesFooterEl.css('left', posX);
         this.timelineFooterEl.css('bottom', 0 - posY);
-        //this.pointerEl.find('.pointer-top-wrapper').css('top', posY);
+        this.pointerEl.find('.pointer-top-wrapper').css('top', posY + 18);
     }
 
     private onReady(e: JQueryEventObject) {
@@ -1186,6 +1217,67 @@ class Timeline
             }   
         });
         return ret;
+    }
+
+    setVisibility(idLayer: number, link: JQuery, change: boolean = true) {
+        var layer: Layer = this.getLayer(idLayer);
+        if (layer) {
+            if (change) {
+                if (layer.isVisibleOnWorkspace) {
+                    link.html('<i class="fa fa-eye-slash"></i>');
+                    link.tooltipster('content', 'Viditelnost: Zobrazit');
+                    link.addClass('invisible');
+                    layer.isVisibleOnWorkspace = false;
+                } else {
+                    link.html('<i class="fa fa-eye"></i>');
+                    link.removeClass('invisible');
+                    link.tooltipster('content', 'Viditelnost: Schovat');
+                    layer.isVisibleOnWorkspace = true;
+                }
+            } else {
+                //only update current state
+                if (layer.isVisibleOnWorkspace) {
+                    link.html('<i class="fa fa-eye"></i>');
+                    link.removeClass('invisible');
+                    link.tooltipster('content', 'Viditelnost: Schovat');
+                } else {
+                    link.html('<i class="fa fa-eye-slash"></i>');
+                    link.tooltipster('content', 'Viditelnost: Zobrazit');
+                    link.addClass('invisible');   
+                }
+            }
+            this.app.workspace.transformShapes();
+        }
+    }
+
+    setMultiply(idLayer: number, link: JQuery, change: boolean = true) {
+        var layer: Layer = this.getLayer(idLayer);
+        if (layer) {
+            if (change) {
+                if (layer.isMultipleEdit) {
+                    link.html('<i class="fa fa-chain-broken"></i>');
+                    link.tooltipster('content', 'Hromadná editace snímků - Vypnuta');
+                    link.removeClass('ismultiple');
+                    layer.isMultipleEdit = false;
+                } else {
+                    link.html('<i class="fa fa-chain"></i>');
+                    link.addClass('ismultiple');
+                    link.tooltipster('content', 'Hromadná editace snímků - Zapnuta');
+                    layer.isMultipleEdit = true;
+                }
+            } else {
+                //only update current state
+                if (layer.isMultipleEdit) {
+                    link.html('<i class="fa fa-chain"></i>');
+                    link.addClass('ismultiple');
+                    link.tooltipster('content', 'Hromadná editace snímků - Zapnuta');
+                } else {
+                    link.html('<i class="fa fa-chain-broken"></i>');
+                    link.tooltipster('content', 'Hromadná editace snímků - Vypnuta');
+                    link.removeClass('ismultiple');
+                }
+            }
+        }        
     }
 
     get repeat() {

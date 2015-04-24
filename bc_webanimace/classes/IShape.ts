@@ -13,6 +13,7 @@
     rotate: _3d;
     skew: _2d;
     origin: _2d;
+    scale: number;
 }
 
 interface IShape {
@@ -66,4 +67,6 @@ interface IShape {
     setOriginX(val: number);
 
     setOriginY(val: number);
+
+    setScale(val: number);
 }

@@ -1282,11 +1282,11 @@ a.menu-item.disabled:hover {
   -webkit-transition: all 0.3s ease 0s;
 }
 
-.btn.svg-btn, .ui-button {
+.btn.svg-btn, .ui-button, .download-btn {
   background: none repeat scroll 0 0 #2DB6CF !important;
   color: #FFFFFF;
 }
-.btn.svg-btn:hover, .ui-button:hover {
+.btn.svg-btn:hover, .ui-button:hover, .download-btn:hover {
   background: none repeat scroll 0 0 #444444 !important;
   color: #FFFFFF;
 }
@@ -1458,4 +1458,9 @@ a.menu-item.disabled:hover {
 
 .action.multiple.ismultiple {
     color: #f61414;
+}
+
+.download-wrapper {
+    width: 100%;
+    text-align: center;
 }

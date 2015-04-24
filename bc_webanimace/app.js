@@ -6407,6 +6407,8 @@ var GenerateCode = (function () {
         this.previewEl = $('<iframe>').attr('id', 'previewFrame').attr('src', 'about:blank');
         this.codeWrapperEl = $('<div>').attr('id', 'code');
         this.runEl = $('<a>').attr('href', '#').addClass('run-preview').html('Znovu spustit animaci');
+        this.downloadWrapperEl = $('<div>').addClass('download-wrapper');
+        this.downloadBtnEl = $('<a>').addClass('btn download-btn').html('Stáhnout HTML soubor').attr('href', '#');
         this.arrayMax = Function.prototype.apply.bind(Math.max, null);
         this.arrayMin = Function.prototype.apply.bind(Math.min, null);
         this.app = app;
@@ -6421,7 +6423,7 @@ var GenerateCode = (function () {
         this.dialogEl.dialog({
             autoOpen: false,
             draggable: false,
-            height: 600,
+            height: 650,
             width: 900,
             resizable: true,
             modal: true,
@@ -6432,11 +6434,19 @@ var GenerateCode = (function () {
         });
 
         this.dialogEl.append(this.tabsEl);
+        this.downloadWrapperEl.append(this.downloadBtnEl);
+        this.dialogEl.append(this.downloadWrapperEl);
         this.tabsEl.tabs();
 
         this.runEl.on('click', function (event) {
             _this.previewEl.remove();
             _this.previewTab.append(_this.previewEl);
+        });
+
+        this.downloadBtnEl.on('click', function (e) {
+            var blob = new Blob([_this.resultHtml], { type: "text/html;charset=utf-8" });
+
+            saveAs(blob, "animation.html");
         });
     }
     GenerateCode.prototype.generate = function () {
@@ -6453,6 +6463,7 @@ var GenerateCode = (function () {
         html += '\n</body>\n</html>';
 
         var encodehtml = html;
+        this.resultHtml = encodehtml;
         html = html.replace(/[<>]/g, function (m) {
             return { '<': '&lt;', '>': '&gt;' }[m];
         });
@@ -6468,6 +6479,8 @@ var GenerateCode = (function () {
         $(pre).on('dblclick', function () {
             _this.selectText('code');
         });
+
+        return encodehtml;
     };
 
     GenerateCode.prototype.generateCss = function () {

@@ -6,9 +6,13 @@
     private previewEl: JQuery = $('<iframe>').attr('id', 'previewFrame').attr('src', 'about:blank');
     private codeWrapperEl: JQuery = $('<div>').attr('id', 'code');
     private runEl: JQuery = $('<a>').attr('href', '#').addClass('run-preview').html('Znovu spustit animaci');
+    private downloadWrapperEl: JQuery = $('<div>').addClass('download-wrapper');
+    private downloadBtnEl: JQuery = $('<a>').addClass('btn download-btn').html('Stáhnout HTML soubor').attr('href', '#');
 
     private layers: Array<Layer>;
     private app: Application;
+
+    resultHtml: string;
 
     arrayMax = Function.prototype.apply.bind(Math.max, null);
     arrayMin = Function.prototype.apply.bind(Math.min, null);
@@ -27,7 +31,7 @@
         this.dialogEl.dialog({
             autoOpen: false,
             draggable: false,
-            height: 600,
+            height: 650,
             width: 900,
             resizable: true,
             modal: true,
@@ -38,15 +42,23 @@
         });
 
         this.dialogEl.append(this.tabsEl);
+        this.downloadWrapperEl.append(this.downloadBtnEl);
+        this.dialogEl.append(this.downloadWrapperEl);
         this.tabsEl.tabs();
 
         this.runEl.on('click', (event: JQueryEventObject) => {
             this.previewEl.remove();
             this.previewTab.append(this.previewEl);
         });
+
+        this.downloadBtnEl.on('click', (e: JQueryEventObject) => {
+            var blob = new Blob([this.resultHtml], { type: "text/html;charset=utf-8" });
+
+            saveAs(blob, "animation.html");  
+        });
     }
 
-    generate() {
+    generate(): string {
         console.log('generate code');
         this.dialogEl.dialog('open');
 
@@ -59,6 +71,7 @@
         html += '\n</body>\n</html>';
 
         var encodehtml = html;
+        this.resultHtml = encodehtml;
         html = html.replace(/[<>]/g, (m) => { return { '<': '&lt;', '>': '&gt;' }[m]; });
         var pre: JQuery = $('<pre>').addClass('prettyprint').attr('id', 'code');
         this.codeTab.append(pre.html(html));
@@ -72,6 +85,8 @@
         $(pre).on('dblclick', () => {
             this.selectText('code');
         });
+
+        return encodehtml;
     }
 
     generateCss(): string {

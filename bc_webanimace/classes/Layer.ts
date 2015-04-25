@@ -193,6 +193,10 @@
                 left: rangeData.params.relativePosition.left,
             },
             scale: rangeData.params.scale,
+            translate: {
+                x: rangeData.params.translate.x,
+                y: rangeData.params.translate.y,
+            }
         }
         var cssStyles = new Array();
         /*var isChange = {
@@ -652,6 +656,10 @@
                 left: rangeData.params.relativePosition.left,
             },
             scale: rangeData.params.scale,
+            translate: {
+                x: rangeData.params.translate.x,
+                y: rangeData.params.translate.y,
+            }
         }
         //if exist left && right, compute attributes
         if (Object.keys(rng).length == 2) {
@@ -771,14 +779,24 @@
                 params['scale'] = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
             }
 
+            if (paramsLeft.translate.x != paramsRight.translate.x) {
+                isTransform = true;
+                params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
+            }
+
+            if (paramsLeft.translate.y != paramsRight.translate.y) {
+                isTransform = true;
+                params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
+            }
+
             if (isOrigin) {
                 shape.css({ 'transform-origin': params.origin.x + '% ' + params.origin.y + '%' });
                 helper.css({ 'transform-origin': params.origin.x + '% ' + params.origin.y + '%' });
             }
 
             if (isTransform) {
-                shape.css({ 'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
-                helper.css({ 'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                shape.css({ 'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                helper.css({ 'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
             }
             shape.removeClass('novisible');
             helper.removeClass('novisible');
@@ -797,7 +815,7 @@
                 'border-top-right-radius': params.borderRadius[1],
                 'border-bottom-right-radius': params.borderRadius[2],
                 'border-bottom-left-radius': params.borderRadius[3],
-                'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             });
 
@@ -808,7 +826,7 @@
                     'width': params.relativeSize.width + '%',
                     'height': params.relativeSize.height + '%',
                     'z-index': (params.zindex + 1000),
-                    'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
 
@@ -855,6 +873,7 @@
             app.controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
             app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
             app.controlPanel.updateScale(params.scale);
+            app.controlPanel.updateTranslate(params.translate);
             $('.shape-helper.highlight').first().find('.origin-point').css({
                 'left': params.origin.x + '%',
                 'top': params.origin.y + '%',
@@ -918,6 +937,10 @@
                     left: this.computeAttr(rng['l'].shape.parameters.relativePosition.left, rng['r'].shape.parameters.relativePosition.left, bezier(p)),
                 },
                 scale: this.computeAttr(rng['l'].shape.parameters.scale, rng['r'].shape.parameters.scale, bezier(p)),
+                translate: {
+                    x: this.computeAttr(rng['l'].shape.parameters.translate.x, rng['r'].shape.parameters.translate.x, bezier(p)),
+                    y: this.computeAttr(rng['l'].shape.parameters.translate.y, rng['r'].shape.parameters.translate.y, bezier(p)),
+                },
             }
             //shape.css("visibility", "visible");  
             //helper.css("visibility", "visible");
@@ -1152,7 +1175,10 @@
             }
         }*/
 
-        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1) {
+        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 ||
+                p.skew.x != 0 || p.skew.y != 0 ||
+                p.scale != 1 ||
+                p.translate.x != 0 || p.translate.y != 0) {
             var t: string = "";
             if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -1161,7 +1187,11 @@
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
             if (p.scale != 1) {
-                t += 'scale(' + p.scale + ')';
+                t += 'scale(' + p.scale + ') ';
+            }
+
+            if (p.translate.x != 0 || p.translate.y != 0) {
+                t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
             }
             cssObject['transform'] = t;
         }
@@ -1185,6 +1215,7 @@
             rotate: false,
             skew: false,
             scale: false,
+            translate: false,
             origin: false,
         }
         var initP: Parameters = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
@@ -1211,6 +1242,8 @@
             if (initP.origin.x != p.origin.x) change.origin = true;
             if (initP.origin.y != p.origin.y) change.origin = true;
             if (initP.scale != p.scale) change.scale = true;
+            if (initP.translate.x != p.translate.x) change.translate = true;
+            if (initP.translate.y != p.translate.y) change.translate = true;
         });
 
         var p: Parameters = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
@@ -1258,7 +1291,7 @@
             cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         }
 
-        if (change.rotate || change.skew || change.scale) {
+        if (change.rotate || change.skew || change.scale || change.translate) {
             var t: string = "";
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -1267,12 +1300,15 @@
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
             if (change.scale) {
-                t += 'scale(' + p.scale + ')';
+                t += 'scale(' + p.scale + ') ';
+            }
+            if (change.translate) {
+                t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
             }
             cssObject['transform'] = t;
         }
 
-        if ((change.rotate || change.skew || change.scale) && change.origin) {
+        if ((change.rotate || change.skew || change.scale || change.translate) && change.origin) {
             if (change.origin) cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
 
@@ -1318,7 +1354,7 @@
                 'border-top-right-radius': params.borderRadius[1],
                 'border-bottom-right-radius': params.borderRadius[2],
                 'border-bottom-left-radius': params.borderRadius[3],
-                'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             }
             shape.css(css);
@@ -1355,7 +1391,7 @@
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
-                    'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
 

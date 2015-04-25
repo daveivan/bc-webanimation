@@ -69,6 +69,8 @@
         newLayer.globalShape.id = obj.id;
         newLayer.parent = obj._parent;
         newLayer.nesting = obj.nesting;
+        newLayer.isMultipleEdit = obj.isMultipleEdit;
+        newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
 
         obj._keyframes.forEach((k: any, i: number) => {
             if (k._timestamp != 0) {

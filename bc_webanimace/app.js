@@ -213,7 +213,11 @@
                 top: rangeData.params.relativePosition.top,
                 left: rangeData.params.relativePosition.left
             },
-            scale: rangeData.params.scale
+            scale: rangeData.params.scale,
+            translate: {
+                x: rangeData.params.translate.x,
+                y: rangeData.params.translate.y
+            }
         };
         var cssStyles = new Array();
 
@@ -675,7 +679,11 @@
                 top: rangeData.params.relativePosition.top,
                 left: rangeData.params.relativePosition.left
             },
-            scale: rangeData.params.scale
+            scale: rangeData.params.scale,
+            translate: {
+                x: rangeData.params.translate.x,
+                y: rangeData.params.translate.y
+            }
         };
 
         //if exist left && right, compute attributes
@@ -796,14 +804,24 @@
                 params['scale'] = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
             }
 
+            if (paramsLeft.translate.x != paramsRight.translate.x) {
+                isTransform = true;
+                params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
+            }
+
+            if (paramsLeft.translate.y != paramsRight.translate.y) {
+                isTransform = true;
+                params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
+            }
+
             if (isOrigin) {
                 shape.css({ 'transform-origin': params.origin.x + '% ' + params.origin.y + '%' });
                 helper.css({ 'transform-origin': params.origin.x + '% ' + params.origin.y + '%' });
             }
 
             if (isTransform) {
-                shape.css({ 'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
-                helper.css({ 'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                shape.css({ 'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                helper.css({ 'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
             }
             shape.removeClass('novisible');
             helper.removeClass('novisible');
@@ -822,7 +840,7 @@
                 'border-top-right-radius': params.borderRadius[1],
                 'border-bottom-right-radius': params.borderRadius[2],
                 'border-bottom-left-radius': params.borderRadius[3],
-                'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             });
 
@@ -833,7 +851,7 @@
                     'width': params.relativeSize.width + '%',
                     'height': params.relativeSize.height + '%',
                     'z-index': (params.zindex + 1000),
-                    'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
 
@@ -880,6 +898,7 @@
             app.controlPanel.updateSkew({ x: params.skew.x, y: params.skew.y });
             app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
             app.controlPanel.updateScale(params.scale);
+            app.controlPanel.updateTranslate(params.translate);
             $('.shape-helper.highlight').first().find('.origin-point').css({
                 'left': params.origin.x + '%',
                 'top': params.origin.y + '%'
@@ -942,7 +961,11 @@
                     top: this.computeAttr(rng['l'].shape.parameters.relativePosition.top, rng['r'].shape.parameters.relativePosition.top, bezier(p)),
                     left: this.computeAttr(rng['l'].shape.parameters.relativePosition.left, rng['r'].shape.parameters.relativePosition.left, bezier(p))
                 },
-                scale: this.computeAttr(rng['l'].shape.parameters.scale, rng['r'].shape.parameters.scale, bezier(p))
+                scale: this.computeAttr(rng['l'].shape.parameters.scale, rng['r'].shape.parameters.scale, bezier(p)),
+                translate: {
+                    x: this.computeAttr(rng['l'].shape.parameters.translate.x, rng['r'].shape.parameters.translate.x, bezier(p)),
+                    y: this.computeAttr(rng['l'].shape.parameters.translate.y, rng['r'].shape.parameters.translate.y, bezier(p))
+                }
             };
 
             //shape.css("visibility", "visible");
@@ -1174,7 +1197,7 @@
         cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         }
         }*/
-        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1) {
+        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1 || p.translate.x != 0 || p.translate.y != 0) {
             var t = "";
             if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -1183,7 +1206,11 @@
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
             if (p.scale != 1) {
-                t += 'scale(' + p.scale + ')';
+                t += 'scale(' + p.scale + ') ';
+            }
+
+            if (p.translate.x != 0 || p.translate.y != 0) {
+                t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
             }
             cssObject['transform'] = t;
         }
@@ -1207,6 +1234,7 @@
             rotate: false,
             skew: false,
             scale: false,
+            translate: false,
             origin: false
         };
         var initP = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
@@ -1254,6 +1282,10 @@
                 change.origin = true;
             if (initP.scale != p.scale)
                 change.scale = true;
+            if (initP.translate.x != p.translate.x)
+                change.translate = true;
+            if (initP.translate.y != p.translate.y)
+                change.translate = true;
         });
 
         var p = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
@@ -1306,7 +1338,7 @@
             cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         }
 
-        if (change.rotate || change.skew || change.scale) {
+        if (change.rotate || change.skew || change.scale || change.translate) {
             var t = "";
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -1315,12 +1347,15 @@
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
             if (change.scale) {
-                t += 'scale(' + p.scale + ')';
+                t += 'scale(' + p.scale + ') ';
+            }
+            if (change.translate) {
+                t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
             }
             cssObject['transform'] = t;
         }
 
-        if ((change.rotate || change.skew || change.scale) && change.origin) {
+        if ((change.rotate || change.skew || change.scale || change.translate) && change.origin) {
             if (change.origin)
                 cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
@@ -1368,7 +1403,7 @@
                 'border-top-right-radius': params.borderRadius[1],
                 'border-bottom-right-radius': params.borderRadius[2],
                 'border-bottom-left-radius': params.borderRadius[3],
-                'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             };
             shape.css(css);
@@ -1405,7 +1440,7 @@
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
-                    'transform': 'scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
 
@@ -1794,7 +1829,11 @@ var Timeline = (function () {
                         x: k.shape.parameters.origin.x,
                         y: k.shape.parameters.origin.y
                     },
-                    scale: k.shape.parameters.scale
+                    scale: k.shape.parameters.scale,
+                    translate: {
+                        x: k.shape.parameters.translate.x,
+                        y: k.shape.parameters.translate.y
+                    }
                 };
 
                 if (layer.type == 0 /* DIV */) {
@@ -1909,7 +1948,7 @@ var Timeline = (function () {
         $(this.layersFooterEl).append(this.deleteKeyframeEl);
 
         $(this.layersFooterEl).append($('<a href="#" class="performanceTest">Perf. test</a>').on('click', function (e) {
-            _this.app.workspace.performanceTest(5);
+            _this.app.workspace.performanceTest(50);
         }));
 
         $(this.timelineFooterEl).append(this.layersFooterEl);
@@ -2717,9 +2756,20 @@ var Timeline = (function () {
         get: function () {
             return this._repeat;
         },
+        set: function (r) {
+            this._repeat = r;
+            if (this._repeat) {
+                $('#repeat').prop('checked', true);
+            } else {
+                $('#repeat').prop('checked', false);
+            }
+
+            $('#repeat').change();
+        },
         enumerable: true,
         configurable: true
     });
+
 
     Timeline.prototype.getSelectedKeyframeID = function (idLayer) {
         var el = (this.keyframesTableEl.find('tr.layer-row[data-id="' + idLayer + '"]')).find('.keyframe.selected');
@@ -2883,6 +2933,14 @@ var Shape = (function () {
     Shape.prototype.setScale = function (val) {
         this._parameters.scale = val;
     };
+
+    Shape.prototype.setTranslateX = function (val) {
+        this._parameters.translate.x = val;
+    };
+
+    Shape.prototype.setTranslateY = function (val) {
+        this._parameters.translate.y = val;
+    };
     return Shape;
 })();
 ///<reference path="Shape.ts" />
@@ -2895,13 +2953,17 @@ var Workspace = (function () {
         this.movedLayer = null;
         this.workspaceOverlay = $('<div>').addClass('workspace-overlay');
         this.scopeOverlay = $('<div>').addClass('overlay-scope overlay-clickable');
-        this.uploadArea = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
-        this.uploadBtn = $('<input type="file"></input>').addClass('pick-image');
+        this.uploadAreaWrapper = $('<div>');
+        this.uploadArea = $('<div>').addClass('upload-area bigger').html('Sem přetáhněte obrázek nebo klikněte pro výběr souboru');
+        this.uploadBtn = $('<input type="file"></input>').css('display', 'none');
         this.svgTextArea = $('<div>').addClass('svg-area');
-        this.svgInsertBtn = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit SVG');
+        this.svgInsertBtn = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit SVG z textového pole');
+        this.svgUploadArea = $('<div>').addClass('upload-area').html('Sem přetáhněte SVG obrázek nebo klikněte');
+        this.svgUploadInput = $('<input type="file"></input>').addClass('svgfile').css('display', 'none');
         this.svgText = $('<textarea>');
-        this.loadArea = $('<div>').addClass('load-area').html('<p>Sem přetáhněte .json soubor s uloženými objekty</p>');
-        this.loadBtn = $('<input type="file"></input>').addClass('pick-json');
+        this.loadAreaWrapper = $('<div>');
+        this.loadArea = $('<div>').addClass('upload-area bigger').html('Sem přetáhněte uložený projekt v souboru JSON nebo klikněte pro výběr souboru.');
+        this.loadBtn = $('<input type="file"></input>').css('display', 'none');
         this.contextMenuEl = $('<div>').addClass('context-menu');
         this.menuItemDelete = $('<a>').addClass('menu-item menu-delete').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat objekt');
         this.menuItemToBackground = $('<a>').addClass('menu-item menu-tobackground').attr('href', '#').html('<i class="fa fa-long-arrow-down"></i> Níže do pozadí');
@@ -2917,9 +2979,14 @@ var Workspace = (function () {
         this.workspaceContainer = workspaceContainer;
         this.workspaceContainerOriginal = workspaceContainer;
         this.workspaceWrapper = workspaceWrapper;
-        this.uploadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.uploadBtn));
-        this.loadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.loadBtn));
-        this.svgTextArea.append('Vložte XML kód');
+        this.uploadAreaWrapper.append(this.uploadArea);
+        this.uploadAreaWrapper.append(this.uploadBtn);
+        this.loadAreaWrapper.append(this.loadArea);
+        this.loadAreaWrapper.append(this.loadBtn);
+        this.svgTextArea.append('nahrát SVG ze souboru');
+        this.svgTextArea.append(this.svgUploadArea);
+        this.svgTextArea.append(this.svgUploadInput);
+        this.svgTextArea.append('nebo vložte XML kód');
         this.svgTextArea.append(this.svgText);
         this.svgTextArea.append(this.svgInsertBtn);
 
@@ -3490,7 +3557,8 @@ var Workspace = (function () {
             rotate: { x: 0, y: 0, z: 0 },
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
-            scale: 1
+            scale: 1,
+            translate: { x: 0, y: 0 }
         };
 
         new_object.css({
@@ -3603,7 +3671,11 @@ var Workspace = (function () {
                         width: this.computeParameter(interval['left'].shape.parameters.relativeSize.width, interval['right'].shape.parameters.relativeSize.width, bezier(p)),
                         height: this.computeParameter(interval['left'].shape.parameters.relativeSize.height, interval['right'].shape.parameters.relativeSize.height, bezier(p))
                     },
-                    scale: this.computeOpacity(interval['left'].shape.parameters.scale, interval['right'].shape.parameters.scale, bezier(p))
+                    scale: this.computeOpacity(interval['left'].shape.parameters.scale, interval['right'].shape.parameters.scale, bezier(p)),
+                    translate: {
+                        x: this.computeParameter(interval['left'].shape.parameters.translate.x, interval['right'].shape.parameters.translate.x, bezier(p)),
+                        y: this.computeParameter(interval['left'].shape.parameters.translate.y, interval['right'].shape.parameters.translate.y, bezier(p))
+                    }
                 };
             }
 
@@ -3994,6 +4066,9 @@ var Workspace = (function () {
                         _this.app.controlPanel.updateIdEl(_this.app.timeline.getLayer(id).idEl);
                         _this.app.controlPanel.update3DRotate({ x: shape.parameters.rotate.x, y: shape.parameters.rotate.y, z: shape.parameters.rotate.z });
                         _this.app.controlPanel.updateTransformOrigin(shape.parameters.origin.x, shape.parameters.origin.y);
+                        _this.app.controlPanel.updateSkew(shape.parameters.skew);
+                        _this.app.controlPanel.updateScale(shape.parameters.scale);
+                        _this.app.controlPanel.updateTranslate(shape.parameters.translate);
 
                         (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
                             'left': shape.parameters.origin.x + '%',
@@ -4039,6 +4114,7 @@ var Workspace = (function () {
         }
     };
 
+    //TODO: upravit klonovani - nove vlastnosti z interpolace
     Workspace.prototype.getCurrentShape = function (id) {
         var shapeEl = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
         if (shapeEl.length) {
@@ -4091,7 +4167,11 @@ var Workspace = (function () {
                     x: this.getTransformAttr(id, 'origin').x,
                     y: this.getTransformAttr(id, 'origin').y
                 },
-                scale: this.getTransformAttr(id, 'scale')
+                scale: this.getTransformAttr(id, 'scale'),
+                translate: {
+                    x: this.getTransformAttr(id, 'translate').x,
+                    y: this.getTransformAttr(id, 'translate').y
+                }
             };
 
             //console.log(shapeEl.attr('data-opacity'));
@@ -4442,6 +4522,42 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.setTranslate = function (type, value) {
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
+            }
+            if (keyframe != null) {
+                if (type === 'x') {
+                    keyframe.shape.setTranslateX(value);
+                } else if (type === 'y') {
+                    keyframe.shape.setTranslateY(value);
+                }
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        if (type === 'x') {
+                            k.shape.setTranslateX(value);
+                        } else if (type === 'y') {
+                            k.shape.setTranslateY(value);
+                        }
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
+            }
+
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
     Workspace.prototype.setTransformOrigin = function (type, value) {
         console.log('setting transform-origin');
         var layer = this.getHighlightedLayer();
@@ -4655,13 +4771,12 @@ var Workspace = (function () {
         var _this = this;
         this.dialogEl.empty();
         $('body').find(this.dialogEl).remove();
-        this.dialogEl.append(this.loadArea);
+        this.dialogEl.append(this.loadAreaWrapper);
         $('body').append(this.dialogEl);
         this.dialogEl.dialog({
             title: 'Nahrát projekt ze souboru',
             autoOpen: true,
             draggable: false,
-            height: 400,
             width: 550,
             resizable: false,
             modal: true,
@@ -4676,11 +4791,6 @@ var Workspace = (function () {
         });
 
         //zpracovani souboru
-        $('.load-area > p').on('dragenter', function (event) {
-            console.log('vp');
-            $('.upload-area').addClass('over');
-        });
-
         this.loadArea.on('dragenter', function (event) {
             console.log('enter');
             $(event.target).addClass('over');
@@ -4701,10 +4811,15 @@ var Workspace = (function () {
             event.preventDefault();
             var files = event.originalEvent.dataTransfer.files;
             _this.uploadFile(files);
+            $(event.target).removeClass('over');
         });
 
         this.loadBtn.on('change', function (event) {
             _this.uploadFile(event.target.files);
+        });
+
+        this.loadArea.on('click', function (event) {
+            _this.loadBtn.click();
         });
     };
 
@@ -4746,6 +4861,7 @@ var Workspace = (function () {
                 event.preventDefault();
                 var files = event.originalEvent.dataTransfer.files;
                 _this.uploadFile(files);
+                $(event.target).removeClass('over');
             });
 
             this.loadBtn.on('change', function (event) {
@@ -4794,9 +4910,12 @@ var Workspace = (function () {
 
         //parse fron JSON
         var workspaceSize = JSON.parse(data)[0];
-        var objLayers = JSON.parse(data)[1];
+        var repeatAnimation = JSON.parse(data)[1];
+        var objLayers = JSON.parse(data)[2];
         this.setWorkspaceDimension(parseInt(workspaceSize.x), parseInt(workspaceSize.y));
         this.app.controlPanel.updateWorkspaceDimension(this._workspaceSize);
+        this.app.timeline.repeat = repeatAnimation;
+
         objLayers.forEach(function (obj, i) {
             if (obj._type == 0 /* DIV */) {
                 var newLayer = RectangleLayer.parseJson(obj);
@@ -4832,7 +4951,7 @@ var Workspace = (function () {
             title: 'Vložit SVG z kódu',
             autoOpen: true,
             draggable: false,
-            height: 400,
+            height: 440,
             width: 550,
             resizable: false,
             modal: true,
@@ -4846,84 +4965,120 @@ var Workspace = (function () {
             }
         });
 
+        this.svgUploadArea.on('dragenter', function (event) {
+            console.log('enter');
+            $(event.target).addClass('over');
+        });
+
+        this.svgUploadArea.on('dragleave', function (event) {
+            $(event.target).removeClass('over');
+        });
+
+        this.svgUploadArea.on('dragover', function (event) {
+            console.log('over');
+            event.preventDefault();
+        });
+
+        this.svgUploadArea.on('drop', function (event) {
+            console.log('upload');
+            event.stopPropagation();
+            event.preventDefault();
+            var files = event.originalEvent.dataTransfer.files;
+            _this.uploadSvgFile(files);
+            $(event.target).removeClass('over');
+        });
+
+        this.svgUploadInput.on('change', function (event) {
+            _this.uploadSvgFile(event.target.files);
+        });
+
+        this.svgUploadArea.on('click', function (event) {
+            _this.svgUploadInput.click();
+        });
+
         this.svgInsertBtn.on('click', function (e) {
-            console.log('Inserting SVG');
-
             var xmlString = _this.svgText.val();
-            var parser = new DOMParser();
-            var doc = parser.parseFromString(xmlString, "image/svg+xml");
+            _this.saveSvgText(xmlString);
+        });
+    };
 
-            if (!_this.isParseError(doc)) {
-                var width = 150;
-                var height = 150;
+    Workspace.prototype.saveSvgText = function (svg) {
+        console.log('Inserting SVG');
 
-                for (var j = 0; j < doc.childNodes.length; j++) {
-                    var child = doc.childNodes[j];
-                    if (child.nodeName === 'svg' && child.attributes) {
-                        for (var i = 0; i < child.attributes.length; i++) {
-                            var attr = child.attributes[i];
-                            if (attr.name == 'viewBox') {
-                                var view = attr.value.match(/-?[\d\.]+/g);
-                                width = parseFloat(view[2]);
-                                height = parseFloat(view[3]);
-                            }
+        var xmlString = svg;
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(xmlString, "image/svg+xml");
+
+        if (!this.isParseError(doc)) {
+            var width = 150;
+            var height = 150;
+
+            for (var j = 0; j < doc.childNodes.length; j++) {
+                var child = doc.childNodes[j];
+                if (child.nodeName === 'svg' && child.attributes) {
+                    for (var i = 0; i < child.attributes.length; i++) {
+                        var attr = child.attributes[i];
+                        if (attr.name == 'viewBox') {
+                            var view = attr.value.match(/-?[\d\.]+/g);
+                            width = parseFloat(view[2]);
+                            height = parseFloat(view[3]);
                         }
                     }
                 }
-
-                var p = {
-                    top: 0,
-                    left: 0,
-                    width: width,
-                    height: height,
-                    relativeSize: { width: ((width / _this.workspaceContainer.width()) * 100), height: ((height / _this.workspaceContainer.height()) * 100) },
-                    relativePosition: { top: 0, left: 0 },
-                    background: { r: 255, g: 255, b: 255, a: 0 },
-                    opacity: 1,
-                    borderRadius: [0, 0, 0, 0],
-                    rotate: { x: 0, y: 0, z: 0 },
-                    skew: { x: 0, y: 0 },
-                    origin: { x: 50, y: 50 },
-                    zindex: _this.app.timeline.layers.length,
-                    scale: 1
-                };
-
-                //var svg: IShape = new Svg(p, doc);
-                var svg = new Svg(p, xmlString);
-                var layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), svg);
-                var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
-                layer.parent = parent;
-                if (layer.parent) {
-                    layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
-                }
-                var idLayer = _this.app.timeline.addLayer(layer);
-                _this.renderSingleShape(idLayer);
-                _this.transformShapes();
-                _this.highlightShape([idLayer]);
-
-                _this.dialogEl.remove();
-                _this.app.controlPanel.Mode = 0 /* SELECT */;
-                _this.svgText.val('');
-                $('.tool-btn').removeClass('active');
-                $('.tool-btn.select').addClass('active');
-                _this.onChangeMode();
-            } else {
-                alert('Nevalidní kód');
             }
-        });
+
+            var p = {
+                top: 0,
+                left: 0,
+                width: width,
+                height: height,
+                relativeSize: { width: ((width / this.workspaceContainer.width()) * 100), height: ((height / this.workspaceContainer.height()) * 100) },
+                relativePosition: { top: 0, left: 0 },
+                background: { r: 255, g: 255, b: 255, a: 0 },
+                opacity: 1,
+                borderRadius: [0, 0, 0, 0],
+                rotate: { x: 0, y: 0, z: 0 },
+                skew: { x: 0, y: 0 },
+                origin: { x: 50, y: 50 },
+                zindex: this.app.timeline.layers.length,
+                scale: 1,
+                translate: { x: 0, y: 0 }
+            };
+
+            //var svg: IShape = new Svg(p, doc);
+            var svgShape = new Svg(p, xmlString);
+            var layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), svgShape);
+            var parent = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
+            layer.parent = parent;
+            if (layer.parent) {
+                layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
+            }
+            var idLayer = this.app.timeline.addLayer(layer);
+            this.renderSingleShape(idLayer);
+            this.transformShapes();
+            this.highlightShape([idLayer]);
+
+            this.dialogEl.remove();
+            this.app.controlPanel.Mode = 0 /* SELECT */;
+            this.svgText.val('');
+            $('.tool-btn').removeClass('active');
+            $('.tool-btn.select').addClass('active');
+            this.onChangeMode();
+        } else {
+            alert('Nevalidní kód');
+        }
     };
 
     Workspace.prototype.imageMode = function () {
         var _this = this;
         this.dialogEl.empty();
         $('body').find(this.dialogEl).remove();
-        this.dialogEl.append(this.uploadArea);
+        this.dialogEl.append(this.uploadAreaWrapper);
         $('body').append(this.dialogEl);
         this.dialogEl.dialog({
             title: 'Nahrát obrázek',
             autoOpen: true,
             draggable: false,
-            height: 400,
             width: 550,
             resizable: false,
             modal: true,
@@ -4935,11 +5090,6 @@ var Workspace = (function () {
                 $('.tool-btn').removeClass('active');
                 $('.tool-btn.select').addClass('active');
             }
-        });
-
-        $('.upload-area > p').on('dragenter', function (event) {
-            console.log('vp');
-            $('.upload-area').addClass('over');
         });
 
         this.uploadArea.on('dragenter', function (event) {
@@ -4962,12 +5112,32 @@ var Workspace = (function () {
             event.preventDefault();
             var files = event.originalEvent.dataTransfer.files;
             _this.uploadImage(files);
+            $(event.target).removeClass('over');
         });
 
         this.uploadBtn.on('change', function (event) {
             console.log('pick image');
             _this.uploadImage(event.target.files);
         });
+
+        this.uploadArea.on('click', function (event) {
+            _this.uploadBtn.click();
+        });
+    };
+
+    Workspace.prototype.uploadSvgFile = function (files) {
+        var _this = this;
+        var file = files[0];
+        if (file.type.match('image/svg.*')) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                _this.saveSvgText(e.target.result);
+            };
+
+            reader.readAsText(file);
+        } else {
+            alert('Nesprávný formát souboru');
+        }
     };
 
     Workspace.prototype.uploadImage = function (files) {
@@ -5021,7 +5191,8 @@ var Workspace = (function () {
                     skew: { x: 0, y: 0 },
                     origin: { x: 50, y: 50 },
                     zindex: _this.app.timeline.layers.length,
-                    scale: 1
+                    scale: 1,
+                    translate: { x: 0, y: 0 }
                 };
                 var image = new Img(p, dataurl);
                 var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
@@ -5083,7 +5254,8 @@ var Workspace = (function () {
                             skew: { x: 0, y: 0 },
                             origin: { x: 50, y: 50 },
                             zindex: _this.app.timeline.layers.length,
-                            scale: 1
+                            scale: 1,
+                            translate: { x: 0, y: 0 }
                         };
                         var image = new Img(p, e.target.result);
                         var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
@@ -5138,7 +5310,8 @@ var Workspace = (function () {
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
-            scale: 1
+            scale: 1,
+            translate: { x: 0, y: 0 }
         };
 
         var shape = new TextField(params, null, this.fontParameters.color, this.fontParameters.size, this.fontParameters.fontFamily);
@@ -5419,7 +5592,8 @@ var Workspace = (function () {
                 rotate: { x: 0, y: 0, z: 0 },
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
-                scale: 1
+                scale: 1,
+                translate: { x: 0, y: 0 }
             };
 
             var shape = new Rectangle(params);
@@ -5447,7 +5621,8 @@ var Workspace = (function () {
                 rotate: { x: 0, y: 0, z: 0 },
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
-                scale: 1
+                scale: 1,
+                translate: { x: 0, y: 0 }
             };
 
             layer.addKeyframe(new Rectangle(paramsNew), 4000, this.getBezier());
@@ -5473,9 +5648,10 @@ var ControlPanel = (function () {
         this.isLockedBorderRadius = true;
         this.fontFamily = ['Segoe UI', 'Georgia', 'Times', 'Arial', 'Calibri', 'Verdana', 'serif', 'sans-serif'];
         this.toolPanelEl = $('<div>').addClass('tool-panel');
+        this.newProjectEl = $('<a>').attr('href', '#').addClass('tool-btn').addClass('new').addClass('tooltip').html('<i class="fa fa-eraser"></i>').attr('title', 'Nový projekt');
         this.selectToolEl = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
         this.createDivToolEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('create-div').html('<i class="fa fa-stop"></i>').attr('title', 'Nový kontejner');
-        this.generateCodeEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-code"></i>').attr('title', 'Vygenerovat kód');
+        this.generateCodeEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-download"></i>').attr('title', 'Vygenerovat kód');
         this.insertImageEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
         this.insertTextEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
         this.insertSVGEl = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-file-code-o"></i>').attr('title', 'Vložit kód s SVG');
@@ -5509,6 +5685,10 @@ var ControlPanel = (function () {
         this.idEl = $('<input type="text"></input>').attr('id', 'id-el');
         this.scaleEl = $('<input>').attr('id', 'scale-input');
         this.scaleSliderEl = $('<div>').addClass('scale-slider');
+        this.translateXEl = $('<input>').attr('id', 'translatex').addClass('translate');
+        this.translateXSliderEl = $('<div>').addClass('translate-slider').attr('id', 'translatex');
+        this.translateYEl = $('<input>').attr('id', 'translatey').addClass('translate');
+        this.translateYSliderEl = $('<div>').addClass('translate-slider').attr('id', 'translatey');
         this.rotateXEl = $('<input>').attr('id', 'rx').addClass('number rotate');
         this.rotateXSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rx');
         this.rotateYEl = $('<input>').attr('id', 'ry').addClass('number rotate');
@@ -5528,8 +5708,10 @@ var ControlPanel = (function () {
         this.app = app;
         this.containerEl = container;
 
+        this.toolPanelEl.append(this.newProjectEl);
         this.toolPanelEl.append(this.loadEl);
         this.toolPanelEl.append(this.saveEl);
+        this.toolPanelEl.append(this.generateCodeEl);
         this.toolPanelEl.append($('<div>').addClass('deliminer'));
         this.toolPanelEl.append(this.selectToolEl);
         this.toolPanelEl.append(this.createDivToolEl);
@@ -5537,7 +5719,6 @@ var ControlPanel = (function () {
         this.toolPanelEl.append(this.insertTextEl);
         this.toolPanelEl.append(this.insertSVGEl);
         this.toolPanelEl.append(this.svgGalleryEl);
-        this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
 
         this.controlPanelEl.append(this.mainPanel);
@@ -5767,6 +5948,23 @@ var ControlPanel = (function () {
         skew.append(expand);
         this.controlPanelEl.append(skew);
 
+        //translate
+        var translate = this.itemControlEl.clone();
+        translate.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>2D Translate</h2></a>').addClass('control-rotate');
+        var expand = $('<div>').addClass('expand');
+        var x = $('<span>').html('<p>x:</p>').addClass('group-form');
+        x.append(this.translateXSliderEl);
+        x.append(this.translateXEl);
+        x.append(' px');
+        expand.append(x);
+        var y = $('<span>').html('<p>y:</p>').addClass('group-form');
+        y.append(this.translateYSliderEl);
+        y.append(this.translateYEl);
+        y.append(' px');
+        expand.append(y);
+        translate.append(expand);
+        this.controlPanelEl.append(translate);
+
         this.containerEl.append(this.controlPanelEl);
 
         $(window).resize(function () {
@@ -5924,6 +6122,16 @@ var ControlPanel = (function () {
             _this.app.workspace.set3DRotate('z', parseInt($(event.target).val()));
         });
 
+        this.translateXEl.on('change', function (event) {
+            _this.translateXSliderEl.slider('value', $(event.target).val());
+            _this.app.workspace.setTranslate('x', parseInt($(event.target).val()));
+        });
+
+        this.translateYEl.on('change', function (event) {
+            _this.translateYSliderEl.slider('value', $(event.target).val());
+            _this.app.workspace.setTranslate('y', parseInt($(event.target).val()));
+        });
+
         this.skewXEl.on('change', function (event) {
             _this.skewXSliderEl.slider('value', $(event.target).val());
             _this.app.workspace.setSkew('x', parseInt($(event.target).val()));
@@ -6046,6 +6254,17 @@ var ControlPanel = (function () {
             _this.app.workspace.onChangeMode();
         });
 
+        this.newProjectEl.on('click', function (event) {
+            if (_this.app.timeline.layers.length > 0) {
+                if (confirm('Přejete si před vytvořením nového projektu uložit stávající projekt?')) {
+                    _this.saveEl.click();
+                }
+                _this.app.timeline.layers = new Array();
+                _this.app.timeline.renderLayers();
+                _this.app.workspace.renderShapes();
+            }
+        });
+
         this.loadEl.on('click', function (event) {
             if ($(event.target).closest('a').hasClass('active')) {
                 $(event.target).closest('a').removeClass('active');
@@ -6092,6 +6311,7 @@ var ControlPanel = (function () {
         this.saveEl.on('click', function (event) {
             var arr = new Array();
             arr.push({ x: _this.app.workspace.workspaceSize.width, y: _this.app.workspace.workspaceSize.height });
+            arr.push(_this.app.timeline.repeat);
             arr.push(_this.app.timeline.layers);
             var toSave = JSON.stringify(arr);
 
@@ -6101,7 +6321,7 @@ var ControlPanel = (function () {
                 var datetime = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
                 datetime += '_' + now.getHours() + '.' + now.getMinutes();
 
-                saveAs(blob, "animation_" + datetime + ".json");
+                saveAs(blob, "animation_project_" + datetime + ".json");
             }
         });
 
@@ -6137,6 +6357,18 @@ var ControlPanel = (function () {
                     $('input#' + $(event.target).attr('id')).val(ui.value).change();
                 }
             });
+
+            $('.translate-slider').slider({
+                min: -100,
+                max: 100,
+                step: 1,
+                value: 0,
+                slide: function (event, ui) {
+                    $('input#' + $(event.target).attr('id')).val(ui.value).change();
+                }
+            });
+
+            $('.translate').val('0');
 
             $('.rotate').val('0');
 
@@ -6292,6 +6524,18 @@ var ControlPanel = (function () {
         if (skew.y != null) {
             this.skewYSliderEl.slider('option', 'value', Number(skew.y));
             this.skewYEl.val(skew.y.toString());
+        }
+    };
+
+    ControlPanel.prototype.updateTranslate = function (translate) {
+        if (translate.x != null) {
+            this.translateXSliderEl.slider('option', 'value', Number(translate.x));
+            this.translateXEl.val(translate.x.toString());
+        }
+
+        if (translate.y != null) {
+            this.translateYSliderEl.slider('option', 'value', Number(translate.y));
+            this.translateYEl.val(translate.y.toString());
         }
     };
 
@@ -6817,6 +7061,8 @@ var ImageLayer = (function (_super) {
         newLayer.globalShape.id = obj.id;
         newLayer.parent = obj._parent;
         newLayer.nesting = obj.nesting;
+        newLayer.isMultipleEdit = obj.isMultipleEdit;
+        newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
 
         obj._keyframes.forEach(function (k, i) {
             if (k._timestamp != 0) {
@@ -7394,6 +7640,8 @@ var RectangleLayer = (function (_super) {
         newLayer.globalShape.id = obj.id;
         newLayer.parent = obj._parent;
         newLayer.nesting = obj.nesting;
+        newLayer.isMultipleEdit = obj.isMultipleEdit;
+        newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
 
         obj._keyframes.forEach(function (k, i) {
             if (k._timestamp != 0) {
@@ -7473,7 +7721,8 @@ var SvgGallery = (function () {
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
-            scale: 1
+            scale: 1,
+            translate: { x: 0, y: 0 }
         };
 
         var xmlString = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><circle fill="#ff0" stroke="#000" stroke-width="10" stroke-miterlimit="10" cx="382.553" cy="306.786" r="217.961"/><path fill="#ff0" stroke="#000" stroke-width="10" stroke-miterlimit="10" d="M244.69 329.602C315.562 498.534 484.494 479.116 531.582 333"/><ellipse cx="337.592" cy="233.485" rx="21.359" ry="49.272"/><ellipse cx="422.592" cy="232.485" rx="21.359" ry="49.272"/></svg>';
@@ -7589,6 +7838,8 @@ var SvgLayer = (function (_super) {
         newLayer.globalShape.id = obj.id;
         newLayer.parent = obj._parent;
         newLayer.nesting = obj.nesting;
+        newLayer.isMultipleEdit = obj.isMultipleEdit;
+        newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
 
         obj._keyframes.forEach(function (k, i) {
             if (k._timestamp != 0) {
@@ -7813,6 +8064,8 @@ var TextLayer = (function (_super) {
         newLayer.globalShape.id = obj.id;
         newLayer.parent = obj._parent;
         newLayer.nesting = obj.nesting;
+        newLayer.isMultipleEdit = obj.isMultipleEdit;
+        newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
 
         obj._keyframes.forEach(function (k, i) {
             if (k._timestamp != 0) {

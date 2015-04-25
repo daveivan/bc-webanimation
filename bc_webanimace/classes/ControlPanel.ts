@@ -14,9 +14,10 @@ class ControlPanel {
 
     private toolPanelEl: JQuery = $('<div>').addClass('tool-panel');
 
+    private newProjectEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn').addClass('new').addClass('tooltip').html('<i class="fa fa-eraser"></i>').attr('title', 'Nový projekt');
     private selectToolEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
     private createDivToolEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('create-div').html('<i class="fa fa-stop"></i>').attr('title', 'Nový kontejner');
-    private generateCodeEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-code"></i>').attr('title', 'Vygenerovat kód');
+    private generateCodeEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('generate-code').html('<i class="fa fa-download"></i>').attr('title', 'Vygenerovat kód');
     private insertImageEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('insert-image').html('<i class="fa fa-file-image-o"></i>').attr('title', 'Vložit obrázek');
     private insertTextEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-text').html('<i class="fa fa-font"</i>').attr('title', 'Vložit text');
     private insertSVGEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip insert-svg').html('<i class="fa fa-file-code-o"></i>').attr('title', 'Vložit kód s SVG');
@@ -60,6 +61,11 @@ class ControlPanel {
     private scaleEl: JQuery = $('<input>').attr('id', 'scale-input');
     private scaleSliderEl: JQuery = $('<div>').addClass('scale-slider');
 
+    private translateXEl: JQuery = $('<input>').attr('id', 'translatex').addClass('translate');
+    private translateXSliderEl: JQuery = $('<div>').addClass('translate-slider').attr('id', 'translatex');
+    private translateYEl: JQuery = $('<input>').attr('id', 'translatey').addClass('translate');
+    private translateYSliderEl: JQuery = $('<div>').addClass('translate-slider').attr('id', 'translatey');
+
     private rotateXEl: JQuery = $('<input>').attr('id', 'rx').addClass('number rotate');
     private rotateXSliderEl: JQuery = $('<div>').addClass('rotate-slider').attr('id', 'rx');
     private rotateYEl: JQuery = $('<input>').attr('id', 'ry').addClass('number rotate');
@@ -87,8 +93,10 @@ class ControlPanel {
         this.app = app;
         this.containerEl = container;
 
+        this.toolPanelEl.append(this.newProjectEl);
         this.toolPanelEl.append(this.loadEl);
         this.toolPanelEl.append(this.saveEl);
+        this.toolPanelEl.append(this.generateCodeEl);
         this.toolPanelEl.append($('<div>').addClass('deliminer'));
         this.toolPanelEl.append(this.selectToolEl);
         this.toolPanelEl.append(this.createDivToolEl);
@@ -96,7 +104,6 @@ class ControlPanel {
         this.toolPanelEl.append(this.insertTextEl);
         this.toolPanelEl.append(this.insertSVGEl);
         this.toolPanelEl.append(this.svgGalleryEl);
-        this.toolPanelEl.append(this.generateCodeEl);
         this.containerEl.append(this.toolPanelEl);
 
         this.controlPanelEl.append(this.mainPanel);
@@ -327,6 +334,23 @@ class ControlPanel {
         skew.append(expand);
         this.controlPanelEl.append(skew);
 
+        //translate
+        var translate: JQuery = this.itemControlEl.clone();
+        translate.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>2D Translate</h2></a>').addClass('control-rotate');
+        var expand: JQuery = $('<div>').addClass('expand');
+        var x: JQuery = $('<span>').html('<p>x:</p>').addClass('group-form');
+        x.append(this.translateXSliderEl);
+        x.append(this.translateXEl);
+        x.append(' px');
+        expand.append(x);
+        var y: JQuery = $('<span>').html('<p>y:</p>').addClass('group-form');
+        y.append(this.translateYSliderEl);
+        y.append(this.translateYEl);
+        y.append(' px');
+        expand.append(y);
+        translate.append(expand);
+        this.controlPanelEl.append(translate);
+
         this.containerEl.append(this.controlPanelEl);
 
         $(window).resize(() => {
@@ -483,6 +507,16 @@ class ControlPanel {
             this.app.workspace.set3DRotate('z', parseInt($(event.target).val()));
         });
 
+        this.translateXEl.on('change', (event: JQueryEventObject) => {
+            this.translateXSliderEl.slider('value', $(event.target).val());
+            this.app.workspace.setTranslate('x', parseInt($(event.target).val()));
+        });
+
+        this.translateYEl.on('change', (event: JQueryEventObject) => {
+            this.translateYSliderEl.slider('value', $(event.target).val());
+            this.app.workspace.setTranslate('y', parseInt($(event.target).val()));
+        });
+
         this.skewXEl.on('change', (event: JQueryEventObject) => {
             this.skewXSliderEl.slider('value', $(event.target).val());
             this.app.workspace.setSkew('x', parseInt($(event.target).val()));
@@ -606,6 +640,17 @@ class ControlPanel {
             this.app.workspace.onChangeMode();
         });
 
+        this.newProjectEl.on('click', (event: JQueryEventObject) => {
+            if (this.app.timeline.layers.length > 0) {
+                if (confirm('Přejete si před vytvořením nového projektu uložit stávající projekt?')) {
+                    this.saveEl.click();
+                }
+                this.app.timeline.layers = new Array<Layer>();
+                this.app.timeline.renderLayers();
+                this.app.workspace.renderShapes();
+            }
+        });
+
         this.loadEl.on('click', (event: JQueryEventObject) => {
             if ($(event.target).closest('a').hasClass('active')) {
                 $(event.target).closest('a').removeClass('active');
@@ -652,6 +697,7 @@ class ControlPanel {
 
             var arr: Array<any> = new Array<any>();
             arr.push({ x: this.app.workspace.workspaceSize.width, y: this.app.workspace.workspaceSize.height });
+            arr.push(this.app.timeline.repeat);
             arr.push(this.app.timeline.layers);
             var toSave = JSON.stringify(arr);
 
@@ -661,7 +707,7 @@ class ControlPanel {
                 var datetime: string = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
                 datetime += '_' + now.getHours() + '.' + now.getMinutes();
 
-                saveAs(blob, "animation_" + datetime + ".json");   
+                saveAs(blob, "animation_project_" + datetime + ".json");   
             }
         });
 
@@ -697,6 +743,18 @@ class ControlPanel {
                     $('input#' + $(event.target).attr('id')).val(ui.value).change();
                 },
             });
+
+            $('.translate-slider').slider({
+                min: -100,
+                max: 100,
+                step: 1,
+                value: 0,
+                slide: (event, ui) => {
+                    $('input#' + $(event.target).attr('id')).val(ui.value).change();
+                },
+            });
+
+            $('.translate').val('0');
 
             $('.rotate').val('0');
 
@@ -857,6 +915,18 @@ class ControlPanel {
         if (skew.y != null) {
             this.skewYSliderEl.slider('option', 'value', Number(skew.y));
             this.skewYEl.val(skew.y.toString());            
+        }
+    }
+
+    updateTranslate(translate: _2d) {
+        if (translate.x != null) {
+            this.translateXSliderEl.slider('option', 'value', Number(translate.x));
+            this.translateXEl.val(translate.x.toString());
+        }
+
+        if (translate.y != null) {
+            this.translateYSliderEl.slider('option', 'value', Number(translate.y));
+            this.translateYEl.val(translate.y.toString());
         }
     }
 

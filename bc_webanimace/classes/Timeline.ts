@@ -383,6 +383,10 @@ class Timeline
                         y: k.shape.parameters.origin.y,
                     },
                     scale: k.shape.parameters.scale,
+                    translate: {
+                        x: k.shape.parameters.translate.x,
+                        y: k.shape.parameters.translate.y,
+                    }
                 }
 
                 if (layer.type == Type.DIV) {
@@ -493,7 +497,7 @@ class Timeline
         $(this.layersFooterEl).append(this.deleteKeyframeEl);
 
         $(this.layersFooterEl).append($('<a href="#" class="performanceTest">Perf. test</a>').on('click', (e: JQueryEventObject) => {
-            this.app.workspace.performanceTest(5);
+            this.app.workspace.performanceTest(50);
         }));
 
         $(this.timelineFooterEl).append(this.layersFooterEl);
@@ -1282,6 +1286,18 @@ class Timeline
 
     get repeat() {
         return this._repeat;
+    }
+
+    set repeat(r: boolean) {
+        this._repeat = r;
+        if (this._repeat) {
+            $('#repeat').prop('checked', true);
+        } else {
+            $('#repeat').prop('checked', false);
+        }
+
+        $('#repeat').change();
+
     }
 
     getSelectedKeyframeID(idLayer: number) {

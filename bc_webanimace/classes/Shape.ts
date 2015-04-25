@@ -124,4 +124,12 @@
     setScale(val: number) {
         this._parameters.scale = val;
     }
+
+    setTranslateX(val: number) {
+        this._parameters.translate.x = val;
+    }
+
+    setTranslateY(val: number) {
+        this._parameters.translate.y = val;
+    }
 }  

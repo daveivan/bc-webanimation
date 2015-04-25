@@ -17,13 +17,17 @@ class Workspace {
 
     private workspaceOverlay: JQuery = $('<div>').addClass('workspace-overlay');
     private scopeOverlay: JQuery = $('<div>').addClass('overlay-scope overlay-clickable');
-    private uploadArea: JQuery = $('<div>').addClass('upload-area').html('<p>Sem přetáhněte obrázek</p>');
-    private uploadBtn: JQuery = $('<input type="file"></input>').addClass('pick-image');
+    private uploadAreaWrapper: JQuery = $('<div>');
+    private uploadArea: JQuery = $('<div>').addClass('upload-area bigger').html('Sem přetáhněte obrázek nebo klikněte pro výběr souboru');
+    private uploadBtn: JQuery = $('<input type="file"></input>').css('display', 'none');
     private svgTextArea: JQuery = $('<div>').addClass('svg-area');
-    private svgInsertBtn: JQuery = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit SVG');
+    private svgInsertBtn: JQuery = $('<a>').addClass('btn svg-btn').attr('href', '#').html('Vložit SVG z textového pole');
+    private svgUploadArea: JQuery = $('<div>').addClass('upload-area').html('Sem přetáhněte SVG obrázek nebo klikněte');
+    private svgUploadInput: JQuery = $('<input type="file"></input>').addClass('svgfile').css('display', 'none');
     private svgText: JQuery = $('<textarea>');
-    private loadArea: JQuery = $('<div>').addClass('load-area').html('<p>Sem přetáhněte .json soubor s uloženými objekty</p>');
-    private loadBtn: JQuery = $('<input type="file"></input>').addClass('pick-json');
+    private loadAreaWrapper: JQuery = $('<div>');
+    private loadArea: JQuery = $('<div>').addClass('upload-area bigger').html('Sem přetáhněte uložený projekt v souboru JSON nebo klikněte pro výběr souboru.');
+    private loadBtn: JQuery = $('<input type="file"></input>').css('display', 'none');
     private contextMenuEl: JQuery = $('<div>').addClass('context-menu');
     private menuItemDelete: JQuery = $('<a>').addClass('menu-item menu-delete').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat objekt');
     private menuItemToBackground: JQuery = $('<a>').addClass('menu-item menu-tobackground').attr('href', '#').html('<i class="fa fa-long-arrow-down"></i> Níže do pozadí');
@@ -41,9 +45,14 @@ class Workspace {
         this.workspaceContainer = workspaceContainer;
         this.workspaceContainerOriginal = workspaceContainer;
         this.workspaceWrapper = workspaceWrapper;
-        this.uploadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.uploadBtn));
-        this.loadArea.append(($('<p>').addClass('perex').html('nebo vyberte soubor ')).append(this.loadBtn));
-        this.svgTextArea.append('Vložte XML kód');
+        this.uploadAreaWrapper.append(this.uploadArea);
+        this.uploadAreaWrapper.append(this.uploadBtn);
+        this.loadAreaWrapper.append(this.loadArea);
+        this.loadAreaWrapper.append(this.loadBtn);
+        this.svgTextArea.append('nahrát SVG ze souboru');
+        this.svgTextArea.append(this.svgUploadArea);
+        this.svgTextArea.append(this.svgUploadInput);
+        this.svgTextArea.append('nebo vložte XML kód');
         this.svgTextArea.append(this.svgText);
         this.svgTextArea.append(this.svgInsertBtn);
 
@@ -618,7 +627,8 @@ class Workspace {
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
             scale: 1,
-        };
+            translate: { x: 0, y: 0 },
+    };
 
         new_object.css({
             'width': width,
@@ -729,6 +739,10 @@ class Workspace {
                         height: this.computeParameter(interval['left'].shape.parameters.relativeSize.height, interval['right'].shape.parameters.relativeSize.height, bezier(p)),
                     },
                     scale: this.computeOpacity(interval['left'].shape.parameters.scale, interval['right'].shape.parameters.scale, bezier(p)),
+                    translate: {
+                        x: this.computeParameter(interval['left'].shape.parameters.translate.x, interval['right'].shape.parameters.translate.x, bezier(p)),
+                        y: this.computeParameter(interval['left'].shape.parameters.translate.y, interval['right'].shape.parameters.translate.y, bezier(p)),
+                    }
                 }
                 
             }
@@ -1116,6 +1130,9 @@ class Workspace {
                         this.app.controlPanel.updateIdEl(this.app.timeline.getLayer(id).idEl);
                         this.app.controlPanel.update3DRotate({ x: shape.parameters.rotate.x, y: shape.parameters.rotate.y, z: shape.parameters.rotate.z });
                         this.app.controlPanel.updateTransformOrigin(shape.parameters.origin.x, shape.parameters.origin.y);
+                        this.app.controlPanel.updateSkew(shape.parameters.skew);
+                        this.app.controlPanel.updateScale(shape.parameters.scale);
+                        this.app.controlPanel.updateTranslate(shape.parameters.translate);
 
                         (this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
                             'left': shape.parameters.origin.x + '%',
@@ -1161,6 +1178,8 @@ class Workspace {
         }
     }
 
+
+    //TODO: upravit klonovani - nove vlastnosti z interpolace
     getCurrentShape(id: number): IShape {
         var shapeEl: JQuery = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
         if (shapeEl.length) {
@@ -1213,6 +1232,10 @@ class Workspace {
                     y: this.getTransformAttr(id, 'origin').y,
                 },
                 scale: this.getTransformAttr(id, 'scale'),
+                translate: {
+                    x: this.getTransformAttr(id, 'translate').x,
+                    y: this.getTransformAttr(id, 'translate').y,
+                }
         };
 
             //console.log(shapeEl.attr('data-opacity'));
@@ -1564,6 +1587,42 @@ class Workspace {
         }                   
     }
 
+    setTranslate(type: string, value: number) {
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
+            }
+            if (keyframe != null) {
+                if (type === 'x') {
+                    keyframe.shape.setTranslateX(value);
+                } else if (type === 'y') {
+                    keyframe.shape.setTranslateY(value);
+                }
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
+                        if (type === 'x') {
+                            k.shape.setTranslateX(value);
+                        } else if (type === 'y') {
+                            k.shape.setTranslateY(value);
+                        }
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
+            }
+
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    }
+
     setTransformOrigin(type: string, value: number) {
         console.log('setting transform-origin');
         var layer: Layer = this.getHighlightedLayer();
@@ -1770,13 +1829,12 @@ class Workspace {
     loadMode() {
             this.dialogEl.empty();
             $('body').find(this.dialogEl).remove();
-            this.dialogEl.append(this.loadArea);
+            this.dialogEl.append(this.loadAreaWrapper);
             $('body').append(this.dialogEl);
-        this.dialogEl.dialog({
+            this.dialogEl.dialog({
                 title: 'Nahrát projekt ze souboru',
                 autoOpen: true,
                 draggable: false,
-                height: 400,
                 width: 550,
                 resizable: false,
                 modal: true,
@@ -1791,10 +1849,6 @@ class Workspace {
             });
 
             //zpracovani souboru
-            $('.load-area > p').on('dragenter', (event: JQueryEventObject) => {
-                console.log('vp');
-                $('.upload-area').addClass('over');
-            });
 
             this.loadArea.on('dragenter', (event: JQueryEventObject) => {
                 console.log('enter');
@@ -1816,11 +1870,16 @@ class Workspace {
                 event.preventDefault();
                 var files = (<DragEvent>event.originalEvent).dataTransfer.files;
                 this.uploadFile(files);
+                $(event.target).removeClass('over');
             });
 
             this.loadBtn.on('change', (event: any) => {
                 this.uploadFile(event.target.files);
             });
+
+        this.loadArea.on('click', (event: JQueryEventObject) => {
+            this.loadBtn.click();
+        });
     }
 
     loadModeOld(active: boolean = true) {
@@ -1859,6 +1918,7 @@ class Workspace {
                 event.preventDefault();
                 var files = (<DragEvent>event.originalEvent).dataTransfer.files;
                 this.uploadFile(files);
+                $(event.target).removeClass('over');
             });
 
             this.loadBtn.on('change', (event: any) => {
@@ -1905,10 +1965,13 @@ class Workspace {
         var maxCount = 0;
 
         //parse fron JSON
-        var workspaceSize =  JSON.parse(data)[0];
-        var objLayers = JSON.parse(data)[1];
+        var workspaceSize = JSON.parse(data)[0];
+        var repeatAnimation = JSON.parse(data)[1];
+        var objLayers = JSON.parse(data)[2];
         this.setWorkspaceDimension(parseInt(workspaceSize.x), parseInt(workspaceSize.y));
         this.app.controlPanel.updateWorkspaceDimension(this._workspaceSize);
+        this.app.timeline.repeat = repeatAnimation;
+
         objLayers.forEach((obj: any, i: number) => {
             if (obj._type == Type.DIV) {
                 var newLayer: Layer = RectangleLayer.parseJson(obj);
@@ -1943,7 +2006,7 @@ class Workspace {
             title: 'Vložit SVG z kódu',
             autoOpen: true,
             draggable: false,
-            height: 400,
+            height: 440,
             width: 550,
             resizable: false,
             modal: true,
@@ -1957,85 +2020,121 @@ class Workspace {
             },
         });
 
+        this.svgUploadArea.on('dragenter', (event: JQueryEventObject) => {
+            console.log('enter');
+            $(event.target).addClass('over');
+        });
+
+        this.svgUploadArea.on('dragleave', (event: JQueryEventObject) => {
+            $(event.target).removeClass('over');
+        });
+
+        this.svgUploadArea.on('dragover', (event: JQueryEventObject) => {
+            console.log('over');
+            event.preventDefault();
+        });
+
+        this.svgUploadArea.on('drop', (event: JQueryEventObject) => {
+            console.log('upload');
+            event.stopPropagation();
+            event.preventDefault();
+            var files = (<DragEvent>event.originalEvent).dataTransfer.files;
+            this.uploadSvgFile(files);
+            $(event.target).removeClass('over');
+        });
+
+        this.svgUploadInput.on('change', (event: any) => {
+            this.uploadSvgFile(event.target.files);
+        });
+
+        this.svgUploadArea.on('click', (event: JQueryEventObject) => {
+            this.svgUploadInput.click();
+        });
+
         this.svgInsertBtn.on('click', (e: JQueryEventObject) => {
-            console.log('Inserting SVG');
-
             var xmlString = this.svgText.val();
-            var parser: DOMParser = new DOMParser();
-            var doc: XMLDocument = parser.parseFromString(xmlString, "image/svg+xml");
+            this.saveSvgText(xmlString);
+        });
+    }
 
-            if (!this.isParseError(doc)) {
+    saveSvgText(svg: string) {
+        console.log('Inserting SVG');
 
-                var width: number = 150;
-                var height: number = 150;
+        var xmlString = svg;
+        var parser: DOMParser = new DOMParser();
+        var doc: XMLDocument = parser.parseFromString(xmlString, "image/svg+xml");
 
-                //if set viewbox, parse width and height
-                for (var j: number = 0; j < doc.childNodes.length; j++) {
-                    var child: Node = doc.childNodes[j];
-                    if (child.nodeName === 'svg' && child.attributes) {
-                        for (var i: number = 0; i < child.attributes.length; i++) {
-                            var attr: Attr = child.attributes[i];
-                            if (attr.name == 'viewBox') {
-                                var view = attr.value.match(/-?[\d\.]+/g);
-                                width = parseFloat(view[2]);
-                                height = parseFloat(view[3]);
-                            }
+        if (!this.isParseError(doc)) {
+
+            var width: number = 150;
+            var height: number = 150;
+
+            //if set viewbox, parse width and height
+            for (var j: number = 0; j < doc.childNodes.length; j++) {
+                var child: Node = doc.childNodes[j];
+                if (child.nodeName === 'svg' && child.attributes) {
+                    for (var i: number = 0; i < child.attributes.length; i++) {
+                        var attr: Attr = child.attributes[i];
+                        if (attr.name == 'viewBox') {
+                            var view = attr.value.match(/-?[\d\.]+/g);
+                            width = parseFloat(view[2]);
+                            height = parseFloat(view[3]);
                         }
                     }
                 }
-
-                var p: Parameters = {
-                    top: 0,
-                    left: 0,
-                    width: width,
-                    height: height,
-                    relativeSize: { width: ((width / this.workspaceContainer.width()) * 100), height: ((height / this.workspaceContainer.height()) * 100) },
-                    relativePosition: { top: 0, left: 0 },
-                    background: { r: 255, g: 255, b: 255, a: 0 },
-                    opacity: 1,
-                    borderRadius: [0, 0, 0, 0],
-                    rotate: { x: 0, y: 0, z: 0 },
-                    skew: { x: 0, y: 0 },
-                    origin: { x: 50, y: 50 },
-                    zindex: this.app.timeline.layers.length,
-                    scale: 1,
-                };
-
-                //var svg: IShape = new Svg(p, doc);
-                var svg: IShape = new Svg(p, xmlString);
-                var layer: Layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), svg);
-                var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
-                layer.parent = parent;
-                if (layer.parent) {
-                    layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
-                }
-                var idLayer: number = this.app.timeline.addLayer(layer);
-                this.renderSingleShape(idLayer);
-                this.transformShapes();
-                this.highlightShape([idLayer]);
-
-                this.dialogEl.remove();
-                this.app.controlPanel.Mode = Mode.SELECT;
-                this.svgText.val('');
-                $('.tool-btn').removeClass('active');
-                $('.tool-btn.select').addClass('active');
-                this.onChangeMode();
-            } else {
-                alert('Nevalidní kód');
             }
-        });
+
+            var p: Parameters = {
+                top: 0,
+                left: 0,
+                width: width,
+                height: height,
+                relativeSize: { width: ((width / this.workspaceContainer.width()) * 100), height: ((height / this.workspaceContainer.height()) * 100) },
+                relativePosition: { top: 0, left: 0 },
+                background: { r: 255, g: 255, b: 255, a: 0 },
+                opacity: 1,
+                borderRadius: [0, 0, 0, 0],
+                rotate: { x: 0, y: 0, z: 0 },
+                skew: { x: 0, y: 0 },
+                origin: { x: 50, y: 50 },
+                zindex: this.app.timeline.layers.length,
+                scale: 1,
+                translate: { x: 0, y: 0 },
+            };
+
+            //var svg: IShape = new Svg(p, doc);
+            var svgShape: IShape = new Svg(p, xmlString);
+            var layer: Layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), svgShape);
+            var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
+            layer.parent = parent;
+            if (layer.parent) {
+                layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
+            }
+            var idLayer: number = this.app.timeline.addLayer(layer);
+            this.renderSingleShape(idLayer);
+            this.transformShapes();
+            this.highlightShape([idLayer]);
+
+            this.dialogEl.remove();
+            this.app.controlPanel.Mode = Mode.SELECT;
+            this.svgText.val('');
+            $('.tool-btn').removeClass('active');
+            $('.tool-btn.select').addClass('active');
+            this.onChangeMode();
+        } else {
+            alert('Nevalidní kód');
+        }     
     }
 
     imageMode() {
         this.dialogEl.empty();
         $('body').find(this.dialogEl).remove();
-        this.dialogEl.append(this.uploadArea);
+        this.dialogEl.append(this.uploadAreaWrapper);
         $('body').append(this.dialogEl);
         this.dialogEl.dialog({
             title: 'Nahrát obrázek',
             autoOpen: true,
             draggable: false,
-            height: 400,
             width: 550,
             resizable: false,
             modal: true,
@@ -2047,11 +2146,6 @@ class Workspace {
                 $('.tool-btn').removeClass('active');
                 $('.tool-btn.select').addClass('active');
             },
-        });
-
-        $('.upload-area > p').on('dragenter', (event: JQueryEventObject) => {
-            console.log('vp');
-            $('.upload-area').addClass('over');
         });
 
         this.uploadArea.on('dragenter', (event: JQueryEventObject) => {
@@ -2074,12 +2168,31 @@ class Workspace {
             event.preventDefault();
             var files = (<DragEvent>event.originalEvent).dataTransfer.files;
             this.uploadImage(files);
+            $(event.target).removeClass('over');
         });
 
         this.uploadBtn.on('change', (event: any) => {
             console.log('pick image');
             this.uploadImage(event.target.files);
         });
+
+        this.uploadArea.on('click', (event: JQueryEventObject) => {
+            this.uploadBtn.click();
+        });
+    }
+
+    uploadSvgFile(files: FileList) {
+        var file: File = files[0];
+        if (file.type.match('image/svg.*')) {
+            var reader = new FileReader();
+            reader.onload = (e) => {
+                this.saveSvgText(e.target.result);
+            }
+
+            reader.readAsText(file);
+        } else {
+            alert('Nesprávný formát souboru');
+        }
     }
 
     uploadImage(files: FileList) {
@@ -2133,7 +2246,8 @@ class Workspace {
                     origin: { x: 50, y: 50 },
                     zindex: this.app.timeline.layers.length,
                     scale: 1,
-                };
+                    translate: { x: 0, y: 0 },
+            };
                 var image: IShape = new Img(p, dataurl);
                 var layer: Layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), image);
                 var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
@@ -2186,14 +2300,15 @@ class Workspace {
                             height: img.height,
                             relativeSize: { width: ((img.width / this.workspaceContainer.width()) * 100), height: ((img.height / this.workspaceContainer.height()) * 100) },
                             relativePosition: { top: 0, left: 0 },
-                            background: {r: 255, g: 255, b: 255, a: 0},
+                            background: { r: 255, g: 255, b: 255, a: 0 },
                             opacity: 1,
                             borderRadius: [0, 0, 0, 0],
-                            rotate: {x: 0, y: 0, z: 0},
-                            skew: {x: 0, y: 0},
-                            origin: {x: 50, y: 50},
+                            rotate: { x: 0, y: 0, z: 0 },
+                            skew: { x: 0, y: 0 },
+                            origin: { x: 50, y: 50 },
                             zindex: this.app.timeline.layers.length,
                             scale: 1,
+                            translate: { x: 0, y: 0 },
                     };
                         var image: IShape = new Img(p, e.target.result);
                         var layer: Layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), image);
@@ -2246,9 +2361,10 @@ class Workspace {
             rotate: { x: 0, y: 0, z: 0 },
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
-            zindex: this.app.timeline.layers.length,    
-            scale: 1,     
-        }
+            zindex: this.app.timeline.layers.length,
+            scale: 1,
+            translate: { x: 0, y: 0 },
+    }
 
         var shape: IShape = new TextField(params, null, this.fontParameters.color, this.fontParameters.size, this.fontParameters.fontFamily);
         var layer: Layer = new TextLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), shape);
@@ -2526,6 +2642,7 @@ class Workspace {
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
+                translate: { x: 0, y: 0 },
         };
 
             var shape: IShape = new Rectangle(params);
@@ -2554,6 +2671,7 @@ class Workspace {
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
+                translate: { x: 0, y: 0 },
             };
 
             layer.addKeyframe(new Rectangle(paramsNew), 4000, this.getBezier());

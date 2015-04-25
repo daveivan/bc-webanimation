@@ -58,6 +58,7 @@ interface repeatParams {
     skew: boolean;
     origin: boolean;
     scale: boolean;
+    translate: boolean;
 }
 
 interface repeatTextParams {

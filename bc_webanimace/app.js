@@ -1558,6 +1558,14 @@ var Timeline = (function () {
             _this.renderAnimationRange();
         });
 
+        this.keyframesEl.on('click', function (event) {
+            if ($(event.target).hasClass('keyframes')) {
+                _this.app.controlPanel.displayMainPanel(false, 'bezier');
+                $('.timing-function').removeClass('selected');
+                $('.keyframe').removeClass('selected');
+            }
+        });
+
         this.playEl.on('click', function (event) {
             _this.playMode = 0 /* PLAY */;
             $('.shape-helper').hide();
@@ -1948,7 +1956,7 @@ var Timeline = (function () {
         $(this.layersFooterEl).append(this.deleteKeyframeEl);
 
         $(this.layersFooterEl).append($('<a href="#" class="performanceTest">Perf. test</a>').on('click', function (e) {
-            _this.app.workspace.performanceTest(50);
+            _this.app.workspace.performanceTest(5);
         }));
 
         $(this.timelineFooterEl).append(this.layersFooterEl);
@@ -2164,14 +2172,16 @@ var Timeline = (function () {
         this.layers.forEach(function (item, index) {
             if (_this.app.workspace.scope == item.parent) {
                 var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', item.id);
+                var textLayerContainer = $('<div>').addClass('textlayer-container');
                 layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
-                layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
+                textLayerContainer.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(item.name));
+                layerItem.append(textLayerContainer);
                 var visibleEl = $('<a>').attr('data-layer', item.id).addClass('action tooltip-right visibility').attr('title', 'Viditelnost').html('<i class="fa fa-eye"></i>').attr('href', '#');
                 var multipleEditEl = $('<a>').attr('data-layer', item.id).addClass('action tooltip-right multiple').attr('title', 'Hromadná editace snímků').html('<i class="fa fa-chain-broken"></i>').attr('href', '#');
                 layerItem.append(($('<span>').addClass('layer-actions')).append(multipleEditEl).append(visibleEl));
 
                 if (item.idEl) {
-                    layerItem.append($('<span>').addClass('div-id').html('#' + item.idEl));
+                    textLayerContainer.append($('<span>').addClass('div-id').html('#' + item.idEl));
                 }
                 _this.layersEl.append(layerItem);
 
@@ -2215,14 +2225,16 @@ var Timeline = (function () {
     Timeline.prototype.renderSingleLayer = function (layer, index) {
         if (this.app.workspace.scope == layer.parent) {
             var layerItem = $('<div>').addClass('layer').attr('id', index).attr('data-id', layer.id);
+            var textLayerContainer = $('<div>').addClass('textlayer-container');
             layerItem.append($('<span>').addClass('handle').html('<i class="fa fa-arrows-v"></i>'));
-            layerItem.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(layer.name));
+            textLayerContainer.append($('<span>').addClass('editable').css('display', 'inline').attr('id', index).html(layer.name));
+            layerItem.append(textLayerContainer);
             var visibleEl = $('<a>').attr('data-layer', layer.id).addClass('action tooltip-right visibility').attr('title', 'Viditelnost').html('<i class="fa fa-eye"></i>').attr('href', '#');
             var multipleEditEl = $('<a>').attr('data-layer', layer.id).addClass('action tooltip-right multiple').attr('title', 'Hromadná editace snímků').html('<i class="fa fa-chain-broken"></i>').attr('href', '#');
             layerItem.append(($('<span>').addClass('layer-actions')).append(multipleEditEl).append(visibleEl));
 
             if (layer.idEl) {
-                layerItem.append($('<span>').addClass('div-id').html('#' + layer.idEl));
+                textLayerContainer.append($('<span>').addClass('div-id').html('#' + layer.idEl));
             }
             this.layersEl.append(layerItem);
 
@@ -3070,6 +3082,10 @@ var Workspace = (function () {
             if (_this.app.controlPanel.Mode == 1 /* CREATE_DIV */) {
                 _this.onDrawSquare(event);
             }
+
+            _this.app.controlPanel.displayMainPanel(false, 'bezier');
+            $('.timing-function').removeClass('selected');
+            $('.keyframe').removeClass('selected');
             //}
         });
 

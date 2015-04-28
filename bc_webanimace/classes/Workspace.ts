@@ -137,6 +137,10 @@ class Workspace {
                 if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
                     this.onDrawSquare(event);     
                 }
+
+            this.app.controlPanel.displayMainPanel(false, 'bezier');
+            $('.timing-function').removeClass('selected');
+            $('.keyframe').removeClass('selected');
             //}   
         });
 

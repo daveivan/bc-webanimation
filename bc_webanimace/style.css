@@ -270,15 +270,20 @@ tr.disabled td {
     background: none;
 }
 
-.editable {
-    position: relative;
-    top: 3px;
-    font-weight: bold;
+.textlayer-container {
     float: left;
     white-space: nowrap;
     width: 250px;
     overflow: hidden;
     text-overflow: ellipsis;
+    height: 100%;
+}
+
+.editable {
+    position: relative;
+    top: 3px;
+    font-weight: bold;
+    float: left;
 }
 
 .editable input {

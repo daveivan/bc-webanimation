@@ -12,6 +12,7 @@
     nesting: number = 0;
     isVisibleOnWorkspace: boolean;
     isMultipleEdit: boolean;
+    lastTransformKeyframe: number = null;
 
     constructor(name: string, fn: Bezier_points, type: Type, shape: IShape = null) {
         this.name = name;
@@ -670,7 +671,7 @@
             var paramsLeft: Parameters = rng['l'].shape.parameters;
             var paramsRight: Parameters = rng['r'].shape.parameters;
 
-            if (paramsLeft.top != paramsRight.top) {
+            if (paramsLeft.top != paramsRight.top || left != this.lastTransformKeyframe) {
                 params['relativePosition']['top'] = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
                 params['top'] = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
                 shape.css({ 'top': params.relativePosition.top + '%' });
@@ -678,7 +679,7 @@
                 //if (showHelpers) //helper.css("top", "-=1");
                     //helper.css({ 'margin': '-1px' });
             }
-            if (paramsLeft.left != paramsRight.left) {
+            if (paramsLeft.left != paramsRight.left || left != this.lastTransformKeyframe) {
                 params['relativePosition']['left'] = this.computeAttr(paramsLeft.relativePosition.left, paramsRight.relativePosition.left, bezier(p));
                 params['left'] = Math.round(this.computeAttr(paramsLeft.left, paramsRight.left, bezier(p)));
                 shape.css({ 'left': params.relativePosition.left + '%' });
@@ -686,14 +687,14 @@
                 //if (showHelpers) //helper.css("left", "-=1");
                     //helper.css({ 'margin': '-1px' });
             }
-            if (paramsLeft.width != paramsRight.width) {
+            if (paramsLeft.width != paramsRight.width || left != this.lastTransformKeyframe) {
                 params['relativeSize']['width'] = this.computeAttr(paramsLeft.relativeSize.width, paramsRight.relativeSize.width, bezier(p));
                 params['width'] = Math.round(this.computeAttr(paramsLeft.width, paramsRight.width, bezier(p)));
                 shape.css({ 'width': params.relativeSize.width + '%' });
                 helper.css({ 'width': params.relativeSize.width + '%' });
                 //if (showHelpers) helper.css("width", "+=2");
             }
-            if (paramsLeft.height != paramsRight.height) {
+            if (paramsLeft.height != paramsRight.height || left != this.lastTransformKeyframe) {
                 params['relativeSize']['height'] = this.computeAttr(paramsLeft.relativeSize.height, paramsRight.relativeSize.height, bezier(p));
                 params['height'] = Math.round(this.computeAttr(paramsLeft.height, paramsRight.height, bezier(p)));
                 shape.css({ 'height': params.relativeSize.height + '%' });
@@ -701,19 +702,19 @@
                 //if (showHelpers) helper.css("height", "+=2");
             }
             var isBg = false;
-            if (paramsLeft.background.r != paramsRight.background.r) {
+            if (paramsLeft.background.r != paramsRight.background.r || left != this.lastTransformKeyframe) {
                 isBg = true;
                 params.background.r = Math.round(this.computeAttr(paramsLeft.background.r, paramsRight.background.r, bezier(p)));
             }
-            if (paramsLeft.background.g != paramsRight.background.g) {
+            if (paramsLeft.background.g != paramsRight.background.g || left != this.lastTransformKeyframe) {
                 isBg = true;
                 params.background.g = Math.round(this.computeAttr(paramsLeft.background.g, paramsRight.background.g, bezier(p)));
             }
-            if (paramsLeft.background.b != paramsRight.background.b) {
+            if (paramsLeft.background.b != paramsRight.background.b || left != this.lastTransformKeyframe) {
                 isBg = true;
                 params.background.b = Math.round(this.computeAttr(paramsLeft.background.b, paramsRight.background.b, bezier(p)));
             }
-            if (paramsLeft.background.a != paramsRight.background.a) {
+            if (paramsLeft.background.a != paramsRight.background.a || left != this.lastTransformKeyframe) {
                 isBg = true;
                 params.background.a = this.computeAttr(paramsLeft.background.a, paramsRight.background.a, bezier(p));
             }
@@ -722,69 +723,69 @@
                 shape.css({ 'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')' });
             }
 
-            if (paramsLeft.opacity != paramsRight.opacity) {
+            if (paramsLeft.opacity != paramsRight.opacity || left != this.lastTransformKeyframe) {
                 params['opacity'] = this.computeAttr(paramsLeft.opacity, paramsRight.opacity, bezier(p));
                 shape.css({ 'opacity': params.opacity });
             }
-            if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0]) {
+            if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
                 shape.css({ 'border-top-left-radius': params.borderRadius[0] });
             }
-            if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1]) {
+            if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
                 shape.css({ 'border-top-right-radius': params.borderRadius[1] });
             }
-            if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2]) {
+            if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
                 shape.css({ 'border-bottom-right-radius': params.borderRadius[2] });
             }
-            if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3]) {
+            if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
                 shape.css({ 'border-bottom-left-radius': params.borderRadius[3] });
             }
 
             var isTransform = false;
-            if (paramsLeft.rotate.x != paramsRight.rotate.x) {
+            if (paramsLeft.rotate.x != paramsRight.rotate.x || left != this.lastTransformKeyframe) {
                 isTransform = true;
                 params['rotate']['x'] = Math.round(this.computeAttr(paramsLeft.rotate.x, paramsRight.rotate.x, bezier(p)));
             }
-            if (paramsLeft.rotate.y != paramsRight.rotate.y) {
+            if (paramsLeft.rotate.y != paramsRight.rotate.y || left != this.lastTransformKeyframe) {
                 isTransform = true;
                 params['rotate']['y'] = Math.round(this.computeAttr(paramsLeft.rotate.y, paramsRight.rotate.y, bezier(p)));
             }
-            if (paramsLeft.rotate.z != paramsRight.rotate.z) {
+            if (paramsLeft.rotate.z != paramsRight.rotate.z || left != this.lastTransformKeyframe) {
                 isTransform = true;
                 params['rotate']['z'] = Math.round(this.computeAttr(paramsLeft.rotate.z, paramsRight.rotate.z, bezier(p)));
             }
-            if (paramsLeft.skew.x != paramsRight.skew.x) {
+            if (paramsLeft.skew.x != paramsRight.skew.x || left != this.lastTransformKeyframe) {
                 isTransform = true;
                 params['skew']['x'] = Math.round(this.computeAttr(paramsLeft.skew.x, paramsRight.skew.x, bezier(p)));
             }
-            if (paramsLeft.skew.y != paramsRight.skew.y) {
+            if (paramsLeft.skew.y != paramsRight.skew.y || left != this.lastTransformKeyframe) {
                 isTransform = true;
                 params['skew']['y'] = Math.round(this.computeAttr(paramsLeft.skew.y, paramsRight.skew.y, bezier(p)));
             }
 
             var isOrigin = false;
-            if (paramsLeft.origin.x != paramsRight.origin.x) {
+            if (paramsLeft.origin.x != paramsRight.origin.x || left != this.lastTransformKeyframe) {
                 isOrigin = true;
                 params['origin']['x'] = this.computeAttr(paramsLeft.origin.x, paramsRight.origin.x, bezier(p));
             }
-            if (paramsLeft.origin.y != paramsRight.origin.y) {
+            if (paramsLeft.origin.y != paramsRight.origin.y || left != this.lastTransformKeyframe) {
                 isOrigin = true;
                 params['origin']['y'] = this.computeAttr(paramsLeft.origin.y, paramsRight.origin.y, bezier(p));
             }
-            if (paramsLeft.scale != paramsRight.scale) {
+            if (paramsLeft.scale != paramsRight.scale || left != this.lastTransformKeyframe) {
                 isTransform = true;
                 params['scale'] = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
             }
 
-            if (paramsLeft.translate.x != paramsRight.translate.x) {
+            if (paramsLeft.translate.x != paramsRight.translate.x || left != this.lastTransformKeyframe) {
                 isTransform = true;
                 params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
             }
 
-            if (paramsLeft.translate.y != paramsRight.translate.y) {
+            if (paramsLeft.translate.y != paramsRight.translate.y || left != this.lastTransformKeyframe) {
                 isTransform = true;
                 params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
             }
@@ -800,6 +801,8 @@
             }
             shape.removeClass('novisible');
             helper.removeClass('novisible');
+
+            this.lastTransformKeyframe = left;
         } else {
             //Apply nearest keyframe styles
             shape.css({
@@ -854,6 +857,8 @@
                 shape.addClass('novisible');
                 helper.addClass('novisible');
             }
+
+            this.lastTransformKeyframe = null;
         }
 
         shape.attr('data-opacity', params.opacity);

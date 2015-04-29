@@ -1042,15 +1042,17 @@ class Timeline
                 this.keyframesTableEl.find('.keyframe').removeClass('selected');
                 this.keyframesTableEl.find('.timing-function').removeClass('selected');
                 this.app.controlPanel.displayMainPanel(false, 'bezier');
+                $('.shape-helper').hide();
             },
             drag: (event: JQueryEventObject, ui) => {
                 this.pointerPosition = ui.position.left + 1;
-                this.app.workspace.transformShapes();
+                this.app.workspace.transformShapes(false);
             },
             stop: (event: JQueryEventObject, ui) => {
                 var posX = Math.round(ui.position.left / this.keyframeWidth) * this.keyframeWidth;
                 this.pointerPosition = posX;  
                 this.pointerEl.css('left', this.pointerPosition - 1);
+                $('.shape-helper').show();
                 this.app.workspace.transformShapes();
             },
         });

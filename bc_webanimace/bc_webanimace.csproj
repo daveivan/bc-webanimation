@@ -88,6 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="assets\bezier-easing\index.d.ts" />
+    <TypeScriptCompile Include="classes\Animations.ts" />
     <TypeScriptCompile Include="classes\Application.ts" />
     <TypeScriptCompile Include="assets\jquery\jquery.d.ts" />
     <TypeScriptCompile Include="classes\ControlPanel.ts" />

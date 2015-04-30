@@ -129,6 +129,10 @@
         return this._keyframes;
     }
 
+    set keyframes(k: Array<Keyframe>) {
+        this._keyframes = k;
+    }
+
     sortTimestamps() {
         var tmp: Array<number> = this._timestamps.sort((n1, n2) => n1 - n2);
         this._timestamps = tmp;
@@ -1298,6 +1302,10 @@
 
         if (change.rotate || change.skew || change.scale || change.translate) {
             var t: string = "";
+            if (change.translate) {
+                //t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
+                t += 'translate3d(' + p.translate.x + 'px, ' + p.translate.y + 'px, 0)';
+            }
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
@@ -1306,9 +1314,6 @@
             }
             if (change.scale) {
                 t += 'scale(' + p.scale + ') ';
-            }
-            if (change.translate) {
-                t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
             }
             cssObject['transform'] = t;
         }

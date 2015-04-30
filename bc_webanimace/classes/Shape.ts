@@ -132,4 +132,22 @@
     setTranslateY(val: number) {
         this._parameters.translate.y = val;
     }
+
+    setParameterByName(name: string, val: number) {
+        if (name == 'opacity') {
+            this.setOpacity(val);
+        } else if(name == 'rotatez') {
+            this.setRotateZ(val);
+        } else if (name == 'translatey') {
+            this.setTranslateY(val);
+        } else if (name == 'translatex') {
+            this.setTranslateX(val);
+        } else if (name == 'scale') {
+            this.setScale(val);
+        } else if (name == 'originx') {
+            this.setOriginX(val);
+        } else if (name == 'originy') {
+            this.setOriginY(val);
+        }
+    }
 }  

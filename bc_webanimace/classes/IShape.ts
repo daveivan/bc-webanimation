@@ -74,4 +74,6 @@ interface IShape {
     setTranslateX(val: number);
 
     setTranslateY(val: number);
+
+    setParameterByName(name: string, val: number);
 }

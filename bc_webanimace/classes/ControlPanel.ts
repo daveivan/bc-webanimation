@@ -56,6 +56,9 @@ class ControlPanel {
     private workspaceWidthEl: JQuery = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
     private workspaceHeightEl: JQuery = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
 
+    private animationSetSelectEl: JQuery = $('<select>').attr('id', 'text-family').addClass('font-attr');
+    private animationSetSubmitEl: JQuery = $('<a>').attr('href', '#').html('Vložit').addClass('btn animationset-btn');
+
     private idEl: JQuery = $('<input type="text"></input>').attr('id', 'id-el');
 
     private scaleEl: JQuery = $('<input>').attr('id', 'scale-input');
@@ -132,6 +135,22 @@ class ControlPanel {
         var propery10: IProperty = new BezierCurve();
         this.controlPanelEl.append(propery10.renderPropery(this.itemControlEl.clone()));*/
         //NEW NEW NEW /end
+
+        //Animation set
+        var ans = Animations.animations;
+        ans.forEach((v, i) => {
+            this.animationSetSelectEl.append($("<option>").attr('value', i).text(v.name));
+        });
+
+        var animation: JQuery = this.itemControlEl.clone();
+        animation.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Připravené animace</h2></a>');
+        var row: JQuery = $('<div>').addClass('row');
+        row.append(this.animationSetSelectEl);
+        row.append(this.animationSetSubmitEl);
+        var expand: JQuery = $('<div>').addClass('expand');
+        expand.append(row);
+        animation.append(expand);
+        this.controlPanelEl.append(animation);
 
         //Workspace dimensions
         var workspaceXY: JQuery = this.itemControlEl.clone();
@@ -443,8 +462,8 @@ class ControlPanel {
         this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
 
         //init coordinates
-        this.point1.css({ top: '100px', left: '100px' });
-        this.point2.css({ top: '50px', left: '50px' });
+        this.point1.css({ top: '180px', left: '50px' });
+        this.point2.css({ top: '0px', left: '50px' });
 
         var options: any = {
             containment: 'parent',
@@ -613,6 +632,11 @@ class ControlPanel {
                 size: parseFloat(this.fontSizeEl.val()),
             }, false);
         });
+
+        this.animationSetSubmitEl.on('click', (e: JQueryEventObject) => {
+            this.app.timeline.insertAnimationSet(Animations.animations[this.animationSetSelectEl.val()]);
+        });
+
 
         this.selectToolEl.on('click', (event: JQueryEventObject) => {
             this._mode = Mode.SELECT;

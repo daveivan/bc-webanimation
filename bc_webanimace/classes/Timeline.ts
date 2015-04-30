@@ -52,7 +52,7 @@ class Timeline
     private menuCreateKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Vytvořit nový snímek');
     private menuDeleteKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat snímek');
     private menuCopyKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-copy"></i> Kopírovat snímek');
-    private menuPasteKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Vložit snímekze schránky');
+    private menuPasteKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Vložit snímek ze schránky');
     private menuReplaceKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Nahradit snímkem ze schránky');
 
     private menuRenameLayer: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-pencil"></i> Přejmenovat vrstvu');
@@ -350,7 +350,60 @@ class Timeline
         });
     }
 
-    pasteKeyframe(position: number) {
+    insertAnimationSet(animation) {
+        var currentLayerId: number = this.layersEl.find('.selected').first().data('id');
+        var layer: Layer = this.getLayer(currentLayerId);
+        if (!layer) {
+            alert('Vyberte nějakou vrstvu');
+        } else {
+            var keyframes: Array<Keyframe> = layer.getAllKeyframes();
+
+            //if layer has keyframe, delete it except first
+            var allow: boolean = true;
+            if (keyframes.length > 1) {
+                allow = confirm('Aplikovat na vrstvu animaci? Stávající snímky budou smazány!');
+                if (allow) {
+
+                    for (var i = keyframes.length-1; i > 0; i--) {
+                        layer.deleteKeyframe(i);
+                    }
+                }
+            }
+
+            if (allow) {
+                //iterate keyframes
+                animation.keyframes.forEach((k, i) => {
+                    //iterate timestamps
+                    k.timestamp.forEach((t, it) => {
+                        //create keyframe by copying
+                        this.copyKeyframe = { layer: layer.id, keyframe: 0 };
+                        var newKeyframe: Keyframe = null;
+                        if (t == 0) {
+                            newKeyframe = layer.getKeyframe(0);
+                        } else {
+                            newKeyframe = this.pasteKeyframe(t);
+                        }
+
+                        //insert bezier
+                        if (k.bezier) {
+                            newKeyframe.timing_function = k.bezier;
+                        }
+
+                        //iterate new parameters
+                        for (var name in k.parameters) {
+                            newKeyframe.shape.setParameterByName(name, k.parameters[name]);
+                        }
+
+                        this.copyKeyframe = null;
+                    });
+                });
+
+                this.renderLayers();   
+            }
+        }
+    }
+
+    pasteKeyframe(position: number): Keyframe {
         var layer: Layer = this.getLayer(this.copyKeyframe.layer);
         if (layer) {
             var k: Keyframe = layer.getKeyframe(this.copyKeyframe.keyframe);
@@ -420,9 +473,15 @@ class Timeline
                             currentKeyframe.timing_function = k.timing_function;
                         }
                     }
+
+                    return currentKeyframe;
+                } else {
+                    return newKeyframe;
                 }
             }
+            return null;
         }
+        return null;
     }
 
     showPause() {
@@ -997,6 +1056,7 @@ class Timeline
             this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
             //highlight selected shapes
             var selectedLayersID: Array<number> = this.layersEl.find('.selected').map(function () { return $(this).data('id'); }).get();
+            
             this.app.workspace.highlightShape(selectedLayersID);
         }
     }

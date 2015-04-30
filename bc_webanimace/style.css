@@ -1301,15 +1301,20 @@ a.menu-item.disabled:hover {
   transition: all 0.3s ease 0s;
   -moz-transition: all 0.3s ease 0s;
   -webkit-transition: all 0.3s ease 0s;
+    text-shadow: none;
 }
 
-.btn.svg-btn, .ui-button, .download-btn {
+.btn.svg-btn, .ui-button, .download-btn, .animationset-btn {
   background: none repeat scroll 0 0 #2DB6CF !important;
   color: #FFFFFF;
 }
-.btn.svg-btn:hover, .ui-button:hover, .download-btn:hover {
+.btn.svg-btn:hover, .ui-button:hover, .download-btn:hover, .animationset-btn:hover {
   background: none repeat scroll 0 0 #444444 !important;
   color: #FFFFFF;
+}
+
+.animationset-btn {
+    padding: 5px 7px !important;
 }
 
 .repeat-icon {

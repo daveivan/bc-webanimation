@@ -1,4 +1,237 @@
-﻿var Layer = (function () {
+﻿var Animations = (function () {
+    function Animations() {
+    }
+    Animations.animations = [
+        {
+            name: 'flash',
+            keyframes: [
+                {
+                    timestamp: [0, 500, 1000],
+                    parameters: {
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [250, 750],
+                    parameters: {
+                        opacity: 0
+                    }
+                }
+            ]
+        },
+        {
+            name: 'bounce',
+            keyframes: [
+                {
+                    timestamp: [0, 400, 1060, 1600, 2000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1.000 },
+                    parameters: {
+                        translatey: 0,
+                        originx: 50,
+                        originy: 100
+                    }
+                },
+                {
+                    timestamp: [800, 860],
+                    bezier: { p0: 0.755, p1: 0.050, p2: 0.855, p3: 0.060 },
+                    parameters: {
+                        translatey: -30,
+                        originx: 50,
+                        originy: 100
+                    }
+                },
+                {
+                    timestamp: [1400],
+                    bezier: { p0: 0.755, p1: 0.050, p2: 0.855, p3: 0.060 },
+                    parameters: {
+                        translatey: -15,
+                        originx: 50,
+                        originy: 100
+                    }
+                },
+                {
+                    timestamp: [1800],
+                    parameters: {
+                        translatey: -4,
+                        originx: 50,
+                        originy: 100
+                    }
+                }
+            ]
+        },
+        {
+            name: 'pulse',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        scale: 1
+                    }
+                },
+                {
+                    timestamp: [500],
+                    parameters: {
+                        scale: 1.05
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        scale: 1
+                    }
+                }
+            ]
+        },
+        {
+            name: 'shake',
+            keyframes: [
+                {
+                    timestamp: [0, 1000],
+                    parameters: {
+                        translatex: 0
+                    }
+                },
+                {
+                    timestamp: [100, 300, 500, 700, 900],
+                    parameters: {
+                        translatex: -10
+                    }
+                },
+                {
+                    timestamp: [200, 400, 600, 800],
+                    parameters: {
+                        translatex: 10
+                    }
+                }
+            ]
+        },
+        {
+            name: 'swing',
+            keyframes: [
+                {
+                    timestamp: [200],
+                    parameters: {
+                        rotatez: 15,
+                        originx: 50,
+                        originy: 0
+                    }
+                },
+                {
+                    timestamp: [400],
+                    parameters: {
+                        rotatez: -10,
+                        originx: 50,
+                        originy: 0
+                    }
+                },
+                {
+                    timestamp: [600],
+                    parameters: {
+                        rotatez: 5,
+                        originx: 50,
+                        originy: 0
+                    }
+                },
+                {
+                    timestamp: [800],
+                    parameters: {
+                        rotatez: -5,
+                        originx: 50,
+                        originy: 0
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        rotatez: 0,
+                        originx: 50,
+                        originy: 0
+                    }
+                }
+            ]
+        },
+        {
+            name: 'tada',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        scale: 1
+                    }
+                },
+                {
+                    timestamp: [100, 200],
+                    parameters: {
+                        scale: 0.9,
+                        rotatez: -3
+                    }
+                },
+                {
+                    timestamp: [300, 500, 700, 900],
+                    parameters: {
+                        scale: 1.1,
+                        rotatez: 3
+                    }
+                },
+                {
+                    timestamp: [400, 600, 800],
+                    parameters: {
+                        scale: 1.1,
+                        rotatez: -3
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        scale: 1
+                    }
+                }
+            ]
+        },
+        {
+            name: 'hinge',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.42, p1: 0, p2: 0.58, p3: 1 },
+                    parameters: {
+                        originx: 0,
+                        originy: 0
+                    }
+                },
+                {
+                    timestamp: [600, 1800],
+                    bezier: { p0: 0.42, p1: 0, p2: 0.58, p3: 1 },
+                    parameters: {
+                        originx: 0,
+                        originy: 0,
+                        rotatez: 80
+                    }
+                },
+                {
+                    timestamp: [1200, 2400],
+                    bezier: { p0: 0.42, p1: 0, p2: 0.58, p3: 1 },
+                    parameters: {
+                        originx: 0,
+                        originy: 0,
+                        rotatez: 60,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [3000],
+                    parameters: {
+                        rotatez: -3,
+                        opacity: 0,
+                        translatey: 700
+                    }
+                }
+            ]
+        }
+    ];
+    return Animations;
+})();
+var Layer = (function () {
     function Layer(name, fn, type, shape) {
         if (typeof shape === "undefined") { shape = null; }
         this._order = 0;
@@ -136,6 +369,14 @@
     Layer.prototype.getAllKeyframes = function () {
         return this._keyframes;
     };
+
+    Object.defineProperty(Layer.prototype, "keyframes", {
+        set: function (k) {
+            this._keyframes = k;
+        },
+        enumerable: true,
+        configurable: true
+    });
 
     Layer.prototype.sortTimestamps = function () {
         var tmp = this._timestamps.sort(function (n1, n2) {
@@ -1345,6 +1586,10 @@
 
         if (change.rotate || change.skew || change.scale || change.translate) {
             var t = "";
+            if (change.translate) {
+                //t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
+                t += 'translate3d(' + p.translate.x + 'px, ' + p.translate.y + 'px, 0)';
+            }
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
@@ -1353,9 +1598,6 @@
             }
             if (change.scale) {
                 t += 'scale(' + p.scale + ') ';
-            }
-            if (change.translate) {
-                t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
             }
             cssObject['transform'] = t;
         }
@@ -1508,7 +1750,7 @@ var Timeline = (function () {
         this.menuCreateKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Vytvořit nový snímek');
         this.menuDeleteKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat snímek');
         this.menuCopyKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-copy"></i> Kopírovat snímek');
-        this.menuPasteKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Vložit snímekze schránky');
+        this.menuPasteKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Vložit snímek ze schránky');
         this.menuReplaceKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Nahradit snímkem ze schránky');
         this.menuRenameLayer = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-pencil"></i> Přejmenovat vrstvu');
         this.menuDeleteLayer = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat vrstvu');
@@ -1802,6 +2044,58 @@ var Timeline = (function () {
             _this.onReady(event);
         });
     }
+    Timeline.prototype.insertAnimationSet = function (animation) {
+        var _this = this;
+        var currentLayerId = this.layersEl.find('.selected').first().data('id');
+        var layer = this.getLayer(currentLayerId);
+        if (!layer) {
+            alert('Vyberte nějakou vrstvu');
+        } else {
+            var keyframes = layer.getAllKeyframes();
+
+            //if layer has keyframe, delete it except first
+            var allow = true;
+            if (keyframes.length > 1) {
+                allow = confirm('Aplikovat na vrstvu animaci? Stávající snímky budou smazány!');
+                if (allow) {
+                    for (var i = keyframes.length - 1; i > 0; i--) {
+                        layer.deleteKeyframe(i);
+                    }
+                }
+            }
+
+            if (allow) {
+                //iterate keyframes
+                animation.keyframes.forEach(function (k, i) {
+                    //iterate timestamps
+                    k.timestamp.forEach(function (t, it) {
+                        //create keyframe by copying
+                        _this.copyKeyframe = { layer: layer.id, keyframe: 0 };
+                        var newKeyframe = null;
+                        if (t == 0) {
+                            newKeyframe = layer.getKeyframe(0);
+                        } else {
+                            newKeyframe = _this.pasteKeyframe(t);
+                        }
+
+                        //insert bezier
+                        if (k.bezier) {
+                            newKeyframe.timing_function = k.bezier;
+                        }
+
+                        for (var name in k.parameters) {
+                            newKeyframe.shape.setParameterByName(name, k.parameters[name]);
+                        }
+
+                        _this.copyKeyframe = null;
+                    });
+                });
+
+                this.renderLayers();
+            }
+        }
+    };
+
     Timeline.prototype.pasteKeyframe = function (position) {
         var layer = this.getLayer(this.copyKeyframe.layer);
         if (layer) {
@@ -1872,9 +2166,15 @@ var Timeline = (function () {
                             currentKeyframe.timing_function = k.timing_function;
                         }
                     }
+
+                    return currentKeyframe;
+                } else {
+                    return newKeyframe;
                 }
             }
+            return null;
         }
+        return null;
     };
 
     Timeline.prototype.showPause = function () {
@@ -2465,6 +2765,7 @@ var Timeline = (function () {
             var selectedLayersID = this.layersEl.find('.selected').map(function () {
                 return $(this).data('id');
             }).get();
+
             this.app.workspace.highlightShape(selectedLayersID);
         }
     };
@@ -2959,6 +3260,24 @@ var Shape = (function () {
 
     Shape.prototype.setTranslateY = function (val) {
         this._parameters.translate.y = val;
+    };
+
+    Shape.prototype.setParameterByName = function (name, val) {
+        if (name == 'opacity') {
+            this.setOpacity(val);
+        } else if (name == 'rotatez') {
+            this.setRotateZ(val);
+        } else if (name == 'translatey') {
+            this.setTranslateY(val);
+        } else if (name == 'translatex') {
+            this.setTranslateX(val);
+        } else if (name == 'scale') {
+            this.setScale(val);
+        } else if (name == 'originx') {
+            this.setOriginX(val);
+        } else if (name == 'originy') {
+            this.setOriginY(val);
+        }
     };
     return Shape;
 })();
@@ -5705,6 +6024,8 @@ var ControlPanel = (function () {
         this.canvas = $('<canvas id="bezierCurve" width="200" height="200"></canvas>');
         this.workspaceWidthEl = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
         this.workspaceHeightEl = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
+        this.animationSetSelectEl = $('<select>').attr('id', 'text-family').addClass('font-attr');
+        this.animationSetSubmitEl = $('<a>').attr('href', '#').html('Vložit').addClass('btn animationset-btn');
         this.idEl = $('<input type="text"></input>').attr('id', 'id-el');
         this.scaleEl = $('<input>').attr('id', 'scale-input');
         this.scaleSliderEl = $('<div>').addClass('scale-slider');
@@ -5769,6 +6090,22 @@ var ControlPanel = (function () {
         var propery10: IProperty = new BezierCurve();
         this.controlPanelEl.append(propery10.renderPropery(this.itemControlEl.clone()));*/
         //NEW NEW NEW /end
+        //Animation set
+        var ans = Animations.animations;
+        ans.forEach(function (v, i) {
+            _this.animationSetSelectEl.append($("<option>").attr('value', i).text(v.name));
+        });
+
+        var animation = this.itemControlEl.clone();
+        animation.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Připravené animace</h2></a>');
+        var row = $('<div>').addClass('row');
+        row.append(this.animationSetSelectEl);
+        row.append(this.animationSetSubmitEl);
+        var expand = $('<div>').addClass('expand');
+        expand.append(row);
+        animation.append(expand);
+        this.controlPanelEl.append(animation);
+
         //Workspace dimensions
         var workspaceXY = this.itemControlEl.clone();
         workspaceXY.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Rozměry plátna</h2></a>');
@@ -6082,8 +6419,8 @@ var ControlPanel = (function () {
         this.ctx = this.canvas.get(0).getContext('2d');
 
         //init coordinates
-        this.point1.css({ top: '100px', left: '100px' });
-        this.point2.css({ top: '50px', left: '50px' });
+        this.point1.css({ top: '180px', left: '50px' });
+        this.point2.css({ top: '0px', left: '50px' });
 
         var options = {
             containment: 'parent',
@@ -6249,6 +6586,10 @@ var ControlPanel = (function () {
                 fontFamily: _this.fontFamilyEl.val(),
                 size: parseFloat(_this.fontSizeEl.val())
             }, false);
+        });
+
+        this.animationSetSubmitEl.on('click', function (e) {
+            _this.app.timeline.insertAnimationSet(Animations.animations[_this.animationSetSelectEl.val()]);
         });
 
         this.selectToolEl.on('click', function (event) {
@@ -7163,6 +7504,68 @@ var Keyframe = (function () {
 
     return Keyframe;
 })();
+var Background = (function () {
+    function Background() {
+        this.initColor = { r: 44, g: 208, b: 219 };
+        this.bgPickerEl = $('<input type="text" id="picker"></input>');
+        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
+        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
+    }
+    Background.prototype.renderPropery = function (container) {
+        container.html('<h2>Barva pozadí elementu</h2>');
+        var row = $('<div>').addClass('row');
+        var s = $('<div>').html('#').addClass('group quarter');
+        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
+        row.append(s);
+        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
+        this.bgOpacityEl.val('0');
+        a.append(this.bgOpacitySliderEl);
+        a.append(this.bgOpacityEl);
+        row.append(a);
+        container.append(row);
+        this.initColorPicker();
+        this.initSlider();
+        return container;
+    };
+
+    Background.prototype.initSlider = function () {
+        var _this = this;
+        this.bgOpacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 0,
+            slide: function (event, ui) {
+                _this.bgOpacityEl.val(ui.value).change();
+            }
+        });
+    };
+
+    Background.prototype.initColorPicker = function () {
+        var _this = this;
+        this.colorPicker = this.bgPickerEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
+                }
+            }
+        }).on('change', function (e) {
+            _this.colorPicker.colpickSetColor($(e.target).val());
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
+        });
+    };
+
+    Background.prototype.getInitColor = function () {
+        return this.initColor;
+    };
+    return Background;
+})();
 var BezierCurve = (function () {
     function BezierCurve() {
         var _this = this;
@@ -7346,68 +7749,6 @@ var Font = (function () {
         });
     };
     return Font;
-})();
-var Background = (function () {
-    function Background() {
-        this.initColor = { r: 44, g: 208, b: 219 };
-        this.bgPickerEl = $('<input type="text" id="picker"></input>');
-        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
-        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
-    }
-    Background.prototype.renderPropery = function (container) {
-        container.html('<h2>Barva pozadí elementu</h2>');
-        var row = $('<div>').addClass('row');
-        var s = $('<div>').html('#').addClass('group quarter');
-        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
-        row.append(s);
-        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
-        this.bgOpacityEl.val('0');
-        a.append(this.bgOpacitySliderEl);
-        a.append(this.bgOpacityEl);
-        row.append(a);
-        container.append(row);
-        this.initColorPicker();
-        this.initSlider();
-        return container;
-    };
-
-    Background.prototype.initSlider = function () {
-        var _this = this;
-        this.bgOpacitySliderEl.slider({
-            min: 0,
-            max: 1,
-            step: 0.05,
-            value: 0,
-            slide: function (event, ui) {
-                _this.bgOpacityEl.val(ui.value).change();
-            }
-        });
-    };
-
-    Background.prototype.initColorPicker = function () {
-        var _this = this;
-        this.colorPicker = this.bgPickerEl.colpick({
-            layout: 'hex',
-            submit: 0,
-            color: this.initColor,
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
-                $(el).css('border-color', '#' + hex);
-                if (!bySetColor)
-                    $(el).val(hex);
-                if (!bySetColor) {
-                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
-                }
-            }
-        }).on('change', function (e) {
-            _this.colorPicker.colpickSetColor($(e.target).val());
-            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
-        });
-    };
-
-    Background.prototype.getInitColor = function () {
-        return this.initColor;
-    };
-    return Background;
 })();
 var ObjectDimension = (function () {
     function ObjectDimension() {

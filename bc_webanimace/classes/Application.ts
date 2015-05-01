@@ -39,7 +39,8 @@ class Application {
 $(document).ready(() => {
     console.log('DOM Loaded');
     new Application();
-    $('.tooltip').tooltipster({ position: 'right', maxWidth: 200});
+    $('.tooltip').tooltipster({ position: 'right', maxWidth: 200 });
+    $('.tooltip-delay').tooltipster({ position: 'right', maxWidth: 200, delay: 600 });
     $('.tooltip-top').tooltipster({ position: 'top' });
     $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });
 

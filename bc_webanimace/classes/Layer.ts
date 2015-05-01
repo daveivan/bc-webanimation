@@ -1243,16 +1243,16 @@
             if (initP.borderRadius[1] != p.borderRadius[1]) change.radius = true;
             if (initP.borderRadius[2] != p.borderRadius[2]) change.radius = true;
             if (initP.borderRadius[3] != p.borderRadius[3]) change.radius = true;
-            if (initP.rotate.x != p.rotate.x) change.rotate = true;
-            if (initP.rotate.y != p.rotate.y) change.rotate = true;
-            if (initP.rotate.z != p.rotate.z) change.rotate = true;
-            if (initP.skew.x != p.skew.x) change.skew = true;
-            if (initP.skew.y != p.skew.y) change.skew = true;
-            if (initP.origin.x != p.origin.x) change.origin = true;
-            if (initP.origin.y != p.origin.y) change.origin = true;
-            if (initP.scale != p.scale) change.scale = true;
-            if (initP.translate.x != p.translate.x) change.translate = true;
-            if (initP.translate.y != p.translate.y) change.translate = true;
+            if (initP.rotate.x != p.rotate.x || initP.rotate.x != 0) change.rotate = true;
+            if (initP.rotate.y != p.rotate.y || initP.rotate.y != 0) change.rotate = true;
+            if (initP.rotate.z != p.rotate.z || initP.rotate.z != 0) change.rotate = true;
+            if (initP.skew.x != p.skew.x || initP.skew.x != 0) change.skew = true;
+            if (initP.skew.y != p.skew.y || initP.skew.y != 0) change.skew = true;
+            if (initP.origin.x != p.origin.x || initP.origin.x != 50) change.origin = true;
+            if (initP.origin.y != p.origin.y || initP.origin.y != 50) change.origin = true;
+            if (initP.scale != p.scale || initP.scale != 0) change.scale = true;
+            if (initP.translate.x != p.translate.x || initP.translate.x != 0) change.translate = true;
+            if (initP.translate.y != p.translate.y || initP.translate.y != 0) change.translate = true;
         });
 
         var p: Parameters = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
@@ -1304,7 +1304,7 @@
             var t: string = "";
             if (change.translate) {
                 //t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
-                t += 'translate3d(' + p.translate.x + 'px, ' + p.translate.y + 'px, 0)';
+                t += 'translate3d(' + p.translate.x + 'px, ' + p.translate.y + 'px, 0) ';
             }
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -1313,7 +1313,7 @@
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
             if (change.scale) {
-                t += 'scale(' + p.scale + ') ';
+                t += 'scale(' + p.scale + ')';
             }
             cssObject['transform'] = t;
         }

@@ -143,7 +143,7 @@ class ControlPanel {
         });
 
         var animation: JQuery = this.itemControlEl.clone();
-        animation.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Připravené animace</h2></a>');
+        animation.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Hotové animace k použití</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         row.append(this.animationSetSelectEl);
         row.append(this.animationSetSubmitEl);
@@ -154,7 +154,7 @@ class ControlPanel {
 
         //Workspace dimensions
         var workspaceXY: JQuery = this.itemControlEl.clone();
-        workspaceXY.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Rozměry plátna</h2></a>');
+        workspaceXY.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Rozměry hlavního plátna</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         var w: JQuery = $('<div>').html('width: ').addClass('group half');
         w.append(this.workspaceWidthEl.val(this.app.workspace.workspaceSize.width.toString()));
@@ -170,7 +170,7 @@ class ControlPanel {
         this.controlPanelEl.append(workspaceXY);
 
         var idElement: JQuery = this.itemControlEl.clone();
-        idElement.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>ID elementu</h2></a>');
+        idElement.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Nastavit ID elementu</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         var g: JQuery = $('<div>').html('#').addClass('group full');
         g.append(this.idEl);
@@ -182,7 +182,7 @@ class ControlPanel {
 
         //Bezier curve
         var curve: JQuery = this.itemControlEl.clone();
-        curve.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Časový průběh animace</h2></a>');
+        curve.html('<a href="#" class="expand-link tooltip-delay" title="cubic-bezier()"><i class="fa fa-caret-right"></i><h2>Časový průběh animace</h2></a>');
         this.graph.append(this.point0);
         this.graph.append(this.point1);
         this.graph.append(this.point2);
@@ -201,7 +201,7 @@ class ControlPanel {
 
         //background
         var newItem: JQuery = this.itemControlEl.clone();
-        newItem.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Barva pozadí elementu</h2></a>');
+        newItem.html('<a href="#" class="expand-link tooltip-delay" title="background-color"><i class="fa fa-caret-right"></i><h2>Barva pozadí elementu</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         var s: JQuery = $('<div>').html('#').addClass('group quarter');
         s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
@@ -218,7 +218,7 @@ class ControlPanel {
 
         //opacity
         var opacity: JQuery = this.itemControlEl.clone();
-        opacity.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Průhlednost elementu</h2></a>');
+        opacity.html('<a href="#" class="expand-link tooltip-delay" title="opacity"><i class="fa fa-caret-right"></i><h2>Průhlednost elementu</h2></a>');
         this.opacityEl.val('1');
         var expand: JQuery = $('<div>').addClass('expand');
         expand.append(this.opacitySliderEl);
@@ -245,7 +245,7 @@ class ControlPanel {
 
         //border-radius
         var radius: JQuery = this.itemControlEl.clone();
-        radius.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Border-radius</h2></a>');
+        radius.html('<a href="#" class="expand-link tooltip-delay" title="border-radius"><i class="fa fa-caret-right"></i><h2>Zaoblení rohů</h2></a>');
         this.borderRadiusHelperEl.append(this.borderRadiusTLEl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusTREl.val('0'));
         this.borderRadiusHelperEl.append(this.borderRadiusBLEl.val('0'));
@@ -260,7 +260,7 @@ class ControlPanel {
         var font: JQuery = this.itemControlEl.clone();
         this.fontSizeEl.val(this.initFontSize.toString());
         this.fontColorEl.val($.colpick.rgbToHex(this.initTextColor));
-        font.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Nastavení textu</h2></a>');
+        font.html('<a href="#" class="expand-link tooltip-delay" title="font-size, font-family, color"><i class="fa fa-caret-right"></i><h2>Nastavení vlastností textu</h2></a>');
         var row: JQuery = $('<div>').addClass('row');
         this.fontFamily.forEach((val, index) => {
             this.fontFamilyEl.append($("<option>").attr('value', val).text(val));
@@ -283,7 +283,7 @@ class ControlPanel {
 
         //opacity
         var scale: JQuery = this.itemControlEl.clone();
-        scale.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>CSS3 Scale</h2></a>');
+        scale.html('<a href="#" class="expand-link tooltip-delay" title="scale()"><i class="fa fa-caret-right"></i><h2>Změna měřítka</h2></a>');
         this.scaleEl.val('1');
         var expand: JQuery = $('<div>').addClass('expand');
         expand.append(this.scaleSliderEl);
@@ -295,7 +295,7 @@ class ControlPanel {
         this.transformOriginXEl.val(this.initOrigin[0].toString());
         this.transformOriginYEl.val(this.initOrigin[1].toString());
         var origin: JQuery = this.itemControlEl.clone();
-        origin.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Transform-origin</h2></a>').addClass('control-origin');
+        origin.html('<a href="#" class="expand-link tooltip-delay" title="transform-origin"><i class="fa fa-caret-right"></i><h2>Původ transformace</h2></a>').addClass('control-origin');
         var row: JQuery = $('<div>').addClass('row');
         var visibleLabel: JQuery = $('<label>').html('Zobrazit polohu na plátně').addClass('tooltip').attr('title', 'Poloha bodu umístění transform-origin se zobrazí spolu s elementem. Táhnutím bodu lze transform-origin měnit.');
         visibleLabel.prepend(this.transformOriginVisibleEl);
@@ -316,7 +316,7 @@ class ControlPanel {
 
         //3D Rotate
         var rotate: JQuery = this.itemControlEl.clone();
-        rotate.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>3D Rotace</h2></a>').addClass('control-rotate');
+        rotate.html('<a href="#" class="expand-link tooltip-delay" title="rotate()"><i class="fa fa-caret-right"></i><h2>Rotace</h2></a>').addClass('control-rotate');
         var expand: JQuery = $('<div>').addClass('expand');
         var x: JQuery = $('<span>').html('<p>x:</p>').addClass('group-form');
         x.append(this.rotateXSliderEl);
@@ -338,7 +338,7 @@ class ControlPanel {
 
         //skew
         var skew: JQuery = this.itemControlEl.clone();
-        skew.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Zkosení</h2></a>').addClass('control-rotate');
+        skew.html('<a href="#" class="expand-link tooltip-delay" title="skew()"><i class="fa fa-caret-right"></i><h2>Zkosení</h2></a>').addClass('control-rotate');
         var expand: JQuery = $('<div>').addClass('expand');
         var x: JQuery = $('<span>').html('<p>x:</p>').addClass('group-form');
         x.append(this.skewXSliderEl);
@@ -355,7 +355,7 @@ class ControlPanel {
 
         //translate
         var translate: JQuery = this.itemControlEl.clone();
-        translate.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>2D Translate</h2></a>').addClass('control-rotate');
+        translate.html('<a href="#" class="expand-link tooltip-delay" title="translate()"><i class="fa fa-caret-right"></i><h2>Posun</h2></a>').addClass('control-rotate');
         var expand: JQuery = $('<div>').addClass('expand');
         var x: JQuery = $('<span>').html('<p>x:</p>').addClass('group-form');
         x.append(this.translateXSliderEl);
@@ -665,13 +665,17 @@ class ControlPanel {
         });
 
         this.newProjectEl.on('click', (event: JQueryEventObject) => {
-            if (this.app.timeline.layers.length > 0) {
-                if (confirm('Přejete si před vytvořením nového projektu uložit stávající projekt?')) {
-                    this.saveEl.click();
-                }
-                this.app.timeline.layers = new Array<Layer>();
-                this.app.timeline.renderLayers();
-                this.app.workspace.renderShapes();
+            if (confirm('Stávající projekt bude smazán. Opravdu si přejete vytvořit nový projekt?')) {
+                if (this.app.timeline.layers.length > 0) {
+                    if (confirm('Přejete si před vytvořením nového projektu uložit stávající projekt?')) {
+                        this.saveEl.click();
+                    }
+                    this.app.timeline.layers = new Array<Layer>();
+                    Layer.counter = 0;
+                    this.app.workspace.setWorkspaceDimension(800, 360);
+                    this.app.timeline.renderLayers();
+                    this.app.workspace.renderShapes();
+                }                
             }
         });
 
@@ -975,6 +979,8 @@ class ControlPanel {
             $('.clearfix').hide();
             $('.delete-keyframe').addClass('disabled');
         }
+
+        //$('.tooltip').tooltipster({ position: 'right', maxWidth: 200 });
 
     }
 

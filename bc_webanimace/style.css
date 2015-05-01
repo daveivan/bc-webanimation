@@ -1122,6 +1122,8 @@ a.pause-animation:hover {
 
 a.stop-animation {
     color: #f3f3f3;
+    border-right: 2px solid #bbb;
+      padding-right: 8px;
 }
 
 a.stop-animation:hover {

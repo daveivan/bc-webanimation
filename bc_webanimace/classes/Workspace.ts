@@ -2489,10 +2489,10 @@ class Workspace {
 
             var newKeyframe: Keyframe = layer.addKeyframe(shape, timestamp, this.app.workspace.getBezier());
 
-            var countK = timestamp / this.app.timeline.miliSecPerFrame;
+            /*var countK = timestamp / this.app.timeline.miliSecPerFrame;
             if (countK > (this.app.timeline.keyframeCount - this.app.timeline.expandTimelineBound)) {
                 this.app.timeline.expandFrames();
-            }
+            }*/
 
             this.app.timeline.renderKeyframes(layer.id);
             return newKeyframe;

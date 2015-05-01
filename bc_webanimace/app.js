@@ -1725,6 +1725,7 @@ var Timeline = (function () {
         this.groupKeyframes = 5;
         this.playMode = 1 /* STOP */;
         this.copyKeyframe = null;
+        this.allowedTimes = [10, 25, 50, 100, 200, 500];
         this._repeat = false;
         this.absoluteMax = 0;
         this.arrayMax = Function.prototype.apply.bind(Math.max, null);
@@ -1746,6 +1747,8 @@ var Timeline = (function () {
         this.playEl = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
         this.stopEl = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
         this.pauseEl = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
+        this.timelineScaleMinus = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zmenšit měřítko časové osy"><i class="fa fa-search-minus"></i></a>');
+        this.timelineScalePlus = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zvětšit měřítko časové osy"><i class="fa fa-search-plus"></i></a>');
         this.contextMenuEl = $('<div>').addClass('context-menu');
         this.menuCreateKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Vytvořit nový snímek');
         this.menuDeleteKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat snímek');
@@ -1850,6 +1853,58 @@ var Timeline = (function () {
             _this.app.workspace.transformShapes();
         });
 
+        this.timelineScaleMinus.on('click', function (e) {
+            if ($(e.target).hasClass('disabled')) {
+                return false;
+            }
+            var currentIndex = _this.allowedTimes.indexOf(_this.miliSecPerFrame);
+            if (currentIndex > 0) {
+                _this.miliSecPerFrame = _this.allowedTimes[currentIndex - 1];
+            }
+
+            _this.renderHeader();
+            _this.layers.forEach(function (l, i) {
+                _this.renderKeyframes(l.id);
+            });
+
+            if (_this.miliSecPerFrame == _this.allowedTimes[0]) {
+                _this.timelineScaleMinus.addClass('disabled');
+            } else {
+                _this.timelineScaleMinus.removeClass('disabled');
+            }
+            if (_this.miliSecPerFrame == _this.allowedTimes[_this.allowedTimes.length - 1]) {
+                _this.timelineScalePlus.addClass('disabled');
+            } else {
+                _this.timelineScalePlus.removeClass('disabled');
+            }
+        });
+
+        this.timelineScalePlus.on('click', function (e) {
+            if ($(e.target).hasClass('disabled')) {
+                return false;
+            }
+            var currentIndex = _this.allowedTimes.indexOf(_this.miliSecPerFrame);
+            if (currentIndex < _this.allowedTimes.length - 1) {
+                _this.miliSecPerFrame = _this.allowedTimes[currentIndex + 1];
+            }
+
+            _this.renderHeader();
+            _this.layers.forEach(function (l, i) {
+                _this.renderKeyframes(l.id);
+            });
+
+            if (_this.miliSecPerFrame == _this.allowedTimes[0]) {
+                _this.timelineScaleMinus.addClass('disabled');
+            } else {
+                _this.timelineScaleMinus.removeClass('disabled');
+            }
+            if (_this.miliSecPerFrame == _this.allowedTimes[_this.allowedTimes.length - 1]) {
+                _this.timelineScalePlus.addClass('disabled');
+            } else {
+                _this.timelineScalePlus.removeClass('disabled');
+            }
+        });
+
         $(document).on('mousedown', 'td', function (event) {
             console.log('onClickRow');
             _this.onClickRow(event);
@@ -1891,7 +1946,7 @@ var Timeline = (function () {
                 });
 
                 _this.menuDeleteLayer.on('click', function (event) {
-                    var id = parseInt($(e.target).data('id'));
+                    var id = parseInt($(event.target).data('id'));
                     var index = _this.getLayerIndex(id);
                     _this.deleteOneLayer(index);
                     _this.contextMenuEl.remove();
@@ -2254,6 +2309,8 @@ var Timeline = (function () {
         $(this.timelineHeadEl).append(this.playEl);
         $(this.timelineHeadEl).append(this.pauseEl);
         $(this.timelineHeadEl).append(this.stopEl);
+        $(this.timelineHeadEl).append(this.timelineScaleMinus);
+        $(this.timelineHeadEl).append(this.timelineScalePlus);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
@@ -2329,7 +2386,7 @@ var Timeline = (function () {
 
         this.keyframeCount += 10;
         this.fixedWidthEl.width((this.keyframeWidth) * this.keyframeCount + 350 + 15);
-        this.renderHeader();
+        //this.renderHeader();
     };
 
     Timeline.prototype.renderAnimationRange = function () {
@@ -2403,6 +2460,17 @@ var Timeline = (function () {
             this.renderAnimationRange();
         }
 
+        var c = keyframes[keyframes.length - 1].timestamp / this.miliSecPerFrame;
+        var renderHeaderNeeded = false;
+        while (c > (this.keyframeCount - this.expandTimelineBound)) {
+            renderHeaderNeeded = true;
+            this.expandFrames();
+        }
+
+        if (renderHeaderNeeded) {
+            this.renderHeader();
+        }
+
         $('.keyframe').draggable({
             axis: "x",
             grid: [this.keyframeWidth, this.keyframeWidth],
@@ -2445,11 +2513,10 @@ var Timeline = (function () {
                     layer.updatePosition(keyframeID, ms);
                 }
 
-                var countK = ms / _this.miliSecPerFrame;
-                if (countK > (_this.keyframeCount - _this.expandTimelineBound)) {
-                    _this.expandFrames();
-                }
-
+                /*var countK = ms / this.miliSecPerFrame;
+                if (countK > (this.keyframeCount - this.expandTimelineBound)) {
+                this.expandFrames();
+                }*/
                 _this.renderKeyframes(layerID);
             },
             drag: function (event, ui) {
@@ -5776,11 +5843,10 @@ var Workspace = (function () {
         if (layer.getKeyframeByTimestamp(timestamp) === null) {
             var newKeyframe = layer.addKeyframe(shape, timestamp, this.app.workspace.getBezier());
 
-            var countK = timestamp / this.app.timeline.miliSecPerFrame;
+            /*var countK = timestamp / this.app.timeline.miliSecPerFrame;
             if (countK > (this.app.timeline.keyframeCount - this.app.timeline.expandTimelineBound)) {
-                this.app.timeline.expandFrames();
-            }
-
+            this.app.timeline.expandFrames();
+            }*/
             this.app.timeline.renderKeyframes(layer.id);
             return newKeyframe;
         } else {
@@ -7510,68 +7576,6 @@ var Keyframe = (function () {
 
     return Keyframe;
 })();
-var Background = (function () {
-    function Background() {
-        this.initColor = { r: 44, g: 208, b: 219 };
-        this.bgPickerEl = $('<input type="text" id="picker"></input>');
-        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
-        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
-    }
-    Background.prototype.renderPropery = function (container) {
-        container.html('<h2>Barva pozadí elementu</h2>');
-        var row = $('<div>').addClass('row');
-        var s = $('<div>').html('#').addClass('group quarter');
-        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
-        row.append(s);
-        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
-        this.bgOpacityEl.val('0');
-        a.append(this.bgOpacitySliderEl);
-        a.append(this.bgOpacityEl);
-        row.append(a);
-        container.append(row);
-        this.initColorPicker();
-        this.initSlider();
-        return container;
-    };
-
-    Background.prototype.initSlider = function () {
-        var _this = this;
-        this.bgOpacitySliderEl.slider({
-            min: 0,
-            max: 1,
-            step: 0.05,
-            value: 0,
-            slide: function (event, ui) {
-                _this.bgOpacityEl.val(ui.value).change();
-            }
-        });
-    };
-
-    Background.prototype.initColorPicker = function () {
-        var _this = this;
-        this.colorPicker = this.bgPickerEl.colpick({
-            layout: 'hex',
-            submit: 0,
-            color: this.initColor,
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
-                $(el).css('border-color', '#' + hex);
-                if (!bySetColor)
-                    $(el).val(hex);
-                if (!bySetColor) {
-                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
-                }
-            }
-        }).on('change', function (e) {
-            _this.colorPicker.colpickSetColor($(e.target).val());
-            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
-        });
-    };
-
-    Background.prototype.getInitColor = function () {
-        return this.initColor;
-    };
-    return Background;
-})();
 var BezierCurve = (function () {
     function BezierCurve() {
         var _this = this;
@@ -7755,6 +7759,68 @@ var Font = (function () {
         });
     };
     return Font;
+})();
+var Background = (function () {
+    function Background() {
+        this.initColor = { r: 44, g: 208, b: 219 };
+        this.bgPickerEl = $('<input type="text" id="picker"></input>');
+        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
+        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
+    }
+    Background.prototype.renderPropery = function (container) {
+        container.html('<h2>Barva pozadí elementu</h2>');
+        var row = $('<div>').addClass('row');
+        var s = $('<div>').html('#').addClass('group quarter');
+        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
+        row.append(s);
+        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
+        this.bgOpacityEl.val('0');
+        a.append(this.bgOpacitySliderEl);
+        a.append(this.bgOpacityEl);
+        row.append(a);
+        container.append(row);
+        this.initColorPicker();
+        this.initSlider();
+        return container;
+    };
+
+    Background.prototype.initSlider = function () {
+        var _this = this;
+        this.bgOpacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 0,
+            slide: function (event, ui) {
+                _this.bgOpacityEl.val(ui.value).change();
+            }
+        });
+    };
+
+    Background.prototype.initColorPicker = function () {
+        var _this = this;
+        this.colorPicker = this.bgPickerEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
+                }
+            }
+        }).on('change', function (e) {
+            _this.colorPicker.colpickSetColor($(e.target).val());
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
+        });
+    };
+
+    Background.prototype.getInitColor = function () {
+        return this.initColor;
+    };
+    return Background;
 })();
 var ObjectDimension = (function () {
     function ObjectDimension() {
@@ -8054,6 +8120,7 @@ var Svg = (function (_super) {
     return Svg;
 })(Shape);
 var SvgGallery = (function () {
+    //private files: Array<string> = ['add187.svg'];
     function SvgGallery(app) {
         var _this = this;
         this.dialogEl = $('<div>').attr('id', 'dialog').attr('title', 'Galerie');
@@ -8076,6 +8143,7 @@ var SvgGallery = (function () {
         });
 
         this.objects = new Array();
+        this.dialogEl.dialog('open');
 
         //1. object
         var p = {
@@ -8109,10 +8177,10 @@ var SvgGallery = (function () {
         this.files.forEach(function (name, index) {
             $.ajax({
                 url: 'svg-gallery/' + name,
+                dataType: 'text',
                 success: function (data) {
                     svg = new Svg(p, data);
                     _this.objects.push(svg);
-                    _this.dialogEl.dialog('open');
                     _this.showSingleObject(_this.objects.length - 1);
                     //this.showGallery();
                 }

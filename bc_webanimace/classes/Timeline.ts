@@ -18,6 +18,7 @@ class Timeline
     playInterval: any;
     playMode: Animation_playing = Animation_playing.STOP;
     copyKeyframe: keyframeFrom = null;
+    allowedTimes: Array<number> = [10, 25, 50, 100, 200, 500];
 
     private _repeat: boolean = false;
     private absoluteMax: number = 0;
@@ -47,6 +48,9 @@ class Timeline
     playEl: JQuery = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
     stopEl: JQuery = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
     pauseEl: JQuery = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
+
+    timelineScaleMinus: JQuery = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zmenšit měřítko časové osy"><i class="fa fa-search-minus"></i></a>');
+    timelineScalePlus: JQuery = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zvětšit měřítko časové osy"><i class="fa fa-search-plus"></i></a>');
 
     private contextMenuEl: JQuery = $('<div>').addClass('context-menu');
     private menuCreateKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Vytvořit nový snímek');
@@ -154,6 +158,59 @@ class Timeline
             this.app.workspace.transformShapes();
         });
 
+        this.timelineScaleMinus.on('click', (e: JQueryEventObject) => {
+            if ($(e.target).hasClass('disabled')) {
+                return false;
+            }
+            var currentIndex: number = this.allowedTimes.indexOf(this.miliSecPerFrame);
+            if(currentIndex > 0) {
+                this.miliSecPerFrame = this.allowedTimes[currentIndex - 1];
+            }
+
+            this.renderHeader();
+            this.layers.forEach((l: Layer, i: number) => {
+                this.renderKeyframes(l.id);
+            });
+
+
+            if (this.miliSecPerFrame == this.allowedTimes[0]) {
+                this.timelineScaleMinus.addClass('disabled');
+            } else {
+                this.timelineScaleMinus.removeClass('disabled');
+            }
+            if (this.miliSecPerFrame == this.allowedTimes[this.allowedTimes.length - 1]) {
+                this.timelineScalePlus.addClass('disabled');
+            } else {
+                this.timelineScalePlus.removeClass('disabled');
+            }
+        });
+
+        this.timelineScalePlus.on('click', (e: JQueryEventObject) => {
+            if ($(e.target).hasClass('disabled')) {
+                return false;
+            }
+            var currentIndex: number = this.allowedTimes.indexOf(this.miliSecPerFrame);
+            if (currentIndex < this.allowedTimes.length-1) {
+                this.miliSecPerFrame = this.allowedTimes[currentIndex + 1];
+            }
+
+            this.renderHeader();
+            this.layers.forEach((l: Layer, i: number) => {
+                this.renderKeyframes(l.id);
+            });
+
+            if (this.miliSecPerFrame == this.allowedTimes[0]) {
+                this.timelineScaleMinus.addClass('disabled');
+            } else {
+                this.timelineScaleMinus.removeClass('disabled');
+            }
+            if (this.miliSecPerFrame == this.allowedTimes[this.allowedTimes.length - 1]) {
+                this.timelineScalePlus.addClass('disabled');
+            } else {
+                this.timelineScalePlus.removeClass('disabled');
+            }
+        });
+
         $(document).on('mousedown', 'td', (event: JQueryEventObject) => {
             console.log('onClickRow');
             this.onClickRow(event);
@@ -195,7 +252,7 @@ class Timeline
                 });
 
                 this.menuDeleteLayer.on('click', (event: JQueryEventObject) => {
-                    var id: number = parseInt($(e.target).data('id'));
+                    var id: number = parseInt($(event.target).data('id'));
                     var index: number = this.getLayerIndex(id);
                     this.deleteOneLayer(index);
                     this.contextMenuEl.remove();
@@ -557,6 +614,8 @@ class Timeline
         $(this.timelineHeadEl).append(this.playEl);
         $(this.timelineHeadEl).append(this.pauseEl);
         $(this.timelineHeadEl).append(this.stopEl);
+        $(this.timelineHeadEl).append(this.timelineScaleMinus);
+        $(this.timelineHeadEl).append(this.timelineScalePlus);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
@@ -634,8 +693,7 @@ class Timeline
 
         this.keyframeCount += 10;
         this.fixedWidthEl.width((this.keyframeWidth) * this.keyframeCount + 350 + 15);
-        this.renderHeader();
-
+        //this.renderHeader();
     }
 
     renderAnimationRange() {
@@ -707,6 +765,17 @@ class Timeline
             this.renderAnimationRange();   
         }
 
+        var c = keyframes[keyframes.length-1].timestamp / this.miliSecPerFrame;
+        var renderHeaderNeeded: boolean = false;
+        while (c > (this.keyframeCount - this.expandTimelineBound)) {
+            renderHeaderNeeded = true;
+            this.expandFrames();
+        }
+
+        if (renderHeaderNeeded) {
+            this.renderHeader();
+        }
+
         $('.keyframe').draggable({
             axis: "x",
             grid: [this.keyframeWidth, this.keyframeWidth],
@@ -749,10 +818,10 @@ class Timeline
                     layer.updatePosition(keyframeID, ms);
                 }
 
-                var countK = ms / this.miliSecPerFrame;
+                /*var countK = ms / this.miliSecPerFrame;
                 if (countK > (this.keyframeCount - this.expandTimelineBound)) {
                     this.expandFrames();
-                }
+                }*/
 
                 this.renderKeyframes(layerID);
             },

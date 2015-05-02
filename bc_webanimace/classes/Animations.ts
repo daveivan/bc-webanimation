@@ -226,5 +226,111 @@
                 },
             ],
         },
+        {
+            name: 'flipOutY',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        opacity: 1,
+                        perspective: 400,
+                    },
+                },
+                {
+                    timestamp: [300],
+                    parameters: {
+                        opacity: 1,
+                        rotatey: -15,
+                        perspective: 400,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        opacity: 0,
+                        rotatey: 90,
+                        perspective: 400,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'flipInX',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        rotatex: 90,
+                        perspective: 400,
+                        opacity: 0,
+                    },
+                },
+                {
+                    timestamp: [400],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        rotatex: -40,
+                        perspective: 400,
+                    },
+                },
+                {
+                    timestamp: [600],
+                    parameters: {
+                        opacity: 1,
+                        rotatex: 20,
+                        perspective: 400,
+                    },
+                },
+                {
+                    timestamp: [800],
+                    parameters: {
+                        opacity: 1,
+                        rotatex: -10,
+                        perspective: 400,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        opacity: 1,
+                        perspective: 400,
+                        rotatex: 0,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'zoomOutDown',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        opacity: 1,
+                        scale: 1,
+                        translatey: 0,
+                    },
+                },{
+                    timestamp: [400],
+                    bezier: { p0: 0.55, p1: 0.055, p2: 0.675, p3: 0.190 },
+                    parameters: {
+                        opacity: 1,
+                        scale: 0.475,
+                        translatey: -60,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.175, p1: 0.885, p2: 0.320, p3: 1 },
+                    parameters: {
+                        scale: 0.1,
+                        translatey: 500,
+                        originx: 50,
+                        originy: 100,
+                        opacity: 0,
+                    },
+                },
+            ],
+        },
     ];
 } 

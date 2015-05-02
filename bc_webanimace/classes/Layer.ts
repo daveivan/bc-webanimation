@@ -201,7 +201,12 @@
             translate: {
                 x: rangeData.params.translate.x,
                 y: rangeData.params.translate.y,
-            }
+            },
+            relativeTranslate : {
+                x: rangeData.params.relativeTranslate.x,
+                y: rangeData.params.relativeTranslate.y,
+            },
+            perspective: rangeData.params.perspective
         }
         var cssStyles = new Array();
         /*var isChange = {
@@ -357,13 +362,13 @@
         if (isChange.opacity)
             cssStyles['opacity'] = params.opacity;
         if (isChange.br0)
-            cssStyles['border-top-left-radius'] = params.borderRadius[0];
+            cssStyles['border-top-left-radius'] = params.borderRadius[0] + '%';
         if (isChange.br1)
-            cssStyles['border-top-right-radius'] = params.borderRadius[1];
+            cssStyles['border-top-right-radius'] = params.borderRadius[1] + '%';
         if (isChange.br2)
-            cssStyles['border-bottom-right-radius'] = params.borderRadius[2];
+            cssStyles['border-bottom-right-radius'] = params.borderRadius[2] + '%';
         if (isChange.br3)
-            cssStyles['border-bottom-left-radius'] = params.borderRadius[3];
+            cssStyles['border-bottom-left-radius'] = params.borderRadius[3] + '%';
         if (isChange.rotate)
             cssStyles['transform'] = 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)';
         if (isChange.origin)
@@ -519,19 +524,19 @@
             }
             if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0]) {
                 brParam[0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
-                shape.css({ 'border-top-left-radius': brParam[0] });
+                shape.css({ 'border-top-left-radius': brParam[0] + '%' });
             }
             if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1]) {
                 brParam[1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
-                shape.css({ 'border-top-right-radius': brParam[1] });
+                shape.css({ 'border-top-right-radius': brParam[1] + '%' });
             }
             if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2]) {
                 brParam[2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
-                shape.css({ 'border-bottom-right-radius': brParam[2] });
+                shape.css({ 'border-bottom-right-radius': brParam[2] + '%' });
             }
             if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3]) {
                 brParam[3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
-                shape.css({ 'border-bottom-left-radius': brParam[3] });
+                shape.css({ 'border-bottom-left-radius': brParam[3] + '%' });
             }
 
             var isTransform = false;
@@ -664,7 +669,12 @@
             translate: {
                 x: rangeData.params.translate.x,
                 y: rangeData.params.translate.y,
-            }
+            },
+            relativeTranslate: {
+                x: rangeData.params.relativeTranslate.x,
+                y: rangeData.params.relativeTranslate.y,
+            },
+            perspective: rangeData.params.perspective
         }
         //if exist left && right, compute attributes
         if (Object.keys(rng).length == 2) {
@@ -733,19 +743,19 @@
             }
             if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
-                shape.css({ 'border-top-left-radius': params.borderRadius[0] });
+                shape.css({ 'border-top-left-radius': params.borderRadius[0] + '%' });
             }
             if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
-                shape.css({ 'border-top-right-radius': params.borderRadius[1] });
+                shape.css({ 'border-top-right-radius': params.borderRadius[1] + '%' });
             }
             if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
-                shape.css({ 'border-bottom-right-radius': params.borderRadius[2] });
+                shape.css({ 'border-bottom-right-radius': params.borderRadius[2] + '%' });
             }
             if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
-                shape.css({ 'border-bottom-left-radius': params.borderRadius[3] });
+                shape.css({ 'border-bottom-left-radius': params.borderRadius[3] + '%' });
             }
 
             var isTransform = false;
@@ -786,12 +796,20 @@
 
             if (paramsLeft.translate.x != paramsRight.translate.x || left != this.lastTransformKeyframe) {
                 isTransform = true;
+                params['relativeTranslate']['x'] = this.computeAttr(paramsLeft.relativeTranslate.x, paramsRight.relativeTranslate.x, bezier(p));
                 params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
             }
 
             if (paramsLeft.translate.y != paramsRight.translate.y || left != this.lastTransformKeyframe) {
                 isTransform = true;
+                params['relativeTranslate']['y'] = this.computeAttr(paramsLeft.relativeTranslate.y, paramsRight.relativeTranslate.y, bezier(p));
                 params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
+            }
+
+            //var isPerspective: boolean = false;
+            if (paramsLeft.perspective != paramsRight.perspective || left != this.lastTransformKeyframe) {
+                isTransform = true;
+                params['perspective'] = this.computeAttr(paramsLeft.perspective, paramsRight.perspective, bezier(p));
             }
 
             if (isOrigin) {
@@ -800,9 +818,10 @@
             }
 
             if (isTransform) {
-                shape.css({ 'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
-                helper.css({ 'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                shape.css({ 'transform': 'perspective('+ params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                helper.css({ 'transform': 'perspective(' + params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
             }
+
             shape.removeClass('novisible');
             helper.removeClass('novisible');
 
@@ -818,11 +837,11 @@
                 'border': params.border,
                 'z-index': params.zindex,
                 'opacity': params.opacity,
-                'border-top-left-radius': params.borderRadius[0],
-                'border-top-right-radius': params.borderRadius[1],
-                'border-bottom-right-radius': params.borderRadius[2],
-                'border-bottom-left-radius': params.borderRadius[3],
-                'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'border-top-left-radius': params.borderRadius[0] + '%',
+                'border-top-right-radius': params.borderRadius[1] + '%',
+                'border-bottom-right-radius': params.borderRadius[2] + '%',
+                'border-bottom-left-radius': params.borderRadius[3] + '%',
+                'transform': 'perspective('+ params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             });
 
@@ -833,7 +852,7 @@
                     'width': params.relativeSize.width + '%',
                     'height': params.relativeSize.height + '%',
                     'z-index': (params.zindex + 1000),
-                    'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'perspective(' + params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
 
@@ -883,11 +902,118 @@
             app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
             app.controlPanel.updateScale(params.scale);
             app.controlPanel.updateTranslate(params.translate);
+            app.controlPanel.updatePerspective(params.perspective);
             $('.shape-helper.highlight').first().find('.origin-point').css({
                 'left': params.origin.x + '%',
                 'top': params.origin.y + '%',
             });
         }
+    }
+
+    getShape(position: number): IShape {
+        return null;
+    }
+
+    getParameters(position: number): Parameters {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left: number = rangeData.left;
+        var right: number = rangeData.right;
+        var rng: Array<Keyframe> = rangeData.rng;
+
+        var params: Parameters = {
+            top: rangeData.params.top,
+            left: rangeData.params.left,
+            width: rangeData.params.width,
+            height: rangeData.params.height,
+            background: {
+                r: rangeData.params.background.r,
+                g: rangeData.params.background.g,
+                b: rangeData.params.background.b,
+                a: rangeData.params.background.a,
+            },
+            opacity: rangeData.params.opacity,
+            borderRadius: [
+                rangeData.params.borderRadius[0],
+                rangeData.params.borderRadius[1],
+                rangeData.params.borderRadius[2],
+                rangeData.params.borderRadius[3]
+            ],
+            rotate: {
+                x: rangeData.params.rotate.x,
+                y: rangeData.params.rotate.y,
+                z: rangeData.params.rotate.z,
+            },
+            skew: {
+                x: rangeData.params.skew.x,
+                y: rangeData.params.skew.y,
+            },
+            origin: {
+                x: rangeData.params.origin.x,
+                y: rangeData.params.origin.y,
+            },
+            zindex: this.globalShape.parameters.zindex,
+            relativeSize: {
+                width: rangeData.params.relativeSize.width,
+                height: rangeData.params.relativeSize.height,
+            },
+            relativePosition: {
+                top: rangeData.params.relativePosition.top,
+                left: rangeData.params.relativePosition.left,
+            },
+            scale: rangeData.params.scale,
+            translate: {
+                x: rangeData.params.translate.x,
+                y: rangeData.params.translate.y,
+            },
+            relativeTranslate: {
+                x: rangeData.params.relativeTranslate.x,
+                y: rangeData.params.relativeTranslate.y,
+            },
+            perspective: rangeData.params.perspective
+        }
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn: Bezier_points = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p: number = (position - left) / (right - left);
+
+            var paramsLeft: Parameters = rng['l'].shape.parameters;
+            var paramsRight: Parameters = rng['r'].shape.parameters;
+
+            params['relativePosition']['top'] = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
+            params['top'] = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
+            params['relativePosition']['left'] = this.computeAttr(paramsLeft.relativePosition.left, paramsRight.relativePosition.left, bezier(p));
+            params['left'] = Math.round(this.computeAttr(paramsLeft.left, paramsRight.left, bezier(p)));
+            params['relativeSize']['width'] = this.computeAttr(paramsLeft.relativeSize.width, paramsRight.relativeSize.width, bezier(p));
+            params['width'] = Math.round(this.computeAttr(paramsLeft.width, paramsRight.width, bezier(p)));
+            params['relativeSize']['height'] = this.computeAttr(paramsLeft.relativeSize.height, paramsRight.relativeSize.height, bezier(p));
+            params['height'] = Math.round(this.computeAttr(paramsLeft.height, paramsRight.height, bezier(p)));
+            params.background.r = Math.round(this.computeAttr(paramsLeft.background.r, paramsRight.background.r, bezier(p)));
+            params.background.g = Math.round(this.computeAttr(paramsLeft.background.g, paramsRight.background.g, bezier(p)));
+            params.background.b = Math.round(this.computeAttr(paramsLeft.background.b, paramsRight.background.b, bezier(p)));
+            params.background.a = this.computeAttr(paramsLeft.background.a, paramsRight.background.a, bezier(p));
+            params['opacity'] = this.computeAttr(paramsLeft.opacity, paramsRight.opacity, bezier(p));
+            params['borderRadius'][0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
+            params['borderRadius'][1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
+            params['borderRadius'][2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
+            params['borderRadius'][3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
+            params['rotate']['x'] = Math.round(this.computeAttr(paramsLeft.rotate.x, paramsRight.rotate.x, bezier(p)));
+            params['rotate']['y'] = Math.round(this.computeAttr(paramsLeft.rotate.y, paramsRight.rotate.y, bezier(p)));
+            params['rotate']['z'] = Math.round(this.computeAttr(paramsLeft.rotate.z, paramsRight.rotate.z, bezier(p)));
+            params['skew']['x'] = Math.round(this.computeAttr(paramsLeft.skew.x, paramsRight.skew.x, bezier(p)));
+            params['skew']['y'] = Math.round(this.computeAttr(paramsLeft.skew.y, paramsRight.skew.y, bezier(p)));
+            params['origin']['x'] = this.computeAttr(paramsLeft.origin.x, paramsRight.origin.x, bezier(p));
+            params['origin']['y'] = this.computeAttr(paramsLeft.origin.y, paramsRight.origin.y, bezier(p));
+            params['scale'] = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
+            params['relativeTranslate']['x'] = this.computeAttr(paramsLeft.relativeTranslate.x, paramsRight.relativeTranslate.x, bezier(p));
+            params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
+            params['relativeTranslate']['y'] = this.computeAttr(paramsLeft.relativeTranslate.y, paramsRight.relativeTranslate.y, bezier(p));
+            params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
+            params['perspective'] = this.computeAttr(paramsLeft.perspective, paramsRight.perspective, bezier(p));
+        }
+
+        return params;
     }
 
     transformOriginal(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application) {
@@ -950,6 +1076,11 @@
                     x: this.computeAttr(rng['l'].shape.parameters.translate.x, rng['r'].shape.parameters.translate.x, bezier(p)),
                     y: this.computeAttr(rng['l'].shape.parameters.translate.y, rng['r'].shape.parameters.translate.y, bezier(p)),
                 },
+                relativeTranslate: {
+                    x: this.computeAttr(rng['l'].shape.parameters.relativeTranslate.x, rng['r'].shape.parameters.relativeTranslate.x, bezier(p)),
+                    y: this.computeAttr(rng['l'].shape.parameters.relativeTranslate.y, rng['r'].shape.parameters.relativeTranslate.y, bezier(p)),
+                },
+                perspective: this.computeAttr(rng['l'].shape.parameters.perspective, rng['r'].shape.parameters.perspective, bezier(p)),
             }
             //shape.css("visibility", "visible");  
             //helper.css("visibility", "visible");
@@ -1160,29 +1291,14 @@
         (p.borderRadius[0] == p.borderRadius[2]) &&
         (p.borderRadius[0] == p.borderRadius[3])) {
             if (p.borderRadius[0] != 0) {
-                cssObject['border-radius'] = p.borderRadius[0] + 'px';
-                //cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+                cssObject['border-radius'] = p.borderRadius[0] + '%';
             }
         } else {
-            /*cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
-            cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
-            cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
-            cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';*/
-            cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
-            cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
-            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
-            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
+            cssObject['border-top-left-radius'] = p.borderRadius[0] + '%';
+            cssObject['border-top-right-radius'] = p.borderRadius[1] + '%';
+            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + '%';
+            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + '%';
         }
-
-        /*if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1) {
-            if ((p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) && (p.skew.x != 0 || p.skew.y != 0) && (p.scale != 1)) {
-                cssObject['transform'] = 'scale(' + p.scale + ') rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
-            } else if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) {
-                cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg)';
-            } else if (p.skew.x != 0 || p.skew.y != 0) {
-                cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
-            }
-        }*/
 
         if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 ||
                 p.skew.x != 0 || p.skew.y != 0 ||
@@ -1200,7 +1316,7 @@
             }
 
             if (p.translate.x != 0 || p.translate.y != 0) {
-                t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
+                t += 'translateX(' + p.relativeTranslate.x + '%) translateY(' + p.relativeTranslate.y + '%)';
             }
             cssObject['transform'] = t;
         }
@@ -1226,6 +1342,7 @@
             scale: false,
             translate: false,
             origin: false,
+            perspective: false,
         }
         var initP: Parameters = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
         this.getAllKeyframes().forEach((k: Keyframe, i: number) => {
@@ -1250,9 +1367,10 @@
             if (initP.skew.y != p.skew.y || initP.skew.y != 0) change.skew = true;
             if (initP.origin.x != p.origin.x || initP.origin.x != 50) change.origin = true;
             if (initP.origin.y != p.origin.y || initP.origin.y != 50) change.origin = true;
-            if (initP.scale != p.scale || initP.scale != 0) change.scale = true;
+            if (initP.scale != p.scale || initP.scale != 1) change.scale = true;
             if (initP.translate.x != p.translate.x || initP.translate.x != 0) change.translate = true;
             if (initP.translate.y != p.translate.y || initP.translate.y != 0) change.translate = true;
+            if (p.perspective != 0) change.perspective = true;
         });
 
         var p: Parameters = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
@@ -1268,30 +1386,20 @@
         if (change.left) cssObject['left'] = p.relativePosition.left + '%';
         if (change.bg) cssObject['background'] = 'rgba(' + p.background.r + ',' + p.background.g + ',' + p.background.b + ',' + p.background.a + ')';
         if (change.opacity) cssObject['opacity'] = p.opacity;
-        /*if (change.radius) {
-            if ((p.borderRadius[0] == p.borderRadius[1]) &&
-            (p.borderRadius[0] == p.borderRadius[2]) &&
-            (p.borderRadius[0] == p.borderRadius[3])) {
-                cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
-            } else {
-                cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
-                cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
-                cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
-                cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';              
-            }
-        }*/
+
         if (change.radius) {
             if ((p.borderRadius[0] == p.borderRadius[1]) &&
             (p.borderRadius[0] == p.borderRadius[2]) &&
             (p.borderRadius[0] == p.borderRadius[3])) {
                 cssObject['border-radius'] = p.borderRadius[0] + 'px';
             } else {
-                cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
-                cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
-                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
-                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';        
+                cssObject['border-top-left-radius'] = p.borderRadius[0] + '%';
+                cssObject['border-top-right-radius'] = p.borderRadius[1] + '%';
+                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + '%';
+                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + '%';        
             }
         }
+
         if (change.rotate && change.skew) {
             cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         } else if (change.rotate) {
@@ -1300,11 +1408,15 @@
             cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         }
 
-        if (change.rotate || change.skew || change.scale || change.translate) {
+        if (change.rotate || change.skew || change.scale || change.translate || change.perspective) {
             var t: string = "";
+            if (change.perspective) {
+                t += 'perspective(' + p.perspective + 'px) ';
+            }
+
             if (change.translate) {
                 //t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
-                t += 'translate3d(' + p.translate.x + 'px, ' + p.translate.y + 'px, 0) ';
+                t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, 0) ';
             }
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -1318,7 +1430,7 @@
             cssObject['transform'] = t;
         }
 
-        if ((change.rotate || change.skew || change.scale || change.translate) && change.origin) {
+        if ((change.rotate || change.skew || change.scale || change.translate || change.perspective) && change.origin) {
             if (change.origin) cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
 
@@ -1360,11 +1472,11 @@
                 //'z-index': params.zindex,
                 'z-index': this.globalShape.parameters.zindex,
                 'opacity': params.opacity,
-                'border-top-left-radius': params.borderRadius[0],
-                'border-top-right-radius': params.borderRadius[1],
-                'border-bottom-right-radius': params.borderRadius[2],
-                'border-bottom-left-radius': params.borderRadius[3],
-                'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'border-top-left-radius': params.borderRadius[0] + '%',
+                'border-top-right-radius': params.borderRadius[1] + '%',
+                'border-bottom-right-radius': params.borderRadius[2] + '%',
+                'border-bottom-left-radius': params.borderRadius[3] + '%',
+                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             }
             shape.css(css);
@@ -1401,7 +1513,7 @@
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
-                    'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
 

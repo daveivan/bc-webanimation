@@ -11,6 +11,14 @@
         super.transform(position, shape, helper, currentLayerId, app, showHelper);
     }
 
+    getShape(position: number): IShape {
+        var params: Parameters = super.getParameters(position);
+
+        var shape: IShape = new Rectangle(params);
+
+        return shape;
+    }
+
     getInitStyles(nameElement: string, workspaceSize: Dimensions) {
         return super.getInitStyles(nameElement, workspaceSize);
     }

@@ -595,12 +595,12 @@ input.rotate, input.skew, input.translate {
 
 .border-radius-input {
     width: 30px;
-    display: block;
-    position: absolute;
+    display: inline-block;
 text-align: center;
     border: 1px solid #c9cacb;
     background-color: #fdfdfd;
     color: #4e4e4e;
+    margin-right: 5px;
 }
 
 .border-radius-switch {
@@ -618,24 +618,28 @@ text-align: center;
     color: #006400;
 }
 
-#radius-tl {
+#radius-tl-wrapper {
     top: 5px;
     left: 5px;
+    position: absolute;
 }
 
-#radius-tr {
+#radius-tr-wrapper {
     top: 5px;
     right: 5px;
+    position: absolute;
 }
 
-#radius-br {
+#radius-br-wrapper {
     bottom: 5px;
     right: 5px;
+    position: absolute;
 }
 
-#radius-bl {
+#radius-bl-wrapper {
     bottom: 5px;
     left: 5px;
+    position: absolute;
 }
 
 .opacity-slider, .scale-slider {
@@ -644,7 +648,7 @@ text-align: center;
     z-index: 1;
 }
 
-.rotate-slider, .skew-slider, .translate-slider {
+.rotate-slider, .skew-slider, .translate-slider, .perspective-slider {
     width: 137px;
     display: inline-block;
     z-index: 1;

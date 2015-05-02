@@ -138,11 +138,27 @@ class Workspace {
                     this.onDrawSquare(event);     
                 }
 
+            if (!$(event.target).hasClass('shape-helper') && !$(event.target).closest('.text').length) {
+                this.app.controlPanel.displayMainPanel(false, 'font');
+            } else if($(event.target).closest('.text').length) {
+                this.app.controlPanel.displayMainPanel(true, 'font');
+            }
+
             this.app.controlPanel.displayMainPanel(false, 'bezier');
-            $('.timing-function').removeClass('selected');
-            $('.keyframe').removeClass('selected');
+
+            //this.app.controlPanel.displayMainPanel(false, 'bezier');
+            //this.app.controlPanel.displayMainPanel(false, 'font');
+                /*$('.timing-function').removeClass('selected');
+                $('.keyframe').removeClass('selected');*/    
+            
             //}   
         });
+
+        /*this.workspaceWrapper.on('click', (event: JQueryEventObject) => {
+            this.app.controlPanel.displayMainPanel(false, 'bezier');
+            this.app.controlPanel.displayMainPanel(false, 'font');
+
+        });*/
 
         $('html').on('keyup', (e: JQueryEventObject) => {
             if (e.keyCode == 46) {
@@ -487,7 +503,7 @@ class Workspace {
                 $('.tool-btn').removeClass('active');
                 $('.tool-btn.select').addClass('active');
                 this.onChangeMode();
-                this.app.controlPanel.displayMainPanel(false, 'bezier');
+                //this.app.controlPanel.displayMainPanel(false, 'bezier');
             }
         });
 
@@ -522,6 +538,7 @@ class Workspace {
         });
 
         $(document).ready(() => {
+            this.app.controlPanel.displayMainPanel(false, 'font');
             $(document).on('click', '.breadcrumb span:last-child .set-scope', (e: JQueryEventObject) => {
                 console.log('prevent');
                 e.preventDefault();
@@ -632,6 +649,8 @@ class Workspace {
             origin: { x: 50, y: 50 },
             scale: 1,
             translate: { x: 0, y: 0 },
+            relativeTranslate: { x: 0, y: 0 },
+            perspective: 0,
     };
 
         new_object.css({
@@ -746,7 +765,12 @@ class Workspace {
                     translate: {
                         x: this.computeParameter(interval['left'].shape.parameters.translate.x, interval['right'].shape.parameters.translate.x, bezier(p)),
                         y: this.computeParameter(interval['left'].shape.parameters.translate.y, interval['right'].shape.parameters.translate.y, bezier(p)),
-                    }
+                    },
+                    relativeTranslate: {
+                        x: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.x, interval['right'].shape.parameters.relativeTranslate.x, bezier(p)),
+                        y: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.y, interval['right'].shape.parameters.relativeTranslate.y, bezier(p)),
+                    },
+                    perspective: this.computeParameter(interval['left'].shape.parameters.perspective, interval['right'].shape.parameters.perspective, bezier(p)),
                 }
                 
             }
@@ -769,7 +793,7 @@ class Workspace {
                 if (showHelpers) {
                     helper.show();
                 }
-                if (layer.id == this.scope) {
+                if (layer.id == this.scopce) {
                     helper = this.workspaceContainer.parent().find('.base-fff');
                 }
 
@@ -1137,6 +1161,7 @@ class Workspace {
                         this.app.controlPanel.updateSkew(shape.parameters.skew);
                         this.app.controlPanel.updateScale(shape.parameters.scale);
                         this.app.controlPanel.updateTranslate(shape.parameters.translate);
+                        //TODO - všechny update!!
 
                         (this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
                             'left': shape.parameters.origin.x + '%',
@@ -1146,7 +1171,10 @@ class Workspace {
                         if (shape instanceof TextField) {
                             var text: any = shape;
                             var layer: any = this.app.timeline.getLayer(id);
+                            this.app.controlPanel.displayMainPanel(true, 'font');
                             this.app.controlPanel.updateFont(text.getColor(), text.getSize(), layer.globalShape.getFamily());
+                        } else {
+                            this.app.controlPanel.displayMainPanel(false, 'font');
                         }
 
                         if (this.app.controlPanel.originMode) {
@@ -1182,9 +1210,25 @@ class Workspace {
         }
     }
 
+    getCurrentShape(id: number, timestamp: number = null): IShape {
+        var layer: Layer = this.app.timeline.getLayer(id);
+        if (layer) {
+            var t: number = timestamp;
+            if (timestamp == null) {
+                t = this.app.timeline.pxToMilisec();
+            }
+
+            var shape: IShape = layer.getShape(t);
+            shape.id = id;
+            return shape;
+        } else {
+            return null;
+        }
+    }
+
 
     //TODO: upravit klonovani - nove vlastnosti z interpolace
-    getCurrentShape(id: number): IShape {
+    getCurrentShapeOld(id: number): IShape {
         var shapeEl: JQuery = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
         if (shapeEl.length) {
             //var c = $.color.extract(shapeEl, 'background-color');
@@ -1239,7 +1283,12 @@ class Workspace {
                 translate: {
                     x: this.getTransformAttr(id, 'translate').x,
                     y: this.getTransformAttr(id, 'translate').y,
-                }
+                },
+                relativeTranslate: {
+                    x: (this.getTransformAttr(id, 'translate').x / shapeEl.width() * 100),
+                    y: (this.getTransformAttr(id, 'translate').y / shapeEl.height() * 100),
+                },
+                perspective: this.getTransformAttr(id, 'perspective'),
         };
 
             //console.log(shapeEl.attr('data-opacity'));
@@ -1591,6 +1640,34 @@ class Workspace {
         }                   
     }
 
+    setPerspective(p: number) {
+        var layer: Layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
+            }
+            if (keyframe != null) {
+                keyframe.shape.setPerspective(p);
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
+                        k.shape.setPerspective(p);
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
+            }
+
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }       
+    }
+
     setTranslate(type: string, value: number) {
         var layer: Layer = this.getHighlightedLayer();
         if (layer) {
@@ -1605,16 +1682,20 @@ class Workspace {
             if (keyframe != null) {
                 if (type === 'x') {
                     keyframe.shape.setTranslateX(value);
+                    keyframe.shape.setRelativeTranslateX((value / keyframe.shape.parameters.width) * 100);
                 } else if (type === 'y') {
                     keyframe.shape.setTranslateY(value);
+                    keyframe.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
                 }
 
                 if (layer.isMultipleEdit) {
                     layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
                         if (type === 'x') {
                             k.shape.setTranslateX(value);
+                            keyframe.shape.setRelativeTranslateX((value / keyframe.shape.parameters.width) * 100);
                         } else if (type === 'y') {
                             k.shape.setTranslateY(value);
+                            keyframe.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
                         }
                     });
 
@@ -2104,6 +2185,8 @@ class Workspace {
                 zindex: this.app.timeline.layers.length,
                 scale: 1,
                 translate: { x: 0, y: 0 },
+                relativeTranslate: { x: 0, y: 0 },
+                perspective: 0,
             };
 
             //var svg: IShape = new Svg(p, doc);
@@ -2251,6 +2334,8 @@ class Workspace {
                     zindex: this.app.timeline.layers.length,
                     scale: 1,
                     translate: { x: 0, y: 0 },
+                    relativeTranslate: { x: 0, y: 0 },
+                    perspective: 0,
             };
                 var image: IShape = new Img(p, dataurl);
                 var layer: Layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), image);
@@ -2313,6 +2398,8 @@ class Workspace {
                             zindex: this.app.timeline.layers.length,
                             scale: 1,
                             translate: { x: 0, y: 0 },
+                            relativeTranslate: { x: 0, y: 0 },
+                            perspective: 0,
                     };
                         var image: IShape = new Img(p, e.target.result);
                         var layer: Layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), image);
@@ -2368,6 +2455,8 @@ class Workspace {
             zindex: this.app.timeline.layers.length,
             scale: 1,
             translate: { x: 0, y: 0 },
+            relativeTranslate: { x: 0, y: 0 },
+            perspective: 0,
     }
 
         var shape: IShape = new TextField(params, null, this.fontParameters.color, this.fontParameters.size, this.fontParameters.fontFamily);
@@ -2641,12 +2730,14 @@ class Workspace {
                 background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
                 opacity: 1,
                 zindex: this.app.timeline.layers.length,
-                borderRadius: [20, 20, 20, 20],
+                borderRadius: [50, 50, 50, 50],
                 rotate: { x: 0, y: 0, z: 0 },
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
                 translate: { x: 0, y: 0 },
+                relativeTranslate: { x: 0, y: 0 },
+                perspective: 0,
         };
 
             var shape: IShape = new Rectangle(params);
@@ -2670,12 +2761,14 @@ class Workspace {
                 background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
                 opacity: 1,
                 zindex: this.app.timeline.layers.length,
-                borderRadius: [20, 20, 20, 20],
+                borderRadius: [50, 50, 50, 50],
                 rotate: { x: 0, y: 0, z: 0 },
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
                 translate: { x: 0, y: 0 },
+                relativeTranslate: { x: 0, y: 0 },
+                perspective: 0,
             };
 
             layer.addKeyframe(new Rectangle(paramsNew), 4000, this.getBezier());

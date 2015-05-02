@@ -43,7 +43,9 @@
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
             scale: 1,
-            translate: {x: 0, y: 0},
+            translate: { x: 0, y: 0 },
+            relativeTranslate: { x: 0, y: 0 },
+            perspective: 0,
         };
 
         var xmlString = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><circle fill="#ff0" stroke="#000" stroke-width="10" stroke-miterlimit="10" cx="382.553" cy="306.786" r="217.961"/><path fill="#ff0" stroke="#000" stroke-width="10" stroke-miterlimit="10" d="M244.69 329.602C315.562 498.534 484.494 479.116 531.582 333"/><ellipse cx="337.592" cy="233.485" rx="21.359" ry="49.272"/><ellipse cx="422.592" cy="232.485" rx="21.359" ry="49.272"/></svg>';

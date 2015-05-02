@@ -76,6 +76,9 @@ class ControlPanel {
     private rotateZEl: JQuery = $('<input>').attr('id', 'rz').addClass('number rotate');
     private rotateZSliderEl: JQuery = $('<div>').addClass('rotate-slider').attr('id', 'rz');
 
+    private perspectiveEl: JQuery = $('<input>').attr('id', 'perspective').addClass('number rotate');
+    private perspectiveSliderEl: JQuery = $('<div>').addClass('perspective-slider').attr('id', 'perspective');
+
     private skewXEl: JQuery = $('<input>').attr('id', 'skewx').addClass('number skew');
     private skewXSliderEl: JQuery = $('<div>').addClass('skew-slider').attr('id', 'skewx');
     private skewYEl: JQuery = $('<input>').attr('id', 'skewy').addClass('number skew');
@@ -91,6 +94,7 @@ class ControlPanel {
     private textColorPicker: any;
 
     private curve: JQuery;
+    private font: JQuery;
 
     constructor(app: Application, container: JQuery) {
         this.app = app;
@@ -246,10 +250,14 @@ class ControlPanel {
         //border-radius
         var radius: JQuery = this.itemControlEl.clone();
         radius.html('<a href="#" class="expand-link tooltip-delay" title="border-radius"><i class="fa fa-caret-right"></i><h2>Zaoblení rohů</h2></a>');
-        this.borderRadiusHelperEl.append(this.borderRadiusTLEl.val('0'));
-        this.borderRadiusHelperEl.append(this.borderRadiusTREl.val('0'));
-        this.borderRadiusHelperEl.append(this.borderRadiusBLEl.val('0'));
-        this.borderRadiusHelperEl.append(this.borderRadiusBREl.val('0'));
+        var rlWrapper: JQuery = $('<div>').attr('id', 'radius-tl-wrapper').append(this.borderRadiusTLEl.val('0'));
+        this.borderRadiusHelperEl.append(rlWrapper.append('%'));
+        var trWrapper: JQuery = $('<div>').attr('id', 'radius-tr-wrapper').append(this.borderRadiusTREl.val('0'));
+        this.borderRadiusHelperEl.append(trWrapper.append('%'));
+        var blWrapper: JQuery = $('<div>').attr('id', 'radius-bl-wrapper').append(this.borderRadiusBLEl.val('0'));
+        this.borderRadiusHelperEl.append(blWrapper.append('%'));
+        var brWrapper: JQuery = $('<div>').attr('id', 'radius-br-wrapper').append(this.borderRadiusBREl.val('0'));
+        this.borderRadiusHelperEl.append(brWrapper.append('%'));
         this.borderRadiusHelperEl.append(this.borderRadiusSwitch);
         var expand: JQuery = $('<div>').addClass('expand');
         expand.append(this.borderRadiusHelperEl);
@@ -275,11 +283,13 @@ class ControlPanel {
         size.append(this.fontSizeEl);
         size.append(' px');
         row.append(size);
-        var expand: JQuery = $('<div>').addClass('expand');
+        var expand: JQuery = $('<div>').addClass('expand init-visible');
         expand.append(row);
         font.append(expand);
 
-        this.controlPanelEl.append(font);
+        this.font = font;
+        this.mainPanel.append(font);
+        //this.controlPanelEl.append(font);
 
         //opacity
         var scale: JQuery = this.itemControlEl.clone();
@@ -335,6 +345,18 @@ class ControlPanel {
         expand.append(z);
         rotate.append(expand);
         this.controlPanelEl.append(rotate);
+
+        //Perspective
+        var perspective: JQuery = this.itemControlEl.clone();
+        perspective.html('<a href="#" class="expand-link tooltip-delay" title="perspective()"><i class="fa fa-caret-right"></i><h2>Perspektiva</h2></a>').addClass('control-rotate');
+        var expand: JQuery = $('<div>').addClass('expand');
+        var x: JQuery = $('<span>').addClass('group-form');
+        x.append(this.perspectiveSliderEl);
+        x.append(this.perspectiveEl);
+        x.append(' px');
+        expand.append(x);
+        perspective.append(expand);
+        this.controlPanelEl.append(perspective);
 
         //skew
         var skew: JQuery = this.itemControlEl.clone();
@@ -459,6 +481,16 @@ class ControlPanel {
             },
         });
 
+        this.perspectiveSliderEl.slider({
+            min: -500,
+            max: 500,
+            step: 1,
+            value: 0,
+            slide: (event, ui) => {
+                this.perspectiveEl.val(ui.value).change();
+            },
+        });
+
         this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
 
         //init coordinates
@@ -483,6 +515,11 @@ class ControlPanel {
         this.opacityEl.on('change', (e: JQueryEventObject) => {
             this.opacitySliderEl.slider('value', $(e.target).val());
             this.app.workspace.setOpacity($(e.target).val());
+        });
+
+        this.perspectiveEl.on('change', (e: JQueryEventObject) => {
+            this.perspectiveSliderEl.slider('value', $(e.target).val());
+            this.app.workspace.setPerspective($(e.target).val());
         });
 
         this.scaleEl.on('change', (e: JQueryEventObject) => {
@@ -755,7 +792,7 @@ class ControlPanel {
                 $(e.target).parents('.control-item').find('.expand').slideToggle(100);
                 return false;
             });
-            this.displayMainPanel(true, 'bezier');
+            //this.displayMainPanel(true, 'bezier');
             this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
             this.renderWrap(this.ctx);
             this.controlPanelEl.perfectScrollbar();
@@ -810,6 +847,11 @@ class ControlPanel {
     updateOpacity(opacity: number) {
         this.opacitySliderEl.slider('option', 'value', Number(opacity));
         this.opacityEl.val(opacity.toString());
+    }
+
+    updatePerspective(p: number) {
+        this.perspectiveSliderEl.slider('option', 'value', Number(p));
+        this.perspectiveEl.val(p.toString());
     }
 
     updateScale(scale: number) {
@@ -965,23 +1007,48 @@ class ControlPanel {
 
     displayMainPanel(visible: boolean, type: string) {
         var object: JQuery;
-        if (type === 'bezier') {
-            object = this.curve;
+        
+        
+        if (type === 'bezier' && visible == true) {
+            this.curve.show();
+            $('.delete-keyframe').removeClass('disabled');
+        } else if (type === "bezier" && visible != true) {
+            this.curve.hide();
+            $('.delete-keyframe').addClass('disabled');
+            $('.timing-function').removeClass('selected');
+            $('.keyframe').removeClass('selected');    
+        }
+            
+
+
+        if (type === 'font' && visible == true) {
+            this.font.show();
+        } else if (type === "font" && visible != true) {
+            this.font.hide();
+        }
+
+        if (this.font.is(':visible') && this.curve.is(':visible')) {
+            $('.clearfix').css({ 'margin-top': '80px' });
+            $('.clearfix').show();
+        } else if (this.font.is(':visible') || this.curve.is(':visible')) {
+            $('.clearfix').css({ 'margin-top': '40px' });
+            $('.clearfix').show();
+        } else {
+            $('.clearfix').hide();
         }
 
         if (visible) {
-            this.mainPanel.show();
-            $('.clearfix').show();
-            $('.clearfix').css({ 'margin-top': '40px' });
-            $('.delete-keyframe').removeClass('disabled');
+            //this.mainPanel.show();
+            //$('.clearfix').show();
+            
+            //$('.delete-keyframe').removeClass('disabled');
         } else {
-            this.mainPanel.hide();
-            $('.clearfix').hide();
-            $('.delete-keyframe').addClass('disabled');
+            //this.mainPanel.hide();
+            //$('.clearfix').hide();
+            /*$('.delete-keyframe').addClass('disabled');
+            $('.timing-function').removeClass('selected');
+            $('.keyframe').removeClass('selected'); */   
         }
-
-        //$('.tooltip').tooltipster({ position: 'right', maxWidth: 200 });
-
     }
 
     /*get Mode (){

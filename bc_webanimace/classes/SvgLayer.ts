@@ -7,6 +7,14 @@
         super.transform(position, shape, helper, currentLayerId, app, showHelper);
     }
 
+    getShape(position: number): IShape {
+        var params: Parameters = super.getParameters(position);
+
+        var shape: IShape = new Svg(params, this.globalShape.getSrc());
+
+        return shape;
+    }
+
     jsem() {
         console.log('jsem svg');
     }

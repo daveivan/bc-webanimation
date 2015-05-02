@@ -53,7 +53,8 @@ class Timeline
     timelineScalePlus: JQuery = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zvětšit měřítko časové osy"><i class="fa fa-search-plus"></i></a>');
 
     private contextMenuEl: JQuery = $('<div>').addClass('context-menu');
-    private menuCreateKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Vytvořit nový snímek');
+    private menuCreateKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Nový snímek');
+    private menuCreateKeyframeOriginal: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Nový snímek z aktuální podoby');
     private menuDeleteKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat snímek');
     private menuCopyKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-copy"></i> Kopírovat snímek');
     private menuPasteKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Vložit snímek ze schránky');
@@ -116,8 +117,8 @@ class Timeline
         this.keyframesEl.on('click', (event: JQueryEventObject) => {
             if ($(event.target).hasClass('keyframes')) {
                 this.app.controlPanel.displayMainPanel(false, 'bezier');
-                $('.timing-function').removeClass('selected');
-                $('.keyframe').removeClass('selected');   
+                /*$('.timing-function').removeClass('selected');
+                $('.keyframe').removeClass('selected');  */ 
             }
         });
 
@@ -271,6 +272,7 @@ class Timeline
 
                     this.contextMenuEl.append('<ul></ul>');
                     this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuCreateKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+                    this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuCreateKeyframeOriginal.attr('data-id', $(e.target).closest('tr').data('id'))));
                     this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuPasteKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
 
                     if (this.copyKeyframe != null && this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
@@ -293,6 +295,16 @@ class Timeline
                         posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
                         var position: number = this.pxToMilisec(posX);
                         this.createKeyframe(idLayer, position);
+                        this.contextMenuEl.remove();
+                    });
+
+                    this.menuCreateKeyframeOriginal.on('click', (event: JQueryEventObject) => {
+                        var idLayer: number = parseInt($(event.target).data('id'));
+                        var n = $('body').find('.keyframes > table');
+                        var posX = e.pageX - $(n).offset().left;
+                        posX = Math.round(posX / this.keyframeWidth) * this.keyframeWidth;
+                        var position: number = this.pxToMilisec(posX);
+                        this.createKeyframe(idLayer, position, true);
                         this.contextMenuEl.remove();
                     });
 
@@ -489,7 +501,7 @@ class Timeline
                     ],
                     rotate: {
                         x: k.shape.parameters.rotate.x,
-                        y: k.shape.parameters.rotate.y, 
+                        y: k.shape.parameters.rotate.y,
                         z: k.shape.parameters.rotate.z,
                     },
                     skew: {
@@ -504,8 +516,13 @@ class Timeline
                     translate: {
                         x: k.shape.parameters.translate.x,
                         y: k.shape.parameters.translate.y,
-                    }
-                }
+                    },
+                    relativeTranslate: {
+                        x: k.shape.parameters.relativeTranslate.x,
+                        y: k.shape.parameters.relativeTranslate.y,
+                    },
+                    perspective: k.shape.parameters.perspective,
+            }
 
                 if (layer.type == Type.DIV) {
                     var shape: IShape = new Rectangle(p);
@@ -1168,8 +1185,8 @@ class Timeline
             containment: 'parent',
             handle: '.pointer-top-wrapper',
             start: (event: JQueryEventObject, ui) => {
-                this.keyframesTableEl.find('.keyframe').removeClass('selected');
-                this.keyframesTableEl.find('.timing-function').removeClass('selected');
+                /*this.keyframesTableEl.find('.keyframe').removeClass('selected');
+                this.keyframesTableEl.find('.timing-function').removeClass('selected');*/
                 this.app.controlPanel.displayMainPanel(false, 'bezier');
                 $('.shape-helper').hide();
             },
@@ -1191,17 +1208,17 @@ class Timeline
 
     private onClickTable(e: JQueryEventObject) {
         this.app.controlPanel.displayMainPanel(false, 'bezier');
-        if (!$(e.target).hasClass('pointer')) {
+        /*if (!$(e.target).hasClass('pointer')) {
             this.keyframesTableEl.find('.timing-function').removeClass('selected');
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
-        }
+        }*/
     }
 
     private onClickChangePosition(e: JQueryEventObject) {
         if (!$(e.target).hasClass('pointer')) {
             if (!$(e.target).hasClass('keyframe')) {
-                this.keyframesTableEl.find('.timing-function').removeClass('selected');
-                this.keyframesTableEl.find('.keyframe').removeClass('selected');
+                /*this.keyframesTableEl.find('.timing-function').removeClass('selected');
+                this.keyframesTableEl.find('.keyframe').removeClass('selected');*/
                 this.app.controlPanel.displayMainPanel(false, 'bezier');
             } else {
                 if (!$(e.target).is(':last-child')) {
@@ -1209,6 +1226,7 @@ class Timeline
                 } else {
                     this.app.controlPanel.displayMainPanel(false, 'bezier');
                     $('.delete-keyframe').removeClass('disabled');
+                    $(e.target).addClass('selected');
                 }   
             }
             var n = $(e.target).parents('table');
@@ -1265,7 +1283,7 @@ class Timeline
         this.createKeyframe(idLayer, position);
     }
 
-    createKeyframe(idLayer: number, position: number) {
+    createKeyframe(idLayer: number, position: number, currentView: boolean = false) {
         if ($.isNumeric(idLayer)) {
             var layer: Layer = this.getLayer(idLayer);
             /*if (layer.parent != null) {
@@ -1290,7 +1308,13 @@ class Timeline
                 this.app.workspace.transformShapes();
             }*/
 
-            this.app.workspace.addKeyframe(layer, this.app.workspace.getCurrentShape(idLayer), position, this.app.workspace.getBezier());
+            if (currentView) {
+                var shape: IShape = this.app.workspace.getCurrentShape(idLayer);
+            } else {
+                var shape: IShape = this.app.workspace.getCurrentShape(idLayer, position);
+            }
+            
+            this.app.workspace.addKeyframe(layer, shape, position, this.app.workspace.getBezier());
 
             this.app.workspace.transformShapes();
         }      

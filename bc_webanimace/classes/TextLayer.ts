@@ -58,6 +58,56 @@
         }
     }
 
+    getShape(position: number): IShape {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left: number = rangeData.left;
+        var right: number = rangeData.right;
+        var rng: Array<Keyframe> = rangeData.rng;
+
+        var fontParams: fontParameters = null;
+        var g: any = this.globalShape;
+
+        if (left != null) {
+            fontParams = {
+                color: rng['l'].shape.getColor(),
+                size: rng['l'].shape.getSize(),
+                fontFamily: g.getFamily(),
+            }
+        }
+        if (right != null) {
+            fontParams = {
+                color: rng['r'].shape.getColor(),
+                size: rng['r'].shape.getSize(),
+                fontFamily: g.getFamily(),
+            }
+        }
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn: Bezier_points = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p: number = (position - left) / (right - left);
+
+            fontParams = {
+                color: {
+                    r: Math.round(this.computeAttr(rng['l'].shape.getColor().r, rng['r'].shape.getColor().r, bezier(p))),
+                    g: Math.round(this.computeAttr(rng['l'].shape.getColor().g, rng['r'].shape.getColor().g, bezier(p))),
+                    b: Math.round(this.computeAttr(rng['l'].shape.getColor().b, rng['r'].shape.getColor().b, bezier(p))),
+                },
+                size: this.computeAttr(rng['l'].shape.getSize(), rng['r'].shape.getSize(), bezier(p)),
+                fontFamily: g.getFamily()
+            }
+        }
+
+        var params: Parameters = super.getParameters(position);
+
+        var t: any = this.globalShape;
+        var shape: IShape = new TextField(params, t.getContent(), fontParams.color, fontParams.size, t.getFamily);
+
+        return shape;
+    }
+
     jsem() {
         console.log('jsem text');
     }

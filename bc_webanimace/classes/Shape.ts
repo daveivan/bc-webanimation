@@ -133,21 +133,41 @@
         this._parameters.translate.y = val;
     }
 
+    setRelativeTranslateX(val: number) {
+        this._parameters.relativeTranslate.x = val;
+    }
+
+    setRelativeTranslateY(val: number) {
+        this._parameters.relativeTranslate.y = val;
+    }
+
+    setPerspective(val: number) {
+        this._parameters.perspective = val;
+    }
+
     setParameterByName(name: string, val: number) {
         if (name == 'opacity') {
             this.setOpacity(val);
+        } else if (name == 'rotatey') {
+            this.setRotateY(val);
         } else if(name == 'rotatez') {
             this.setRotateZ(val);
+        } else if (name == 'rotatex') {
+            this.setRotateX(val);
         } else if (name == 'translatey') {
             this.setTranslateY(val);
+            this.setRelativeTranslateY((val / this.parameters.height) * 100);
         } else if (name == 'translatex') {
             this.setTranslateX(val);
+            this.setRelativeTranslateX((val / this.parameters.width) * 100);
         } else if (name == 'scale') {
             this.setScale(val);
         } else if (name == 'originx') {
             this.setOriginX(val);
         } else if (name == 'originy') {
             this.setOriginY(val);
+        } else if (name == 'perspective') {
+            this.setPerspective(val);
         }
     }
 }  

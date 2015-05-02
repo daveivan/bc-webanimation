@@ -15,6 +15,8 @@
     origin: _2d;
     scale: number;
     translate: _2d;
+    relativeTranslate: _2d;
+    perspective: number;
 }
 
 interface IShape {
@@ -75,5 +77,11 @@ interface IShape {
 
     setTranslateY(val: number);
 
+    setRelativeTranslateX(val: number);
+
+    setRelativeTranslateY(val: number);
+
     setParameterByName(name: string, val: number);
+
+    setPerspective(val: number);
 }

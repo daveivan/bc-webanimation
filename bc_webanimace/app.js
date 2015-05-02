@@ -227,6 +227,112 @@
                     }
                 }
             ]
+        },
+        {
+            name: 'flipOutY',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        opacity: 1,
+                        perspective: 400
+                    }
+                },
+                {
+                    timestamp: [300],
+                    parameters: {
+                        opacity: 1,
+                        rotatey: -15,
+                        perspective: 400
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        opacity: 0,
+                        rotatey: 90,
+                        perspective: 400
+                    }
+                }
+            ]
+        },
+        {
+            name: 'flipInX',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        rotatex: 90,
+                        perspective: 400,
+                        opacity: 0
+                    }
+                },
+                {
+                    timestamp: [400],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        rotatex: -40,
+                        perspective: 400
+                    }
+                },
+                {
+                    timestamp: [600],
+                    parameters: {
+                        opacity: 1,
+                        rotatex: 20,
+                        perspective: 400
+                    }
+                },
+                {
+                    timestamp: [800],
+                    parameters: {
+                        opacity: 1,
+                        rotatex: -10,
+                        perspective: 400
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        opacity: 1,
+                        perspective: 400,
+                        rotatex: 0
+                    }
+                }
+            ]
+        },
+        {
+            name: 'zoomOutDown',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        opacity: 1,
+                        scale: 1,
+                        translatey: 0
+                    }
+                }, {
+                    timestamp: [400],
+                    bezier: { p0: 0.55, p1: 0.055, p2: 0.675, p3: 0.190 },
+                    parameters: {
+                        opacity: 1,
+                        scale: 0.475,
+                        translatey: -60
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.175, p1: 0.885, p2: 0.320, p3: 1 },
+                    parameters: {
+                        scale: 0.1,
+                        translatey: 500,
+                        originx: 50,
+                        originy: 100,
+                        opacity: 0
+                    }
+                }
+            ]
         }
     ];
     return Animations;
@@ -459,7 +565,12 @@ var Layer = (function () {
             translate: {
                 x: rangeData.params.translate.x,
                 y: rangeData.params.translate.y
-            }
+            },
+            relativeTranslate: {
+                x: rangeData.params.relativeTranslate.x,
+                y: rangeData.params.relativeTranslate.y
+            },
+            perspective: rangeData.params.perspective
         };
         var cssStyles = new Array();
 
@@ -616,13 +727,13 @@ var Layer = (function () {
         if (isChange.opacity)
             cssStyles['opacity'] = params.opacity;
         if (isChange.br0)
-            cssStyles['border-top-left-radius'] = params.borderRadius[0];
+            cssStyles['border-top-left-radius'] = params.borderRadius[0] + '%';
         if (isChange.br1)
-            cssStyles['border-top-right-radius'] = params.borderRadius[1];
+            cssStyles['border-top-right-radius'] = params.borderRadius[1] + '%';
         if (isChange.br2)
-            cssStyles['border-bottom-right-radius'] = params.borderRadius[2];
+            cssStyles['border-bottom-right-radius'] = params.borderRadius[2] + '%';
         if (isChange.br3)
-            cssStyles['border-bottom-left-radius'] = params.borderRadius[3];
+            cssStyles['border-bottom-left-radius'] = params.borderRadius[3] + '%';
         if (isChange.rotate)
             cssStyles['transform'] = 'rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)';
         if (isChange.origin)
@@ -779,19 +890,19 @@ var Layer = (function () {
             }
             if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0]) {
                 brParam[0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
-                shape.css({ 'border-top-left-radius': brParam[0] });
+                shape.css({ 'border-top-left-radius': brParam[0] + '%' });
             }
             if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1]) {
                 brParam[1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
-                shape.css({ 'border-top-right-radius': brParam[1] });
+                shape.css({ 'border-top-right-radius': brParam[1] + '%' });
             }
             if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2]) {
                 brParam[2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
-                shape.css({ 'border-bottom-right-radius': brParam[2] });
+                shape.css({ 'border-bottom-right-radius': brParam[2] + '%' });
             }
             if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3]) {
                 brParam[3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
-                shape.css({ 'border-bottom-left-radius': brParam[3] });
+                shape.css({ 'border-bottom-left-radius': brParam[3] + '%' });
             }
 
             var isTransform = false;
@@ -925,7 +1036,12 @@ var Layer = (function () {
             translate: {
                 x: rangeData.params.translate.x,
                 y: rangeData.params.translate.y
-            }
+            },
+            relativeTranslate: {
+                x: rangeData.params.relativeTranslate.x,
+                y: rangeData.params.relativeTranslate.y
+            },
+            perspective: rangeData.params.perspective
         };
 
         //if exist left && right, compute attributes
@@ -995,19 +1111,19 @@ var Layer = (function () {
             }
             if (paramsLeft.borderRadius[0] != paramsRight.borderRadius[0] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
-                shape.css({ 'border-top-left-radius': params.borderRadius[0] });
+                shape.css({ 'border-top-left-radius': params.borderRadius[0] + '%' });
             }
             if (paramsLeft.borderRadius[1] != paramsRight.borderRadius[1] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
-                shape.css({ 'border-top-right-radius': params.borderRadius[1] });
+                shape.css({ 'border-top-right-radius': params.borderRadius[1] + '%' });
             }
             if (paramsLeft.borderRadius[2] != paramsRight.borderRadius[2] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
-                shape.css({ 'border-bottom-right-radius': params.borderRadius[2] });
+                shape.css({ 'border-bottom-right-radius': params.borderRadius[2] + '%' });
             }
             if (paramsLeft.borderRadius[3] != paramsRight.borderRadius[3] || left != this.lastTransformKeyframe) {
                 params['borderRadius'][3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
-                shape.css({ 'border-bottom-left-radius': params.borderRadius[3] });
+                shape.css({ 'border-bottom-left-radius': params.borderRadius[3] + '%' });
             }
 
             var isTransform = false;
@@ -1048,12 +1164,20 @@ var Layer = (function () {
 
             if (paramsLeft.translate.x != paramsRight.translate.x || left != this.lastTransformKeyframe) {
                 isTransform = true;
+                params['relativeTranslate']['x'] = this.computeAttr(paramsLeft.relativeTranslate.x, paramsRight.relativeTranslate.x, bezier(p));
                 params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
             }
 
             if (paramsLeft.translate.y != paramsRight.translate.y || left != this.lastTransformKeyframe) {
                 isTransform = true;
+                params['relativeTranslate']['y'] = this.computeAttr(paramsLeft.relativeTranslate.y, paramsRight.relativeTranslate.y, bezier(p));
                 params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
+            }
+
+            //var isPerspective: boolean = false;
+            if (paramsLeft.perspective != paramsRight.perspective || left != this.lastTransformKeyframe) {
+                isTransform = true;
+                params['perspective'] = this.computeAttr(paramsLeft.perspective, paramsRight.perspective, bezier(p));
             }
 
             if (isOrigin) {
@@ -1062,9 +1186,10 @@ var Layer = (function () {
             }
 
             if (isTransform) {
-                shape.css({ 'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
-                helper.css({ 'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
             }
+
             shape.removeClass('novisible');
             helper.removeClass('novisible');
 
@@ -1080,11 +1205,11 @@ var Layer = (function () {
                 'border': params.border,
                 'z-index': params.zindex,
                 'opacity': params.opacity,
-                'border-top-left-radius': params.borderRadius[0],
-                'border-top-right-radius': params.borderRadius[1],
-                'border-bottom-right-radius': params.borderRadius[2],
-                'border-bottom-left-radius': params.borderRadius[3],
-                'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'border-top-left-radius': params.borderRadius[0] + '%',
+                'border-top-right-radius': params.borderRadius[1] + '%',
+                'border-bottom-right-radius': params.borderRadius[2] + '%',
+                'border-bottom-left-radius': params.borderRadius[3] + '%',
+                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             });
 
@@ -1095,7 +1220,7 @@ var Layer = (function () {
                     'width': params.relativeSize.width + '%',
                     'height': params.relativeSize.height + '%',
                     'z-index': (params.zindex + 1000),
-                    'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
 
@@ -1145,11 +1270,119 @@ var Layer = (function () {
             app.controlPanel.updateTransformOrigin(params.origin.x, params.origin.y);
             app.controlPanel.updateScale(params.scale);
             app.controlPanel.updateTranslate(params.translate);
+            app.controlPanel.updatePerspective(params.perspective);
             $('.shape-helper.highlight').first().find('.origin-point').css({
                 'left': params.origin.x + '%',
                 'top': params.origin.y + '%'
             });
         }
+    };
+
+    Layer.prototype.getShape = function (position) {
+        return null;
+    };
+
+    Layer.prototype.getParameters = function (position) {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left = rangeData.left;
+        var right = rangeData.right;
+        var rng = rangeData.rng;
+
+        var params = {
+            top: rangeData.params.top,
+            left: rangeData.params.left,
+            width: rangeData.params.width,
+            height: rangeData.params.height,
+            background: {
+                r: rangeData.params.background.r,
+                g: rangeData.params.background.g,
+                b: rangeData.params.background.b,
+                a: rangeData.params.background.a
+            },
+            opacity: rangeData.params.opacity,
+            borderRadius: [
+                rangeData.params.borderRadius[0],
+                rangeData.params.borderRadius[1],
+                rangeData.params.borderRadius[2],
+                rangeData.params.borderRadius[3]
+            ],
+            rotate: {
+                x: rangeData.params.rotate.x,
+                y: rangeData.params.rotate.y,
+                z: rangeData.params.rotate.z
+            },
+            skew: {
+                x: rangeData.params.skew.x,
+                y: rangeData.params.skew.y
+            },
+            origin: {
+                x: rangeData.params.origin.x,
+                y: rangeData.params.origin.y
+            },
+            zindex: this.globalShape.parameters.zindex,
+            relativeSize: {
+                width: rangeData.params.relativeSize.width,
+                height: rangeData.params.relativeSize.height
+            },
+            relativePosition: {
+                top: rangeData.params.relativePosition.top,
+                left: rangeData.params.relativePosition.left
+            },
+            scale: rangeData.params.scale,
+            translate: {
+                x: rangeData.params.translate.x,
+                y: rangeData.params.translate.y
+            },
+            relativeTranslate: {
+                x: rangeData.params.relativeTranslate.x,
+                y: rangeData.params.relativeTranslate.y
+            },
+            perspective: rangeData.params.perspective
+        };
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p = (position - left) / (right - left);
+
+            var paramsLeft = rng['l'].shape.parameters;
+            var paramsRight = rng['r'].shape.parameters;
+
+            params['relativePosition']['top'] = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
+            params['top'] = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
+            params['relativePosition']['left'] = this.computeAttr(paramsLeft.relativePosition.left, paramsRight.relativePosition.left, bezier(p));
+            params['left'] = Math.round(this.computeAttr(paramsLeft.left, paramsRight.left, bezier(p)));
+            params['relativeSize']['width'] = this.computeAttr(paramsLeft.relativeSize.width, paramsRight.relativeSize.width, bezier(p));
+            params['width'] = Math.round(this.computeAttr(paramsLeft.width, paramsRight.width, bezier(p)));
+            params['relativeSize']['height'] = this.computeAttr(paramsLeft.relativeSize.height, paramsRight.relativeSize.height, bezier(p));
+            params['height'] = Math.round(this.computeAttr(paramsLeft.height, paramsRight.height, bezier(p)));
+            params.background.r = Math.round(this.computeAttr(paramsLeft.background.r, paramsRight.background.r, bezier(p)));
+            params.background.g = Math.round(this.computeAttr(paramsLeft.background.g, paramsRight.background.g, bezier(p)));
+            params.background.b = Math.round(this.computeAttr(paramsLeft.background.b, paramsRight.background.b, bezier(p)));
+            params.background.a = this.computeAttr(paramsLeft.background.a, paramsRight.background.a, bezier(p));
+            params['opacity'] = this.computeAttr(paramsLeft.opacity, paramsRight.opacity, bezier(p));
+            params['borderRadius'][0] = Math.round(this.computeAttr(paramsLeft.borderRadius[0], paramsRight.borderRadius[0], bezier(p)));
+            params['borderRadius'][1] = Math.round(this.computeAttr(paramsLeft.borderRadius[1], paramsRight.borderRadius[1], bezier(p)));
+            params['borderRadius'][2] = Math.round(this.computeAttr(paramsLeft.borderRadius[2], paramsRight.borderRadius[2], bezier(p)));
+            params['borderRadius'][3] = Math.round(this.computeAttr(paramsLeft.borderRadius[3], paramsRight.borderRadius[3], bezier(p)));
+            params['rotate']['x'] = Math.round(this.computeAttr(paramsLeft.rotate.x, paramsRight.rotate.x, bezier(p)));
+            params['rotate']['y'] = Math.round(this.computeAttr(paramsLeft.rotate.y, paramsRight.rotate.y, bezier(p)));
+            params['rotate']['z'] = Math.round(this.computeAttr(paramsLeft.rotate.z, paramsRight.rotate.z, bezier(p)));
+            params['skew']['x'] = Math.round(this.computeAttr(paramsLeft.skew.x, paramsRight.skew.x, bezier(p)));
+            params['skew']['y'] = Math.round(this.computeAttr(paramsLeft.skew.y, paramsRight.skew.y, bezier(p)));
+            params['origin']['x'] = this.computeAttr(paramsLeft.origin.x, paramsRight.origin.x, bezier(p));
+            params['origin']['y'] = this.computeAttr(paramsLeft.origin.y, paramsRight.origin.y, bezier(p));
+            params['scale'] = this.computeAttr(paramsLeft.scale, paramsRight.scale, bezier(p));
+            params['relativeTranslate']['x'] = this.computeAttr(paramsLeft.relativeTranslate.x, paramsRight.relativeTranslate.x, bezier(p));
+            params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
+            params['relativeTranslate']['y'] = this.computeAttr(paramsLeft.relativeTranslate.y, paramsRight.relativeTranslate.y, bezier(p));
+            params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
+            params['perspective'] = this.computeAttr(paramsLeft.perspective, paramsRight.perspective, bezier(p));
+        }
+
+        return params;
     };
 
     Layer.prototype.transformOriginal = function (position, shape, helper, currentLayerId, app) {
@@ -1211,7 +1444,12 @@ var Layer = (function () {
                 translate: {
                     x: this.computeAttr(rng['l'].shape.parameters.translate.x, rng['r'].shape.parameters.translate.x, bezier(p)),
                     y: this.computeAttr(rng['l'].shape.parameters.translate.y, rng['r'].shape.parameters.translate.y, bezier(p))
-                }
+                },
+                relativeTranslate: {
+                    x: this.computeAttr(rng['l'].shape.parameters.relativeTranslate.x, rng['r'].shape.parameters.relativeTranslate.x, bezier(p)),
+                    y: this.computeAttr(rng['l'].shape.parameters.relativeTranslate.y, rng['r'].shape.parameters.relativeTranslate.y, bezier(p))
+                },
+                perspective: this.computeAttr(rng['l'].shape.parameters.perspective, rng['r'].shape.parameters.perspective, bezier(p))
             };
 
             //shape.css("visibility", "visible");
@@ -1420,29 +1658,15 @@ var Layer = (function () {
 
         if ((p.borderRadius[0] == p.borderRadius[1]) && (p.borderRadius[0] == p.borderRadius[2]) && (p.borderRadius[0] == p.borderRadius[3])) {
             if (p.borderRadius[0] != 0) {
-                cssObject['border-radius'] = p.borderRadius[0] + 'px';
-                //cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
+                cssObject['border-radius'] = p.borderRadius[0] + '%';
             }
         } else {
-            /*cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
-            cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
-            cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
-            cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';*/
-            cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
-            cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
-            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
-            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
+            cssObject['border-top-left-radius'] = p.borderRadius[0] + '%';
+            cssObject['border-top-right-radius'] = p.borderRadius[1] + '%';
+            cssObject['border-bottom-right-radius'] = p.borderRadius[2] + '%';
+            cssObject['border-bottom-left-radius'] = p.borderRadius[3] + '%';
         }
 
-        /*if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1) {
-        if ((p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) && (p.skew.x != 0 || p.skew.y != 0) && (p.scale != 1)) {
-        cssObject['transform'] = 'scale(' + p.scale + ') rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
-        } else if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0) {
-        cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg)';
-        } else if (p.skew.x != 0 || p.skew.y != 0) {
-        cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
-        }
-        }*/
         if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1 || p.translate.x != 0 || p.translate.y != 0) {
             var t = "";
             if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
@@ -1456,7 +1680,7 @@ var Layer = (function () {
             }
 
             if (p.translate.x != 0 || p.translate.y != 0) {
-                t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
+                t += 'translateX(' + p.relativeTranslate.x + '%) translateY(' + p.relativeTranslate.y + '%)';
             }
             cssObject['transform'] = t;
         }
@@ -1481,7 +1705,8 @@ var Layer = (function () {
             skew: false,
             scale: false,
             translate: false,
-            origin: false
+            origin: false,
+            perspective: false
         };
         var initP = (this.getKeyframeByTimestamp(this.timestamps[0])).shape.parameters;
         this.getAllKeyframes().forEach(function (k, i) {
@@ -1526,12 +1751,14 @@ var Layer = (function () {
                 change.origin = true;
             if (initP.origin.y != p.origin.y || initP.origin.y != 50)
                 change.origin = true;
-            if (initP.scale != p.scale || initP.scale != 0)
+            if (initP.scale != p.scale || initP.scale != 1)
                 change.scale = true;
             if (initP.translate.x != p.translate.x || initP.translate.x != 0)
                 change.translate = true;
             if (initP.translate.y != p.translate.y || initP.translate.y != 0)
                 change.translate = true;
+            if (p.perspective != 0)
+                change.perspective = true;
         });
 
         var p = (this.getKeyframeByTimestamp(timestamp)).shape.parameters;
@@ -1554,28 +1781,17 @@ var Layer = (function () {
         if (change.opacity)
             cssObject['opacity'] = p.opacity;
 
-        /*if (change.radius) {
-        if ((p.borderRadius[0] == p.borderRadius[1]) &&
-        (p.borderRadius[0] == p.borderRadius[2]) &&
-        (p.borderRadius[0] == p.borderRadius[3])) {
-        cssObject['border-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
-        } else {
-        cssObject['border-top-left-radius'] = (p.borderRadius[0] / p.width) * 100 + '%';
-        cssObject['border-top-right-radius'] = (p.borderRadius[1] / p.width) * 100 + '%';
-        cssObject['border-bottom-right-radius'] = (p.borderRadius[2] / p.width) * 100 + '%';
-        cssObject['border-bottom-left-radius'] = (p.borderRadius[3] / p.width) * 100 + '%';
-        }
-        }*/
         if (change.radius) {
             if ((p.borderRadius[0] == p.borderRadius[1]) && (p.borderRadius[0] == p.borderRadius[2]) && (p.borderRadius[0] == p.borderRadius[3])) {
                 cssObject['border-radius'] = p.borderRadius[0] + 'px';
             } else {
-                cssObject['border-top-left-radius'] = p.borderRadius[0] + 'px';
-                cssObject['border-top-right-radius'] = p.borderRadius[1] + 'px';
-                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + 'px';
-                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + 'px';
+                cssObject['border-top-left-radius'] = p.borderRadius[0] + '%';
+                cssObject['border-top-right-radius'] = p.borderRadius[1] + '%';
+                cssObject['border-bottom-right-radius'] = p.borderRadius[2] + '%';
+                cssObject['border-bottom-left-radius'] = p.borderRadius[3] + '%';
             }
         }
+
         if (change.rotate && change.skew) {
             cssObject['transform'] = 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         } else if (change.rotate) {
@@ -1584,11 +1800,15 @@ var Layer = (function () {
             cssObject['transform'] = 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg)';
         }
 
-        if (change.rotate || change.skew || change.scale || change.translate) {
+        if (change.rotate || change.skew || change.scale || change.translate || change.perspective) {
             var t = "";
+            if (change.perspective) {
+                t += 'perspective(' + p.perspective + 'px) ';
+            }
+
             if (change.translate) {
                 //t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
-                t += 'translate3d(' + p.translate.x + 'px, ' + p.translate.y + 'px, 0) ';
+                t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, 0) ';
             }
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -1602,7 +1822,7 @@ var Layer = (function () {
             cssObject['transform'] = t;
         }
 
-        if ((change.rotate || change.skew || change.scale || change.translate) && change.origin) {
+        if ((change.rotate || change.skew || change.scale || change.translate || change.perspective) && change.origin) {
             if (change.origin)
                 cssObject["transform-origin"] = p.origin.x + '% ' + p.origin.y + '%';
         }
@@ -1646,11 +1866,11 @@ var Layer = (function () {
                 //'z-index': params.zindex,
                 'z-index': this.globalShape.parameters.zindex,
                 'opacity': params.opacity,
-                'border-top-left-radius': params.borderRadius[0],
-                'border-top-right-radius': params.borderRadius[1],
-                'border-bottom-right-radius': params.borderRadius[2],
-                'border-bottom-left-radius': params.borderRadius[3],
-                'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'border-top-left-radius': params.borderRadius[0] + '%',
+                'border-top-right-radius': params.borderRadius[1] + '%',
+                'border-bottom-right-radius': params.borderRadius[2] + '%',
+                'border-bottom-left-radius': params.borderRadius[3] + '%',
+                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             };
             shape.css(css);
@@ -1687,7 +1907,7 @@ var Layer = (function () {
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
-                    'transform': 'translateX(' + params.translate.x + 'px) translateY(' + params.translate.y + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
 
@@ -1750,7 +1970,8 @@ var Timeline = (function () {
         this.timelineScaleMinus = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zmenšit měřítko časové osy"><i class="fa fa-search-minus"></i></a>');
         this.timelineScalePlus = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zvětšit měřítko časové osy"><i class="fa fa-search-plus"></i></a>');
         this.contextMenuEl = $('<div>').addClass('context-menu');
-        this.menuCreateKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Vytvořit nový snímek');
+        this.menuCreateKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Nový snímek');
+        this.menuCreateKeyframeOriginal = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Nový snímek z aktuální podoby');
         this.menuDeleteKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat snímek');
         this.menuCopyKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-copy"></i> Kopírovat snímek');
         this.menuPasteKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-paste"></i> Vložit snímek ze schránky');
@@ -1811,8 +2032,8 @@ var Timeline = (function () {
         this.keyframesEl.on('click', function (event) {
             if ($(event.target).hasClass('keyframes')) {
                 _this.app.controlPanel.displayMainPanel(false, 'bezier');
-                $('.timing-function').removeClass('selected');
-                $('.keyframe').removeClass('selected');
+                /*$('.timing-function').removeClass('selected');
+                $('.keyframe').removeClass('selected');  */
             }
         });
 
@@ -1965,6 +2186,7 @@ var Timeline = (function () {
 
                     _this.contextMenuEl.append('<ul></ul>');
                     _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuCreateKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
+                    _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuCreateKeyframeOriginal.attr('data-id', $(e.target).closest('tr').data('id'))));
                     _this.contextMenuEl.find('ul').append($('<li></li>').append(_this.menuPasteKeyframe.attr('data-id', $(e.target).closest('tr').data('id'))));
 
                     if (_this.copyKeyframe != null && _this.copyKeyframe.layer == parseInt($(e.target).closest('tr').data('id'))) {
@@ -1987,6 +2209,16 @@ var Timeline = (function () {
                         posX = Math.round(posX / _this.keyframeWidth) * _this.keyframeWidth;
                         var position = _this.pxToMilisec(posX);
                         _this.createKeyframe(idLayer, position);
+                        _this.contextMenuEl.remove();
+                    });
+
+                    _this.menuCreateKeyframeOriginal.on('click', function (event) {
+                        var idLayer = parseInt($(event.target).data('id'));
+                        var n = $('body').find('.keyframes > table');
+                        var posX = e.pageX - $(n).offset().left;
+                        posX = Math.round(posX / _this.keyframeWidth) * _this.keyframeWidth;
+                        var position = _this.pxToMilisec(posX);
+                        _this.createKeyframe(idLayer, position, true);
                         _this.contextMenuEl.remove();
                     });
 
@@ -2195,7 +2427,12 @@ var Timeline = (function () {
                     translate: {
                         x: k.shape.parameters.translate.x,
                         y: k.shape.parameters.translate.y
-                    }
+                    },
+                    relativeTranslate: {
+                        x: k.shape.parameters.relativeTranslate.x,
+                        y: k.shape.parameters.relativeTranslate.y
+                    },
+                    perspective: k.shape.parameters.perspective
                 };
 
                 if (layer.type == 0 /* DIV */) {
@@ -2875,8 +3112,8 @@ var Timeline = (function () {
             containment: 'parent',
             handle: '.pointer-top-wrapper',
             start: function (event, ui) {
-                _this.keyframesTableEl.find('.keyframe').removeClass('selected');
-                _this.keyframesTableEl.find('.timing-function').removeClass('selected');
+                /*this.keyframesTableEl.find('.keyframe').removeClass('selected');
+                this.keyframesTableEl.find('.timing-function').removeClass('selected');*/
                 _this.app.controlPanel.displayMainPanel(false, 'bezier');
                 $('.shape-helper').hide();
             },
@@ -2898,17 +3135,17 @@ var Timeline = (function () {
 
     Timeline.prototype.onClickTable = function (e) {
         this.app.controlPanel.displayMainPanel(false, 'bezier');
-        if (!$(e.target).hasClass('pointer')) {
-            this.keyframesTableEl.find('.timing-function').removeClass('selected');
-            this.keyframesTableEl.find('.keyframe').removeClass('selected');
-        }
+        /*if (!$(e.target).hasClass('pointer')) {
+        this.keyframesTableEl.find('.timing-function').removeClass('selected');
+        this.keyframesTableEl.find('.keyframe').removeClass('selected');
+        }*/
     };
 
     Timeline.prototype.onClickChangePosition = function (e) {
         if (!$(e.target).hasClass('pointer')) {
             if (!$(e.target).hasClass('keyframe')) {
-                this.keyframesTableEl.find('.timing-function').removeClass('selected');
-                this.keyframesTableEl.find('.keyframe').removeClass('selected');
+                /*this.keyframesTableEl.find('.timing-function').removeClass('selected');
+                this.keyframesTableEl.find('.keyframe').removeClass('selected');*/
                 this.app.controlPanel.displayMainPanel(false, 'bezier');
             } else {
                 if (!$(e.target).is(':last-child')) {
@@ -2916,6 +3153,7 @@ var Timeline = (function () {
                 } else {
                     this.app.controlPanel.displayMainPanel(false, 'bezier');
                     $('.delete-keyframe').removeClass('disabled');
+                    $(e.target).addClass('selected');
                 }
             }
             var n = $(e.target).parents('table');
@@ -2972,7 +3210,8 @@ var Timeline = (function () {
         this.createKeyframe(idLayer, position);
     };
 
-    Timeline.prototype.createKeyframe = function (idLayer, position) {
+    Timeline.prototype.createKeyframe = function (idLayer, position, currentView) {
+        if (typeof currentView === "undefined") { currentView = false; }
         if ($.isNumeric(idLayer)) {
             var layer = this.getLayer(idLayer);
 
@@ -2997,7 +3236,13 @@ var Timeline = (function () {
             this.renderKeyframes(idLayer);
             this.app.workspace.transformShapes();
             }*/
-            this.app.workspace.addKeyframe(layer, this.app.workspace.getCurrentShape(idLayer), position, this.app.workspace.getBezier());
+            if (currentView) {
+                var shape = this.app.workspace.getCurrentShape(idLayer);
+            } else {
+                var shape = this.app.workspace.getCurrentShape(idLayer, position);
+            }
+
+            this.app.workspace.addKeyframe(layer, shape, position, this.app.workspace.getBezier());
 
             this.app.workspace.transformShapes();
         }
@@ -3329,21 +3574,41 @@ var Shape = (function () {
         this._parameters.translate.y = val;
     };
 
+    Shape.prototype.setRelativeTranslateX = function (val) {
+        this._parameters.relativeTranslate.x = val;
+    };
+
+    Shape.prototype.setRelativeTranslateY = function (val) {
+        this._parameters.relativeTranslate.y = val;
+    };
+
+    Shape.prototype.setPerspective = function (val) {
+        this._parameters.perspective = val;
+    };
+
     Shape.prototype.setParameterByName = function (name, val) {
         if (name == 'opacity') {
             this.setOpacity(val);
+        } else if (name == 'rotatey') {
+            this.setRotateY(val);
         } else if (name == 'rotatez') {
             this.setRotateZ(val);
+        } else if (name == 'rotatex') {
+            this.setRotateX(val);
         } else if (name == 'translatey') {
             this.setTranslateY(val);
+            this.setRelativeTranslateY((val / this.parameters.height) * 100);
         } else if (name == 'translatex') {
             this.setTranslateX(val);
+            this.setRelativeTranslateX((val / this.parameters.width) * 100);
         } else if (name == 'scale') {
             this.setScale(val);
         } else if (name == 'originx') {
             this.setOriginX(val);
         } else if (name == 'originy') {
             this.setOriginY(val);
+        } else if (name == 'perspective') {
+            this.setPerspective(val);
         }
     };
     return Shape;
@@ -3476,12 +3741,25 @@ var Workspace = (function () {
                 _this.onDrawSquare(event);
             }
 
+            if (!$(event.target).hasClass('shape-helper') && !$(event.target).closest('.text').length) {
+                _this.app.controlPanel.displayMainPanel(false, 'font');
+            } else if ($(event.target).closest('.text').length) {
+                _this.app.controlPanel.displayMainPanel(true, 'font');
+            }
+
             _this.app.controlPanel.displayMainPanel(false, 'bezier');
-            $('.timing-function').removeClass('selected');
-            $('.keyframe').removeClass('selected');
+            //this.app.controlPanel.displayMainPanel(false, 'bezier');
+            //this.app.controlPanel.displayMainPanel(false, 'font');
+            /*$('.timing-function').removeClass('selected');
+            $('.keyframe').removeClass('selected');*/
             //}
         });
 
+        /*this.workspaceWrapper.on('click', (event: JQueryEventObject) => {
+        this.app.controlPanel.displayMainPanel(false, 'bezier');
+        this.app.controlPanel.displayMainPanel(false, 'font');
+        
+        });*/
         $('html').on('keyup', function (e) {
             if (e.keyCode == 46) {
                 if (e.target.nodeName === 'BODY') {
@@ -3825,7 +4103,7 @@ var Workspace = (function () {
                 $('.tool-btn').removeClass('active');
                 $('.tool-btn.select').addClass('active');
                 _this.onChangeMode();
-                _this.app.controlPanel.displayMainPanel(false, 'bezier');
+                //this.app.controlPanel.displayMainPanel(false, 'bezier');
             }
         });
 
@@ -3859,6 +4137,7 @@ var Workspace = (function () {
         });
 
         $(document).ready(function () {
+            _this.app.controlPanel.displayMainPanel(false, 'font');
             $(document).on('click', '.breadcrumb span:last-child .set-scope', function (e) {
                 console.log('prevent');
                 e.preventDefault();
@@ -3967,7 +4246,9 @@ var Workspace = (function () {
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
             scale: 1,
-            translate: { x: 0, y: 0 }
+            translate: { x: 0, y: 0 },
+            relativeTranslate: { x: 0, y: 0 },
+            perspective: 0
         };
 
         new_object.css({
@@ -4084,7 +4365,12 @@ var Workspace = (function () {
                     translate: {
                         x: this.computeParameter(interval['left'].shape.parameters.translate.x, interval['right'].shape.parameters.translate.x, bezier(p)),
                         y: this.computeParameter(interval['left'].shape.parameters.translate.y, interval['right'].shape.parameters.translate.y, bezier(p))
-                    }
+                    },
+                    relativeTranslate: {
+                        x: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.x, interval['right'].shape.parameters.relativeTranslate.x, bezier(p)),
+                        y: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.y, interval['right'].shape.parameters.relativeTranslate.y, bezier(p))
+                    },
+                    perspective: this.computeParameter(interval['left'].shape.parameters.perspective, interval['right'].shape.parameters.perspective, bezier(p))
                 };
             }
 
@@ -4108,7 +4394,7 @@ var Workspace = (function () {
                 if (showHelpers) {
                     helper.show();
                 }
-                if (layer.id == _this.scope) {
+                if (layer.id == _this.scopce) {
                     helper = _this.workspaceContainer.parent().find('.base-fff');
                 }
 
@@ -4487,7 +4773,10 @@ var Workspace = (function () {
                         if (shape instanceof TextField) {
                             var text = shape;
                             var layer = _this.app.timeline.getLayer(id);
+                            _this.app.controlPanel.displayMainPanel(true, 'font');
                             _this.app.controlPanel.updateFont(text.getColor(), text.getSize(), layer.globalShape.getFamily());
+                        } else {
+                            _this.app.controlPanel.displayMainPanel(false, 'font');
                         }
 
                         if (_this.app.controlPanel.originMode) {
@@ -4523,8 +4812,25 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.getCurrentShape = function (id, timestamp) {
+        if (typeof timestamp === "undefined") { timestamp = null; }
+        var layer = this.app.timeline.getLayer(id);
+        if (layer) {
+            var t = timestamp;
+            if (timestamp == null) {
+                t = this.app.timeline.pxToMilisec();
+            }
+
+            var shape = layer.getShape(t);
+            shape.id = id;
+            return shape;
+        } else {
+            return null;
+        }
+    };
+
     //TODO: upravit klonovani - nove vlastnosti z interpolace
-    Workspace.prototype.getCurrentShape = function (id) {
+    Workspace.prototype.getCurrentShapeOld = function (id) {
         var shapeEl = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
         if (shapeEl.length) {
             //var c = $.color.extract(shapeEl, 'background-color');
@@ -4580,7 +4886,12 @@ var Workspace = (function () {
                 translate: {
                     x: this.getTransformAttr(id, 'translate').x,
                     y: this.getTransformAttr(id, 'translate').y
-                }
+                },
+                relativeTranslate: {
+                    x: (this.getTransformAttr(id, 'translate').x / shapeEl.width() * 100),
+                    y: (this.getTransformAttr(id, 'translate').y / shapeEl.height() * 100)
+                },
+                perspective: this.getTransformAttr(id, 'perspective')
             };
 
             //console.log(shapeEl.attr('data-opacity'));
@@ -4931,6 +5242,34 @@ var Workspace = (function () {
         }
     };
 
+    Workspace.prototype.setPerspective = function (p) {
+        var layer = this.getHighlightedLayer();
+        if (layer) {
+            var keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
+            if (keyframe == null) {
+                if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
+                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                    //this.app.timeline.renderKeyframes(layer.id);
+                    keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
+                }
+            }
+            if (keyframe != null) {
+                keyframe.shape.setPerspective(p);
+
+                if (layer.isMultipleEdit) {
+                    layer.getAllKeyframes().forEach(function (k, index) {
+                        k.shape.setPerspective(p);
+                    });
+
+                    this.renderSingleShape(layer.id);
+                }
+            }
+
+            this.transformShapes();
+            this.app.timeline.selectLayer(layer.id);
+        }
+    };
+
     Workspace.prototype.setTranslate = function (type, value) {
         var layer = this.getHighlightedLayer();
         if (layer) {
@@ -4945,16 +5284,20 @@ var Workspace = (function () {
             if (keyframe != null) {
                 if (type === 'x') {
                     keyframe.shape.setTranslateX(value);
+                    keyframe.shape.setRelativeTranslateX((value / keyframe.shape.parameters.width) * 100);
                 } else if (type === 'y') {
                     keyframe.shape.setTranslateY(value);
+                    keyframe.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
                 }
 
                 if (layer.isMultipleEdit) {
                     layer.getAllKeyframes().forEach(function (k, index) {
                         if (type === 'x') {
                             k.shape.setTranslateX(value);
+                            keyframe.shape.setRelativeTranslateX((value / keyframe.shape.parameters.width) * 100);
                         } else if (type === 'y') {
                             k.shape.setTranslateY(value);
+                            keyframe.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
                         }
                     });
 
@@ -5451,7 +5794,9 @@ var Workspace = (function () {
                 origin: { x: 50, y: 50 },
                 zindex: this.app.timeline.layers.length,
                 scale: 1,
-                translate: { x: 0, y: 0 }
+                translate: { x: 0, y: 0 },
+                relativeTranslate: { x: 0, y: 0 },
+                perspective: 0
             };
 
             //var svg: IShape = new Svg(p, doc);
@@ -5601,7 +5946,9 @@ var Workspace = (function () {
                     origin: { x: 50, y: 50 },
                     zindex: _this.app.timeline.layers.length,
                     scale: 1,
-                    translate: { x: 0, y: 0 }
+                    translate: { x: 0, y: 0 },
+                    relativeTranslate: { x: 0, y: 0 },
+                    perspective: 0
                 };
                 var image = new Img(p, dataurl);
                 var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
@@ -5664,7 +6011,9 @@ var Workspace = (function () {
                             origin: { x: 50, y: 50 },
                             zindex: _this.app.timeline.layers.length,
                             scale: 1,
-                            translate: { x: 0, y: 0 }
+                            translate: { x: 0, y: 0 },
+                            relativeTranslate: { x: 0, y: 0 },
+                            perspective: 0
                         };
                         var image = new Img(p, e.target.result);
                         var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
@@ -5720,7 +6069,9 @@ var Workspace = (function () {
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
             scale: 1,
-            translate: { x: 0, y: 0 }
+            translate: { x: 0, y: 0 },
+            relativeTranslate: { x: 0, y: 0 },
+            perspective: 0
         };
 
         var shape = new TextField(params, null, this.fontParameters.color, this.fontParameters.size, this.fontParameters.fontFamily);
@@ -5996,12 +6347,14 @@ var Workspace = (function () {
                 background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
                 opacity: 1,
                 zindex: this.app.timeline.layers.length,
-                borderRadius: [20, 20, 20, 20],
+                borderRadius: [50, 50, 50, 50],
                 rotate: { x: 0, y: 0, z: 0 },
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
-                translate: { x: 0, y: 0 }
+                translate: { x: 0, y: 0 },
+                relativeTranslate: { x: 0, y: 0 },
+                perspective: 0
             };
 
             var shape = new Rectangle(params);
@@ -6025,12 +6378,14 @@ var Workspace = (function () {
                 background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
                 opacity: 1,
                 zindex: this.app.timeline.layers.length,
-                borderRadius: [20, 20, 20, 20],
+                borderRadius: [50, 50, 50, 50],
                 rotate: { x: 0, y: 0, z: 0 },
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
-                translate: { x: 0, y: 0 }
+                translate: { x: 0, y: 0 },
+                relativeTranslate: { x: 0, y: 0 },
+                perspective: 0
             };
 
             layer.addKeyframe(new Rectangle(paramsNew), 4000, this.getBezier());
@@ -6105,6 +6460,8 @@ var ControlPanel = (function () {
         this.rotateYSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'ry');
         this.rotateZEl = $('<input>').attr('id', 'rz').addClass('number rotate');
         this.rotateZSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rz');
+        this.perspectiveEl = $('<input>').attr('id', 'perspective').addClass('number rotate');
+        this.perspectiveSliderEl = $('<div>').addClass('perspective-slider').attr('id', 'perspective');
         this.skewXEl = $('<input>').attr('id', 'skewx').addClass('number skew');
         this.skewXSliderEl = $('<div>').addClass('skew-slider').attr('id', 'skewx');
         this.skewYEl = $('<input>').attr('id', 'skewy').addClass('number skew');
@@ -6267,10 +6624,14 @@ var ControlPanel = (function () {
         //border-radius
         var radius = this.itemControlEl.clone();
         radius.html('<a href="#" class="expand-link tooltip-delay" title="border-radius"><i class="fa fa-caret-right"></i><h2>Zaoblení rohů</h2></a>');
-        this.borderRadiusHelperEl.append(this.borderRadiusTLEl.val('0'));
-        this.borderRadiusHelperEl.append(this.borderRadiusTREl.val('0'));
-        this.borderRadiusHelperEl.append(this.borderRadiusBLEl.val('0'));
-        this.borderRadiusHelperEl.append(this.borderRadiusBREl.val('0'));
+        var rlWrapper = $('<div>').attr('id', 'radius-tl-wrapper').append(this.borderRadiusTLEl.val('0'));
+        this.borderRadiusHelperEl.append(rlWrapper.append('%'));
+        var trWrapper = $('<div>').attr('id', 'radius-tr-wrapper').append(this.borderRadiusTREl.val('0'));
+        this.borderRadiusHelperEl.append(trWrapper.append('%'));
+        var blWrapper = $('<div>').attr('id', 'radius-bl-wrapper').append(this.borderRadiusBLEl.val('0'));
+        this.borderRadiusHelperEl.append(blWrapper.append('%'));
+        var brWrapper = $('<div>').attr('id', 'radius-br-wrapper').append(this.borderRadiusBREl.val('0'));
+        this.borderRadiusHelperEl.append(brWrapper.append('%'));
         this.borderRadiusHelperEl.append(this.borderRadiusSwitch);
         var expand = $('<div>').addClass('expand');
         expand.append(this.borderRadiusHelperEl);
@@ -6296,12 +6657,14 @@ var ControlPanel = (function () {
         size.append(this.fontSizeEl);
         size.append(' px');
         row.append(size);
-        var expand = $('<div>').addClass('expand');
+        var expand = $('<div>').addClass('expand init-visible');
         expand.append(row);
         font.append(expand);
 
-        this.controlPanelEl.append(font);
+        this.font = font;
+        this.mainPanel.append(font);
 
+        //this.controlPanelEl.append(font);
         //opacity
         var scale = this.itemControlEl.clone();
         scale.html('<a href="#" class="expand-link tooltip-delay" title="scale()"><i class="fa fa-caret-right"></i><h2>Změna měřítka</h2></a>');
@@ -6356,6 +6719,18 @@ var ControlPanel = (function () {
         expand.append(z);
         rotate.append(expand);
         this.controlPanelEl.append(rotate);
+
+        //Perspective
+        var perspective = this.itemControlEl.clone();
+        perspective.html('<a href="#" class="expand-link tooltip-delay" title="perspective()"><i class="fa fa-caret-right"></i><h2>Perspektiva</h2></a>').addClass('control-rotate');
+        var expand = $('<div>').addClass('expand');
+        var x = $('<span>').addClass('group-form');
+        x.append(this.perspectiveSliderEl);
+        x.append(this.perspectiveEl);
+        x.append(' px');
+        expand.append(x);
+        perspective.append(expand);
+        this.controlPanelEl.append(perspective);
 
         //skew
         var skew = this.itemControlEl.clone();
@@ -6482,6 +6857,16 @@ var ControlPanel = (function () {
             }
         });
 
+        this.perspectiveSliderEl.slider({
+            min: -500,
+            max: 500,
+            step: 1,
+            value: 0,
+            slide: function (event, ui) {
+                _this.perspectiveEl.val(ui.value).change();
+            }
+        });
+
         this.ctx = this.canvas.get(0).getContext('2d');
 
         //init coordinates
@@ -6505,6 +6890,11 @@ var ControlPanel = (function () {
         this.opacityEl.on('change', function (e) {
             _this.opacitySliderEl.slider('value', $(e.target).val());
             _this.app.workspace.setOpacity($(e.target).val());
+        });
+
+        this.perspectiveEl.on('change', function (e) {
+            _this.perspectiveSliderEl.slider('value', $(e.target).val());
+            _this.app.workspace.setPerspective($(e.target).val());
         });
 
         this.scaleEl.on('change', function (e) {
@@ -6775,7 +7165,8 @@ var ControlPanel = (function () {
                 $(e.target).parents('.control-item').find('.expand').slideToggle(100);
                 return false;
             });
-            _this.displayMainPanel(true, 'bezier');
+
+            //this.displayMainPanel(true, 'bezier');
             _this.ctx = _this.canvas.get(0).getContext('2d');
             _this.renderWrap(_this.ctx);
             _this.controlPanelEl.perfectScrollbar();
@@ -6827,6 +7218,11 @@ var ControlPanel = (function () {
     ControlPanel.prototype.updateOpacity = function (opacity) {
         this.opacitySliderEl.slider('option', 'value', Number(opacity));
         this.opacityEl.val(opacity.toString());
+    };
+
+    ControlPanel.prototype.updatePerspective = function (p) {
+        this.perspectiveSliderEl.slider('option', 'value', Number(p));
+        this.perspectiveEl.val(p.toString());
     };
 
     ControlPanel.prototype.updateScale = function (scale) {
@@ -6980,21 +7376,44 @@ var ControlPanel = (function () {
 
     ControlPanel.prototype.displayMainPanel = function (visible, type) {
         var object;
-        if (type === 'bezier') {
-            object = this.curve;
+
+        if (type === 'bezier' && visible == true) {
+            this.curve.show();
+            $('.delete-keyframe').removeClass('disabled');
+        } else if (type === "bezier" && visible != true) {
+            this.curve.hide();
+            $('.delete-keyframe').addClass('disabled');
+            $('.timing-function').removeClass('selected');
+            $('.keyframe').removeClass('selected');
+        }
+
+        if (type === 'font' && visible == true) {
+            this.font.show();
+        } else if (type === "font" && visible != true) {
+            this.font.hide();
+        }
+
+        if (this.font.is(':visible') && this.curve.is(':visible')) {
+            $('.clearfix').css({ 'margin-top': '80px' });
+            $('.clearfix').show();
+        } else if (this.font.is(':visible') || this.curve.is(':visible')) {
+            $('.clearfix').css({ 'margin-top': '40px' });
+            $('.clearfix').show();
+        } else {
+            $('.clearfix').hide();
         }
 
         if (visible) {
-            this.mainPanel.show();
-            $('.clearfix').show();
-            $('.clearfix').css({ 'margin-top': '40px' });
-            $('.delete-keyframe').removeClass('disabled');
+            //this.mainPanel.show();
+            //$('.clearfix').show();
+            //$('.delete-keyframe').removeClass('disabled');
         } else {
-            this.mainPanel.hide();
-            $('.clearfix').hide();
-            $('.delete-keyframe').addClass('disabled');
+            //this.mainPanel.hide();
+            //$('.clearfix').hide();
+            /*$('.delete-keyframe').addClass('disabled');
+            $('.timing-function').removeClass('selected');
+            $('.keyframe').removeClass('selected'); */
         }
-        //$('.tooltip').tooltipster({ position: 'right', maxWidth: 200 });
     };
 
     Object.defineProperty(ControlPanel.prototype, "Mode", {
@@ -7447,6 +7866,13 @@ var ImageLayer = (function (_super) {
     }
     ImageLayer.prototype.transform = function (position, shape, helper, currentLayerId, app, showHelper) {
         _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app, showHelper);
+    };
+
+    ImageLayer.prototype.getShape = function (position) {
+        var params = _super.prototype.getParameters.call(this, position);
+        var shape = new Img(params, this.globalShape.getSrc());
+
+        return shape;
     };
 
     ImageLayer.prototype.jsem = function () {
@@ -8031,6 +8457,14 @@ var RectangleLayer = (function (_super) {
         _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app, showHelper);
     };
 
+    RectangleLayer.prototype.getShape = function (position) {
+        var params = _super.prototype.getParameters.call(this, position);
+
+        var shape = new Rectangle(params);
+
+        return shape;
+    };
+
     RectangleLayer.prototype.getInitStyles = function (nameElement, workspaceSize) {
         return _super.prototype.getInitStyles.call(this, nameElement, workspaceSize);
     };
@@ -8161,7 +8595,9 @@ var SvgGallery = (function () {
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
             scale: 1,
-            translate: { x: 0, y: 0 }
+            translate: { x: 0, y: 0 },
+            relativeTranslate: { x: 0, y: 0 },
+            perspective: 0
         };
 
         var xmlString = '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><circle fill="#ff0" stroke="#000" stroke-width="10" stroke-miterlimit="10" cx="382.553" cy="306.786" r="217.961"/><path fill="#ff0" stroke="#000" stroke-width="10" stroke-miterlimit="10" d="M244.69 329.602C315.562 498.534 484.494 479.116 531.582 333"/><ellipse cx="337.592" cy="233.485" rx="21.359" ry="49.272"/><ellipse cx="422.592" cy="232.485" rx="21.359" ry="49.272"/></svg>';
@@ -8247,6 +8683,14 @@ var SvgLayer = (function (_super) {
     }
     SvgLayer.prototype.transform = function (position, shape, helper, currentLayerId, app, showHelper) {
         _super.prototype.transform.call(this, position, shape, helper, currentLayerId, app, showHelper);
+    };
+
+    SvgLayer.prototype.getShape = function (position) {
+        var params = _super.prototype.getParameters.call(this, position);
+
+        var shape = new Svg(params, this.globalShape.getSrc());
+
+        return shape;
     };
 
     SvgLayer.prototype.jsem = function () {
@@ -8424,6 +8868,56 @@ var TextLayer = (function (_super) {
         if (currentLayerId == this.id) {
             app.controlPanel.updateFont(fontParams.color, fontParams.size, fontParams.fontFamily);
         }
+    };
+
+    TextLayer.prototype.getShape = function (position) {
+        //find interval between position
+        var rangeData = this.getRange(position);
+        var left = rangeData.left;
+        var right = rangeData.right;
+        var rng = rangeData.rng;
+
+        var fontParams = null;
+        var g = this.globalShape;
+
+        if (left != null) {
+            fontParams = {
+                color: rng['l'].shape.getColor(),
+                size: rng['l'].shape.getSize(),
+                fontFamily: g.getFamily()
+            };
+        }
+        if (right != null) {
+            fontParams = {
+                color: rng['r'].shape.getColor(),
+                size: rng['r'].shape.getSize(),
+                fontFamily: g.getFamily()
+            };
+        }
+
+        //if exist left && right, compute attributes
+        if (Object.keys(rng).length == 2) {
+            var fn = rng['l'].timing_function;
+            var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+            var p = (position - left) / (right - left);
+
+            fontParams = {
+                color: {
+                    r: Math.round(this.computeAttr(rng['l'].shape.getColor().r, rng['r'].shape.getColor().r, bezier(p))),
+                    g: Math.round(this.computeAttr(rng['l'].shape.getColor().g, rng['r'].shape.getColor().g, bezier(p))),
+                    b: Math.round(this.computeAttr(rng['l'].shape.getColor().b, rng['r'].shape.getColor().b, bezier(p)))
+                },
+                size: this.computeAttr(rng['l'].shape.getSize(), rng['r'].shape.getSize(), bezier(p)),
+                fontFamily: g.getFamily()
+            };
+        }
+
+        var params = _super.prototype.getParameters.call(this, position);
+
+        var t = this.globalShape;
+        var shape = new TextField(params, t.getContent(), fontParams.color, fontParams.size, t.getFamily);
+
+        return shape;
     };
 
     TextLayer.prototype.jsem = function () {

@@ -14,7 +14,7 @@
         this.dialogEl.dialog({
             autoOpen: false,
             draggable: false,
-            height: 600,
+            height: 550,
             width: 900,
             resizable: true,
             modal: true,
@@ -23,6 +23,7 @@
                 this.dialogEl.remove();
             },
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.objects = new Array<Svg>();
         this.dialogEl.dialog('open');

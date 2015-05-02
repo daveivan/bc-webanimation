@@ -31,7 +31,7 @@
         this.dialogEl.dialog({
             autoOpen: false,
             draggable: false,
-            height: 650,
+            height: 600,
             width: 900,
             resizable: true,
             modal: true,
@@ -40,6 +40,7 @@
                 this.dialogEl.remove();
             },
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.dialogEl.append(this.tabsEl);
         this.downloadWrapperEl.append(this.downloadBtnEl);

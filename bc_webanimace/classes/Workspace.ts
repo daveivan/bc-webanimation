@@ -1932,6 +1932,7 @@ class Workspace {
                     $('.tool-btn.select').addClass('active');
                 },
             });
+            $('.ui-dialog-titlebar-close').empty().append('X');
 
             //zpracovani souboru
 
@@ -2032,6 +2033,7 @@ class Workspace {
                         }
                     }
                 });
+                $('.ui-dialog-titlebar-close').empty().append('X');
             }
             this.loadBtn.val('');
 
@@ -2104,6 +2106,7 @@ class Workspace {
                 $('.tool-btn.select').addClass('active');
             },
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.svgUploadArea.on('dragenter', (event: JQueryEventObject) => {
             console.log('enter');
@@ -2234,6 +2237,7 @@ class Workspace {
                 $('.tool-btn.select').addClass('active');
             },
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.uploadArea.on('dragenter', (event: JQueryEventObject) => {
             console.log('enter');
@@ -2363,6 +2367,7 @@ class Workspace {
                     }
                 }
             });
+            $('.ui-dialog-titlebar-close').empty().append('X');
         }
         this.uploadBtn.val('');
 

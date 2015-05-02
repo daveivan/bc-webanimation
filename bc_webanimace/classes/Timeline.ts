@@ -600,7 +600,7 @@ class Timeline
             var dt = now - (time || now);
 
             time = now;
-            this.pointerPosition += (absoluteMaxPx / absoluteMax) * dt;;
+            this.pointerPosition += (absoluteMaxPx / absoluteMax) * dt;
             if (this.pointerPosition >= absoluteMaxPx) {
                 cancelAnimationFrame(this.playInterval);
                 if (this.repeat) {
@@ -1053,6 +1053,7 @@ class Timeline
                 }
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
     }
 
     deleteLayers(e: JQueryEventObject) {
@@ -1092,6 +1093,7 @@ class Timeline
                     }
                 }
             });
+            $('.ui-dialog-titlebar-close').empty().append('X');
         }
     }
 
@@ -1374,6 +1376,7 @@ class Timeline
                 }
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
     }
 
     checkChildTimestamps(layer: Layer, limit: number, maxTimestamp: number = 0) {

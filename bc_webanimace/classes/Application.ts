@@ -44,5 +44,5 @@ $(document).ready(() => {
     $('.tooltip-top').tooltipster({ position: 'top' });
     $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });
 
-    window.onbeforeunload = function() { return "Opravdu chcete opustit stránku? Neuložený projekt bude ztracený!" };
+    window.onbeforeunload = function () { return "Opravdu chcete opustit stránku? Neuložený projekt bude ztracený!" };
 });

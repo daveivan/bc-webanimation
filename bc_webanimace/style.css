@@ -826,19 +826,28 @@ li.ui-state-active {
 .ui-dialog {
     z-index: 10010;
     border-radius: 0;
+    overflow: visible;
+    border-radius: 15px;
+    border: none !important;
+    box-shadow: 0 0 25px 5px rgba(153, 153, 153, 0.5) !important;
+    /*font-family: 'Segoe UI' !important;*/
+    padding-bottom: 7px;
 }
 
 .ui-dialog-titlebar {
     background: none;
     border-radius: 0;
-    background-color: #8ed2dc;
+    background-color: #2DB6CF;
     border: 0;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+
 }
 
 .ui-dialog-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    color: #688e93;
+    color: #fff;
 
 }
 
@@ -849,10 +858,23 @@ li.ui-state-active {
 .ui-dialog-titlebar-close {
     border: none !important;
     border-radius: 0 !important;
-    width: 18px !important;
-    height: 18px !important;
+    width: 25px !important;
+    height: 25px !important;
     background: none !important;
+    border-radius: 50% !important;
+    background-color: #d76d6d !important;
+    right: -11px !important;
+    top: -3px !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    color: #fff !important;
+  transition: all 0.3s ease 0s;
+  -moz-transition: all 0.3s ease 0s;
+  -webkit-transition: all 0.3s ease 0s;
+}
 
+.ui-dialog-titlebar-close:hover {
+    background-color: #b11414 !important;
 }
 
 pre.prettyprint {
@@ -1140,7 +1162,7 @@ tr.first.to-background th{
 
 iframe#previewFrame {
     width: 100%;
-    height: 400px;
+    height: 390px;
     border: 1px solid #d8d8d8;
 }
 
@@ -1290,7 +1312,7 @@ a.menu-item.disabled:hover {
     font-size: 12px !important;
 }
 
-.btn, .ui-button  {
+.btn, .ui-dialog-buttonset > .ui-button  {
   border: 0 none !important;
   border-radius: 2px 2px 2px 2px !important;
   color: #FFFFFF !important;
@@ -1310,11 +1332,15 @@ a.menu-item.disabled:hover {
     text-shadow: none;
 }
 
-.btn.svg-btn, .ui-button, .download-btn, .animationset-btn {
+.ui-dialog-buttonset > .ui-button {
+    padding: 5px 7px !important;
+}
+
+.btn.svg-btn, .download-btn, .animationset-btn, .ui-dialog-buttonset > .ui-button {
   background: none repeat scroll 0 0 #2DB6CF !important;
   color: #FFFFFF;
 }
-.btn.svg-btn:hover, .ui-button:hover, .download-btn:hover, .animationset-btn:hover {
+.btn.svg-btn:hover, .download-btn:hover, .animationset-btn:hover, .ui-dialog-buttonset > .ui-button:hover {
   background: none repeat scroll 0 0 #444444 !important;
   color: #FFFFFF;
 }

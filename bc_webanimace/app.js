@@ -2515,7 +2515,6 @@ var Timeline = (function () {
 
             time = now;
             _this.pointerPosition += (absoluteMaxPx / absoluteMax) * dt;
-            ;
             if (_this.pointerPosition >= absoluteMaxPx) {
                 cancelAnimationFrame(_this.playInterval);
                 if (_this.repeat) {
@@ -2974,6 +2973,7 @@ var Timeline = (function () {
                 }
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
     };
 
     Timeline.prototype.deleteLayers = function (e) {
@@ -3015,6 +3015,7 @@ var Timeline = (function () {
                     }
                 }
             });
+            $('.ui-dialog-titlebar-close').empty().append('X');
         }
     };
 
@@ -3303,6 +3304,7 @@ var Timeline = (function () {
                 }
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
     };
 
     Timeline.prototype.checkChildTimestamps = function (layer, limit, maxTimestamp) {
@@ -4765,6 +4767,7 @@ var Workspace = (function () {
                         _this.app.controlPanel.updateScale(shape.parameters.scale);
                         _this.app.controlPanel.updateTranslate(shape.parameters.translate);
 
+                        //TODO - všechny update!!
                         (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
                             'left': shape.parameters.origin.x + '%',
                             'top': shape.parameters.origin.y + '%'
@@ -5541,6 +5544,7 @@ var Workspace = (function () {
                 $('.tool-btn.select').addClass('active');
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         //zpracovani souboru
         this.loadArea.on('dragenter', function (event) {
@@ -5643,6 +5647,7 @@ var Workspace = (function () {
                         }
                     }
                 });
+                $('.ui-dialog-titlebar-close').empty().append('X');
             }
             _this.loadBtn.val('');
 
@@ -5716,6 +5721,7 @@ var Workspace = (function () {
                 $('.tool-btn.select').addClass('active');
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.svgUploadArea.on('dragenter', function (event) {
             console.log('enter');
@@ -5845,6 +5851,7 @@ var Workspace = (function () {
                 $('.tool-btn.select').addClass('active');
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.uploadArea.on('dragenter', function (event) {
             console.log('enter');
@@ -5977,6 +5984,7 @@ var Workspace = (function () {
                     }
                 }
             });
+            $('.ui-dialog-titlebar-close').empty().append('X');
         }
         this.uploadBtn.val('');
 
@@ -7522,7 +7530,7 @@ var GenerateCode = (function () {
         this.dialogEl.dialog({
             autoOpen: false,
             draggable: false,
-            height: 650,
+            height: 600,
             width: 900,
             resizable: true,
             modal: true,
@@ -7531,6 +7539,7 @@ var GenerateCode = (function () {
                 _this.dialogEl.remove();
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.dialogEl.append(this.tabsEl);
         this.downloadWrapperEl.append(this.downloadBtnEl);
@@ -8002,6 +8011,68 @@ var Keyframe = (function () {
 
     return Keyframe;
 })();
+var Background = (function () {
+    function Background() {
+        this.initColor = { r: 44, g: 208, b: 219 };
+        this.bgPickerEl = $('<input type="text" id="picker"></input>');
+        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
+        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
+    }
+    Background.prototype.renderPropery = function (container) {
+        container.html('<h2>Barva pozadí elementu</h2>');
+        var row = $('<div>').addClass('row');
+        var s = $('<div>').html('#').addClass('group quarter');
+        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
+        row.append(s);
+        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
+        this.bgOpacityEl.val('0');
+        a.append(this.bgOpacitySliderEl);
+        a.append(this.bgOpacityEl);
+        row.append(a);
+        container.append(row);
+        this.initColorPicker();
+        this.initSlider();
+        return container;
+    };
+
+    Background.prototype.initSlider = function () {
+        var _this = this;
+        this.bgOpacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 0,
+            slide: function (event, ui) {
+                _this.bgOpacityEl.val(ui.value).change();
+            }
+        });
+    };
+
+    Background.prototype.initColorPicker = function () {
+        var _this = this;
+        this.colorPicker = this.bgPickerEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
+                }
+            }
+        }).on('change', function (e) {
+            _this.colorPicker.colpickSetColor($(e.target).val());
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
+        });
+    };
+
+    Background.prototype.getInitColor = function () {
+        return this.initColor;
+    };
+    return Background;
+})();
 var BezierCurve = (function () {
     function BezierCurve() {
         var _this = this;
@@ -8185,68 +8256,6 @@ var Font = (function () {
         });
     };
     return Font;
-})();
-var Background = (function () {
-    function Background() {
-        this.initColor = { r: 44, g: 208, b: 219 };
-        this.bgPickerEl = $('<input type="text" id="picker"></input>');
-        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
-        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
-    }
-    Background.prototype.renderPropery = function (container) {
-        container.html('<h2>Barva pozadí elementu</h2>');
-        var row = $('<div>').addClass('row');
-        var s = $('<div>').html('#').addClass('group quarter');
-        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
-        row.append(s);
-        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
-        this.bgOpacityEl.val('0');
-        a.append(this.bgOpacitySliderEl);
-        a.append(this.bgOpacityEl);
-        row.append(a);
-        container.append(row);
-        this.initColorPicker();
-        this.initSlider();
-        return container;
-    };
-
-    Background.prototype.initSlider = function () {
-        var _this = this;
-        this.bgOpacitySliderEl.slider({
-            min: 0,
-            max: 1,
-            step: 0.05,
-            value: 0,
-            slide: function (event, ui) {
-                _this.bgOpacityEl.val(ui.value).change();
-            }
-        });
-    };
-
-    Background.prototype.initColorPicker = function () {
-        var _this = this;
-        this.colorPicker = this.bgPickerEl.colpick({
-            layout: 'hex',
-            submit: 0,
-            color: this.initColor,
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
-                $(el).css('border-color', '#' + hex);
-                if (!bySetColor)
-                    $(el).val(hex);
-                if (!bySetColor) {
-                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
-                }
-            }
-        }).on('change', function (e) {
-            _this.colorPicker.colpickSetColor($(e.target).val());
-            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
-        });
-    };
-
-    Background.prototype.getInitColor = function () {
-        return this.initColor;
-    };
-    return Background;
 })();
 var ObjectDimension = (function () {
     function ObjectDimension() {
@@ -8566,7 +8575,7 @@ var SvgGallery = (function () {
         this.dialogEl.dialog({
             autoOpen: false,
             draggable: false,
-            height: 600,
+            height: 550,
             width: 900,
             resizable: true,
             modal: true,
@@ -8575,6 +8584,7 @@ var SvgGallery = (function () {
                 _this.dialogEl.remove();
             }
         });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.objects = new Array();
         this.dialogEl.dialog('open');

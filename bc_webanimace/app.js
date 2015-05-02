@@ -4272,116 +4272,114 @@ var Workspace = (function () {
         }
     };
 
-    Workspace.prototype.getTransformAttr = function (idLayer, attr, timestamp) {
-        if (typeof timestamp === "undefined") { timestamp = null; }
-        if (timestamp == null) {
-            var currentTimestamp = this.app.timeline.pxToMilisec();
-        } else {
-            var currentTimestamp = timestamp;
-        }
-        var layer = this.app.timeline.getLayer(idLayer);
-        if (layer) {
-            var keyframe = layer.getKeyframeByTimestamp(currentTimestamp);
-            if (keyframe == null) {
-                keyframe = layer.getKeyframe(0);
-            }
-            var timestamps = layer.timestamps;
-
-            var left = null;
-            var right = null;
-            var index = 0;
-            for (var i = timestamps.length; i--;) {
-                if (timestamps[i] < currentTimestamp && (left === null || left < timestamps[i])) {
-                    left = timestamps[i];
-                }
-                if (timestamps[i] >= currentTimestamp && (right === null || right > timestamps[i])) {
-                    right = timestamps[i];
-                    index = i;
-                }
-            }
-            ;
-
-            if (left === null && right === currentTimestamp && timestamps.length >= 2) {
-                left = right;
-                right = timestamps[index + 1];
-            }
-
-            var params = null;
-            var interval = new Array();
-            if (left != null) {
-                interval['left'] = layer.getKeyframeByTimestamp(left);
-                params = interval['left'].shape.parameters;
-            }
-            if (right != null) {
-                interval['right'] = layer.getKeyframeByTimestamp(right);
-                params = interval['right'].shape.parameters;
-            }
-
-            if (Object.keys(interval).length == 2) {
-                //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
-                var fn = interval['right'].timing_function;
-                var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
-                var p = (currentTimestamp - left) / (right - left);
-
-                params = {
-                    top: this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
-                    left: this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
-                    width: this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
-                    height: this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
-                    background: {
-                        r: this.computeParameter(interval['left'].shape.parameters.background.r, interval['right'].shape.parameters.background.r, bezier(p)),
-                        g: this.computeParameter(interval['left'].shape.parameters.background.g, interval['right'].shape.parameters.background.g, bezier(p)),
-                        b: this.computeParameter(interval['left'].shape.parameters.background.b, interval['right'].shape.parameters.background.b, bezier(p)),
-                        a: this.computeOpacity(interval['left'].shape.parameters.background.a, interval['right'].shape.parameters.background.a, bezier(p))
-                    },
-                    opacity: this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
-                    borderRadius: [
-                        this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
-                        this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
-                        this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
-                        this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
-                    ],
-                    rotate: {
-                        x: this.computeParameter(interval['left'].shape.parameters.rotate.x, interval['right'].shape.parameters.rotate.x, bezier(p)),
-                        y: this.computeParameter(interval['left'].shape.parameters.rotate.y, interval['right'].shape.parameters.rotate.y, bezier(p)),
-                        z: this.computeParameter(interval['left'].shape.parameters.rotate.z, interval['right'].shape.parameters.rotate.z, bezier(p))
-                    },
-                    skew: {
-                        x: this.computeParameter(interval['left'].shape.parameters.skew.x, interval['right'].shape.parameters.skew.x, bezier(p)),
-                        y: this.computeParameter(interval['left'].shape.parameters.skew.y, interval['right'].shape.parameters.skew.y, bezier(p))
-                    },
-                    origin: {
-                        x: this.computeOpacity(interval['left'].shape.parameters.origin.x, interval['right'].shape.parameters.origin.x, bezier(p)),
-                        y: this.computeOpacity(interval['left'].shape.parameters.origin.y, interval['right'].shape.parameters.origin.y, bezier(p))
-                    },
-                    zindex: interval['left'].shape.parameters.zindex,
-                    relativePosition: {
-                        top: this.computeParameter(interval['left'].shape.parameters.relativePosition.top, interval['right'].shape.parameters.relativePosition.top, bezier(p)),
-                        left: this.computeParameter(interval['left'].shape.parameters.relativePosition.left, interval['right'].shape.parameters.relativePosition.left, bezier(p))
-                    },
-                    relativeSize: {
-                        width: this.computeParameter(interval['left'].shape.parameters.relativeSize.width, interval['right'].shape.parameters.relativeSize.width, bezier(p)),
-                        height: this.computeParameter(interval['left'].shape.parameters.relativeSize.height, interval['right'].shape.parameters.relativeSize.height, bezier(p))
-                    },
-                    scale: this.computeOpacity(interval['left'].shape.parameters.scale, interval['right'].shape.parameters.scale, bezier(p)),
-                    translate: {
-                        x: this.computeParameter(interval['left'].shape.parameters.translate.x, interval['right'].shape.parameters.translate.x, bezier(p)),
-                        y: this.computeParameter(interval['left'].shape.parameters.translate.y, interval['right'].shape.parameters.translate.y, bezier(p))
-                    },
-                    relativeTranslate: {
-                        x: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.x, interval['right'].shape.parameters.relativeTranslate.x, bezier(p)),
-                        y: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.y, interval['right'].shape.parameters.relativeTranslate.y, bezier(p))
-                    },
-                    perspective: this.computeParameter(interval['left'].shape.parameters.perspective, interval['right'].shape.parameters.perspective, bezier(p))
-                };
-            }
-
-            return params[attr];
-        } else {
-            return null;
-        }
+    /*getTransformAttr(idLayer: number, attr: string, timestamp: number = null): any {
+    if (timestamp == null) {
+    var currentTimestamp: number = this.app.timeline.pxToMilisec();
+    } else {
+    var currentTimestamp: number = timestamp;
+    }
+    var layer: Layer = this.app.timeline.getLayer(idLayer);
+    if (layer) {
+    var keyframe: Keyframe = layer.getKeyframeByTimestamp(currentTimestamp);
+    if (keyframe == null) {
+    keyframe = layer.getKeyframe(0);
+    }
+    var timestamps: Array<number> = layer.timestamps;
+    
+    var left = null;
+    var right = null;
+    var index = 0;
+    for (var i = timestamps.length; i--;) {
+    if (timestamps[i] < currentTimestamp && (left === null || left < timestamps[i])) {
+    left = timestamps[i];
+    }
+    if (timestamps[i] >= currentTimestamp && (right === null || right > timestamps[i])) {
+    right = timestamps[i];
+    index = i;
+    }
     };
-
+    
+    if (left === null && right === currentTimestamp && timestamps.length >= 2) {
+    left = right;
+    right = timestamps[index + 1];
+    }
+    
+    var params: Parameters = null;
+    var interval: Array<Keyframe> = new Array<Keyframe>();
+    if (left != null) {
+    interval['left'] = layer.getKeyframeByTimestamp(left);
+    params = interval['left'].shape.parameters;
+    }
+    if (right != null) {
+    interval['right'] = layer.getKeyframeByTimestamp(right);
+    params = interval['right'].shape.parameters;
+    }
+    
+    if (Object.keys(interval).length == 2) {
+    //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
+    var fn: Bezier_points = interval['right'].timing_function;
+    var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
+    var p: number = (currentTimestamp - left) / (right - left);
+    
+    params = {
+    top: this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
+    left: this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
+    width: this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
+    height: this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
+    background: {
+    r: this.computeParameter(interval['left'].shape.parameters.background.r, interval['right'].shape.parameters.background.r, bezier(p)),
+    g: this.computeParameter(interval['left'].shape.parameters.background.g, interval['right'].shape.parameters.background.g, bezier(p)),
+    b: this.computeParameter(interval['left'].shape.parameters.background.b, interval['right'].shape.parameters.background.b, bezier(p)),
+    a: this.computeOpacity(interval['left'].shape.parameters.background.a, interval['right'].shape.parameters.background.a, bezier(p)),
+    },
+    opacity: this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
+    borderRadius: [
+    this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
+    this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
+    this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
+    this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
+    ],
+    rotate: {
+    x: this.computeParameter(interval['left'].shape.parameters.rotate.x, interval['right'].shape.parameters.rotate.x, bezier(p)),
+    y: this.computeParameter(interval['left'].shape.parameters.rotate.y, interval['right'].shape.parameters.rotate.y, bezier(p)),
+    z: this.computeParameter(interval['left'].shape.parameters.rotate.z, interval['right'].shape.parameters.rotate.z, bezier(p)),
+    },
+    skew: {
+    x: this.computeParameter(interval['left'].shape.parameters.skew.x, interval['right'].shape.parameters.skew.x, bezier(p)),
+    y: this.computeParameter(interval['left'].shape.parameters.skew.y, interval['right'].shape.parameters.skew.y, bezier(p)),
+    },
+    origin: {
+    x: this.computeOpacity(interval['left'].shape.parameters.origin.x, interval['right'].shape.parameters.origin.x, bezier(p)),
+    y: this.computeOpacity(interval['left'].shape.parameters.origin.y, interval['right'].shape.parameters.origin.y, bezier(p)),
+    },
+    zindex: interval['left'].shape.parameters.zindex,
+    relativePosition: {
+    top: this.computeParameter(interval['left'].shape.parameters.relativePosition.top, interval['right'].shape.parameters.relativePosition.top, bezier(p)),
+    left: this.computeParameter(interval['left'].shape.parameters.relativePosition.left, interval['right'].shape.parameters.relativePosition.left, bezier(p)),
+    },
+    relativeSize: {
+    width: this.computeParameter(interval['left'].shape.parameters.relativeSize.width, interval['right'].shape.parameters.relativeSize.width, bezier(p)),
+    height: this.computeParameter(interval['left'].shape.parameters.relativeSize.height, interval['right'].shape.parameters.relativeSize.height, bezier(p)),
+    },
+    scale: this.computeOpacity(interval['left'].shape.parameters.scale, interval['right'].shape.parameters.scale, bezier(p)),
+    translate: {
+    x: this.computeParameter(interval['left'].shape.parameters.translate.x, interval['right'].shape.parameters.translate.x, bezier(p)),
+    y: this.computeParameter(interval['left'].shape.parameters.translate.y, interval['right'].shape.parameters.translate.y, bezier(p)),
+    },
+    relativeTranslate: {
+    x: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.x, interval['right'].shape.parameters.relativeTranslate.x, bezier(p)),
+    y: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.y, interval['right'].shape.parameters.relativeTranslate.y, bezier(p)),
+    },
+    perspective: this.computeParameter(interval['left'].shape.parameters.perspective, interval['right'].shape.parameters.perspective, bezier(p)),
+    }
+    
+    }
+    
+    return params[attr];
+    } else {
+    return null;
+    }
+    }*/
     Workspace.prototype.transformShapes = function (showHelpers) {
         var _this = this;
         if (typeof showHelpers === "undefined") { showHelpers = true; }
@@ -4396,7 +4394,7 @@ var Workspace = (function () {
                 if (showHelpers) {
                     helper.show();
                 }
-                if (layer.id == _this.scopce) {
+                if (layer.id == _this.scope) {
                     helper = _this.workspaceContainer.parent().find('.base-fff');
                 }
 
@@ -4410,28 +4408,27 @@ var Workspace = (function () {
         });
     };
 
-    Workspace.prototype.computeParameter = function (leftParam, rightParam, b) {
-        var value = null;
-        var absValue = Math.round((Math.abs(rightParam - leftParam)) * b);
-        if (leftParam > rightParam) {
-            value = leftParam - absValue;
-        } else {
-            value = leftParam + absValue;
-        }
-        return value;
-    };
-
-    Workspace.prototype.computeOpacity = function (leftParam, rightParam, b) {
-        var value = null;
-        var absValue = (Math.abs(rightParam - leftParam)) * b;
-        if (leftParam > rightParam) {
-            value = Number(leftParam) - Number(absValue);
-        } else {
-            value = Number(leftParam) + Number(absValue);
-        }
-        return (Number(value));
-    };
-
+    /*computeParameter(leftParam: number, rightParam: number, b: number): number {
+    var value: number = null;
+    var absValue: number = Math.round((Math.abs(rightParam - leftParam)) * b);
+    if (leftParam > rightParam) {
+    value = leftParam - absValue;
+    } else {
+    value = leftParam + absValue;
+    }
+    return value;
+    }
+    
+    computeOpacity(leftParam: number, rightParam: number, b: number): number {
+    var value: number = null;
+    var absValue: number = (Math.abs(rightParam - leftParam)) * b;
+    if (leftParam > rightParam) {
+    value = Number(leftParam) - Number(absValue);
+    } else {
+    value = Number(leftParam) + Number(absValue);
+    }
+    return (Number(value));
+    }*/
     Workspace.prototype.renderShapes = function (scope) {
         var _this = this;
         if (typeof scope === "undefined") { scope = null; }
@@ -4511,6 +4508,49 @@ var Workspace = (function () {
             this.workspaceContainer.parents('.square').addClass('scope');
         } else {
             this.workspaceContainer = $('#workspace');
+        }
+    };
+
+    Workspace.prototype.renderSingleShapeWithChildren = function (id) {
+        var _this = this;
+        var shapeEl = $('#workspace').find('.shape[data-id="' + id + '"]');
+        var container = this.workspaceContainer;
+        if (shapeEl.length) {
+            container = shapeEl.parent();
+        }
+
+        var layer = this.app.timeline.getLayer(id);
+        if (layer) {
+            var shape = layer.renderShape(container, this.app.timeline.pxToMilisec(), this.scope);
+
+            this.app.timeline.layers.forEach(function (l, index) {
+                if (l.parent == layer.id) {
+                    _this.recursiveRenderShape(l.id, shape);
+                }
+            });
+        }
+
+        this.dragResize();
+        this.onChangeMode();
+        if (this.scope) {
+            this.workspaceContainer = this.workspaceWrapper.find('.square' + '[data-id="' + this.scope + '"]').addClass('scope');
+            this.workspaceContainer.parents('.square').addClass('scope');
+        } else {
+            this.workspaceContainer = $('#workspace');
+        }
+    };
+
+    Workspace.prototype.recursiveRenderShape = function (id, container) {
+        var _this = this;
+        var layer = this.app.timeline.getLayer(id);
+        if (layer) {
+            var shape = layer.renderShape(container, this.app.timeline.pxToMilisec(), this.scope);
+
+            this.app.timeline.layers.forEach(function (l, index) {
+                if (l.parent == layer.id) {
+                    _this.recursiveRenderShape(l.id, shape);
+                }
+            });
         }
     };
 
@@ -4659,7 +4699,7 @@ var Workspace = (function () {
                                 left: ((ui.position.left + 1) / _this.workspaceContainer.width()) * 100
                             });
                         });
-                        _this.renderSingleShape(layer.id);
+                        _this.renderSingleShapeWithChildren(layer.id);
                     }
                 }
 
@@ -4731,7 +4771,7 @@ var Workspace = (function () {
                                 height: (($(event.target).height()) / _this.workspaceContainer.height()) * 100
                             });
                         });
-                        _this.renderSingleShape(layer.id);
+                        _this.renderSingleShapeWithChildren(layer.id);
                     }
                 }
 
@@ -4833,102 +4873,101 @@ var Workspace = (function () {
     };
 
     //TODO: upravit klonovani - nove vlastnosti z interpolace
-    Workspace.prototype.getCurrentShapeOld = function (id) {
-        var shapeEl = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
-        if (shapeEl.length) {
-            //var c = $.color.extract(shapeEl, 'background-color');
-            var barva = parseCSSColor(shapeEl.css('background-color'));
-            var c = {
-                r: barva[0],
-                g: barva[1],
-                b: barva[2],
-                a: barva[3]
-            };
-
-            //var topPx: number = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().top + 1;
-            //var leftPx: number = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1;
-            var topPx = shapeEl.position().top;
-            var leftPx = shapeEl.position().left;
-            var params = {
-                top: topPx,
-                left: leftPx,
-                width: shapeEl.width(),
-                height: shapeEl.height(),
-                relativePosition: {
-                    top: (topPx / shapeEl.parent().height() * 100),
-                    left: (leftPx / shapeEl.parent().width() * 100)
-                },
-                relativeSize: {
-                    width: (shapeEl.width() / shapeEl.parent().width() * 100),
-                    height: (shapeEl.height() / shapeEl.parent().height() * 100)
-                },
-                background: c,
-                //opacity: parseFloat(shapeEl.css('opacity')),
-                opacity: parseFloat(shapeEl.attr('data-opacity')),
-                zindex: parseInt(shapeEl.css('z-index')),
-                borderRadius: [
-                    parseInt(shapeEl.css('border-top-left-radius')),
-                    parseInt(shapeEl.css('border-top-right-radius')),
-                    parseInt(shapeEl.css('border-bottom-right-radius')),
-                    parseInt(shapeEl.css('border-bottom-left-radius'))
-                ],
-                rotate: {
-                    x: this.getTransformAttr(id, 'rotate').x,
-                    y: this.getTransformAttr(id, 'rotate').y,
-                    z: this.getTransformAttr(id, 'rotate').z
-                },
-                skew: {
-                    x: this.getTransformAttr(id, 'skew').x,
-                    y: this.getTransformAttr(id, 'skew').y
-                },
-                origin: {
-                    x: this.getTransformAttr(id, 'origin').x,
-                    y: this.getTransformAttr(id, 'origin').y
-                },
-                scale: this.getTransformAttr(id, 'scale'),
-                translate: {
-                    x: this.getTransformAttr(id, 'translate').x,
-                    y: this.getTransformAttr(id, 'translate').y
-                },
-                relativeTranslate: {
-                    x: (this.getTransformAttr(id, 'translate').x / shapeEl.width() * 100),
-                    y: (this.getTransformAttr(id, 'translate').y / shapeEl.height() * 100)
-                },
-                perspective: this.getTransformAttr(id, 'perspective')
-            };
-
-            //console.log(shapeEl.attr('data-opacity'));
-            //if background is transparent
-            if (c.a == 0) {
-                params['background']['r'] = this.color.r;
-                params['background']['g'] = this.color.g;
-                params['background']['b'] = this.color.b;
-            }
-
-            if (this.app.timeline.getLayer(id).globalShape instanceof Img) {
-                var shape = new Img(params, shapeEl.attr('src'));
-            } else if (this.app.timeline.getLayer(id).globalShape instanceof TextField) {
-                var color = {
-                    r: this.getPartOfRGBA(shapeEl.css('color'), 'r'),
-                    g: this.getPartOfRGBA(shapeEl.css('color'), 'g'),
-                    b: this.getPartOfRGBA(shapeEl.css('color'), 'b')
-                };
-                var size = parseFloat(shapeEl.css('font-size'));
-                var font = shapeEl.css('font-family');
-                var shape = new TextField(params, shapeEl.html().toString(), color, size, font);
-            } else if (this.app.timeline.getLayer(id).globalShape instanceof Svg) {
-                var shape = new Svg(params, this.app.timeline.getLayer(id).globalShape.getSrc());
-            } else {
-                var shape = new Rectangle(params);
-            }
-            shape.id = id;
-
-            return shape;
-        } else {
-            return null;
-        }
+    /*getCurrentShapeOld(id: number): IShape {
+    var shapeEl: JQuery = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
+    if (shapeEl.length) {
+    //var c = $.color.extract(shapeEl, 'background-color');
+    var barva = parseCSSColor(shapeEl.css('background-color'));
+    var c: rgba = {
+    r: barva[0],
+    g: barva[1],
+    b: barva[2],
+    a: barva[3],
+    }
+    //var topPx: number = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().top + 1;
+    //var leftPx: number = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1;
+    var topPx: number = shapeEl.position().top;
+    var leftPx: number = shapeEl.position().left;
+    var params: Parameters = {
+    top: topPx,
+    left: leftPx,
+    width: shapeEl.width(),
+    height: shapeEl.height(),
+    relativePosition: {
+    top: (topPx / shapeEl.parent().height() * 100),
+    left: (leftPx / shapeEl.parent().width() * 100),
+    },
+    relativeSize: {
+    width: (shapeEl.width() / shapeEl.parent().width() * 100),
+    height: (shapeEl.height() / shapeEl.parent().height() * 100),
+    },
+    background: c,
+    //opacity: parseFloat(shapeEl.css('opacity')),
+    opacity: parseFloat(shapeEl.attr('data-opacity')),
+    zindex: parseInt(shapeEl.css('z-index')),
+    borderRadius: [
+    parseInt(shapeEl.css('border-top-left-radius')),
+    parseInt(shapeEl.css('border-top-right-radius')),
+    parseInt(shapeEl.css('border-bottom-right-radius')),
+    parseInt(shapeEl.css('border-bottom-left-radius'))
+    ],
+    rotate: {
+    x: this.getTransformAttr(id, 'rotate').x,
+    y: this.getTransformAttr(id, 'rotate').y,
+    z: this.getTransformAttr(id, 'rotate').z,
+    },
+    skew: {
+    x: this.getTransformAttr(id, 'skew').x,
+    y: this.getTransformAttr(id, 'skew').y,
+    },
+    origin: {
+    x: this.getTransformAttr(id, 'origin').x,
+    y: this.getTransformAttr(id, 'origin').y,
+    },
+    scale: this.getTransformAttr(id, 'scale'),
+    translate: {
+    x: this.getTransformAttr(id, 'translate').x,
+    y: this.getTransformAttr(id, 'translate').y,
+    },
+    relativeTranslate: {
+    x: (this.getTransformAttr(id, 'translate').x / shapeEl.width() * 100),
+    y: (this.getTransformAttr(id, 'translate').y / shapeEl.height() * 100),
+    },
+    perspective: this.getTransformAttr(id, 'perspective'),
     };
-
+    
+    //console.log(shapeEl.attr('data-opacity'));
+    
+    //if background is transparent
+    if (c.a == 0) {
+    params['background']['r'] = this.color.r;
+    params['background']['g'] = this.color.g;
+    params['background']['b'] = this.color.b;
+    }
+    
+    if (this.app.timeline.getLayer(id).globalShape instanceof Img) {
+    var shape: IShape = new Img(params, shapeEl.attr('src'));
+    } else if (this.app.timeline.getLayer(id).globalShape instanceof TextField) {
+    var color: rgb = {
+    r: this.getPartOfRGBA(shapeEl.css('color'), 'r'),
+    g: this.getPartOfRGBA(shapeEl.css('color'), 'g'),
+    b: this.getPartOfRGBA(shapeEl.css('color'), 'b'),
+    };
+    var size: number = parseFloat(shapeEl.css('font-size'));
+    var font: string = shapeEl.css('font-family');
+    var shape: IShape = new TextField(params, shapeEl.html().toString(), color, size, font);
+    } else if (this.app.timeline.getLayer(id).globalShape instanceof Svg) {
+    var shape: IShape = new Svg(params, this.app.timeline.getLayer(id).globalShape.getSrc());
+    } else {
+    var shape: IShape = new Rectangle(params);
+    }
+    shape.id = id;
+    
+    return shape;
+    } else {
+    return null;
+    }
+    }*/
     Workspace.prototype.getRandomColor = function () {
         var letters = '0123456789ABCDEF'.split('');
         var color = '#';
@@ -5007,7 +5046,7 @@ var Workspace = (function () {
                         k.shape.setBackground(_this.color);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5041,7 +5080,7 @@ var Workspace = (function () {
                         textField.setFont(_this.fontParameters);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
             var l = layer;
@@ -5072,7 +5111,7 @@ var Workspace = (function () {
                         k.shape.setOpacity(opacity);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5099,7 +5138,7 @@ var Workspace = (function () {
                         k.shape.setScale(scale);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5130,7 +5169,7 @@ var Workspace = (function () {
                             k.shape.setRelativeX((dimension / _this.workspaceContainer.width()) * 100);
                         });
 
-                        this.renderSingleShape(layer.id);
+                        this.renderSingleShapeWithChildren(layer.id);
                     } else {
                         keyframe.shape.setX(dimension);
                         keyframe.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
@@ -5145,7 +5184,7 @@ var Workspace = (function () {
                             k.shape.setRelativeY((dimension / _this.workspaceContainer.height()) * 100);
                         });
 
-                        this.renderSingleShape(layer.id);
+                        this.renderSingleShapeWithChildren(layer.id);
                     }
                 }
             }
@@ -5195,7 +5234,7 @@ var Workspace = (function () {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5236,7 +5275,7 @@ var Workspace = (function () {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5264,7 +5303,7 @@ var Workspace = (function () {
                         k.shape.setPerspective(p);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5304,7 +5343,7 @@ var Workspace = (function () {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5342,7 +5381,7 @@ var Workspace = (function () {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5380,7 +5419,7 @@ var Workspace = (function () {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -5404,7 +5443,7 @@ var Workspace = (function () {
                         k.timing_function = _this.bezier;
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
 
                 this.app.timeline.renderKeyframes(layer.id);
@@ -5450,7 +5489,7 @@ var Workspace = (function () {
             }
 
             //this.renderShapes();
-            this.renderSingleShape(layer.id);
+            this.renderSingleShapeWithChildren(layer.id);
             this.transformShapes();
             this.app.timeline.renderLayers();
             this.app.timeline.selectLayer(layer.id);
@@ -6233,6 +6272,10 @@ var Workspace = (function () {
         //this.dragResize(); <- nefunguje
         this.app.timeline.renderLayers();
         this.renderShapes();
+        if (this.scope) {
+            this.app.timeline.getLayer(this.scope).lastTransformKeyframe = null;
+        }
+
         this.transformShapes();
         this.app.timeline.selectLayer(null);
     };
@@ -7521,7 +7564,7 @@ var GenerateCode = (function () {
         this.app = app;
         this.layers = l;
 
-        this.tabsEl.append('<ul><li><a href="#code">Kód</a></li><li><a href="#preview">Náhled animace</a></li></ul>');
+        this.tabsEl.append('<ul><li><a href="#code">Vygenerovaný HTML kód animace</a></li><li><a href="#preview">Náhled vytvořené animace</a></li></ul>');
         this.tabsEl.append(this.codeTab);
         this.tabsEl.append(this.previewTab);
 
@@ -7727,16 +7770,20 @@ var GenerateCode = (function () {
                     if (i == 0 && part != 0) {
                         cssObject['0%'] = { 'visibility': 'hidden' };
                     }
-                    percents.push(percent);
 
                     parentSize = _this.app.workspace.workspaceSize;
                     if (item.parent != null) {
                         var k = _this.app.timeline.getLayer(item.parent).getKeyframeByTimestamp(timestamp);
                         if (k == null) {
                             //compute dimensions
+                            /*parentSize = {
+                            width: this.app.workspace.getTransformAttr(item.parent, 'width', timestamp),
+                            height: this.app.workspace.getTransformAttr(item.parent, 'height', timestamp),
+                            }*/
+                            var tmp = _this.app.timeline.getLayer(item.parent).getShape(timestamp);
                             parentSize = {
-                                width: _this.app.workspace.getTransformAttr(item.parent, 'width', timestamp),
-                                height: _this.app.workspace.getTransformAttr(item.parent, 'height', timestamp)
+                                width: tmp.parameters.width,
+                                height: tmp.parameters.height
                             };
                         } else {
                             parentSize = { width: k.shape.parameters.width, height: k.shape.parameters.height };
@@ -8011,68 +8058,6 @@ var Keyframe = (function () {
 
     return Keyframe;
 })();
-var Background = (function () {
-    function Background() {
-        this.initColor = { r: 44, g: 208, b: 219 };
-        this.bgPickerEl = $('<input type="text" id="picker"></input>');
-        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
-        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
-    }
-    Background.prototype.renderPropery = function (container) {
-        container.html('<h2>Barva pozadí elementu</h2>');
-        var row = $('<div>').addClass('row');
-        var s = $('<div>').html('#').addClass('group quarter');
-        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
-        row.append(s);
-        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
-        this.bgOpacityEl.val('0');
-        a.append(this.bgOpacitySliderEl);
-        a.append(this.bgOpacityEl);
-        row.append(a);
-        container.append(row);
-        this.initColorPicker();
-        this.initSlider();
-        return container;
-    };
-
-    Background.prototype.initSlider = function () {
-        var _this = this;
-        this.bgOpacitySliderEl.slider({
-            min: 0,
-            max: 1,
-            step: 0.05,
-            value: 0,
-            slide: function (event, ui) {
-                _this.bgOpacityEl.val(ui.value).change();
-            }
-        });
-    };
-
-    Background.prototype.initColorPicker = function () {
-        var _this = this;
-        this.colorPicker = this.bgPickerEl.colpick({
-            layout: 'hex',
-            submit: 0,
-            color: this.initColor,
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
-                $(el).css('border-color', '#' + hex);
-                if (!bySetColor)
-                    $(el).val(hex);
-                if (!bySetColor) {
-                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
-                }
-            }
-        }).on('change', function (e) {
-            _this.colorPicker.colpickSetColor($(e.target).val());
-            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
-        });
-    };
-
-    Background.prototype.getInitColor = function () {
-        return this.initColor;
-    };
-    return Background;
-})();
 var BezierCurve = (function () {
     function BezierCurve() {
         var _this = this;
@@ -8256,6 +8241,68 @@ var Font = (function () {
         });
     };
     return Font;
+})();
+var Background = (function () {
+    function Background() {
+        this.initColor = { r: 44, g: 208, b: 219 };
+        this.bgPickerEl = $('<input type="text" id="picker"></input>');
+        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
+        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
+    }
+    Background.prototype.renderPropery = function (container) {
+        container.html('<h2>Barva pozadí elementu</h2>');
+        var row = $('<div>').addClass('row');
+        var s = $('<div>').html('#').addClass('group quarter');
+        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
+        row.append(s);
+        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
+        this.bgOpacityEl.val('0');
+        a.append(this.bgOpacitySliderEl);
+        a.append(this.bgOpacityEl);
+        row.append(a);
+        container.append(row);
+        this.initColorPicker();
+        this.initSlider();
+        return container;
+    };
+
+    Background.prototype.initSlider = function () {
+        var _this = this;
+        this.bgOpacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 0,
+            slide: function (event, ui) {
+                _this.bgOpacityEl.val(ui.value).change();
+            }
+        });
+    };
+
+    Background.prototype.initColorPicker = function () {
+        var _this = this;
+        this.colorPicker = this.bgPickerEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
+                }
+            }
+        }).on('change', function (e) {
+            _this.colorPicker.colpickSetColor($(e.target).val());
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
+        });
+    };
+
+    Background.prototype.getInitColor = function () {
+        return this.initColor;
+    };
+    return Background;
 })();
 var ObjectDimension = (function () {
     function ObjectDimension() {

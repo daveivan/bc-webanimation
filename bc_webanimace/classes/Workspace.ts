@@ -672,7 +672,7 @@ class Workspace {
         }
     }
 
-    getTransformAttr(idLayer: number, attr: string, timestamp: number = null): any {
+    /*getTransformAttr(idLayer: number, attr: string, timestamp: number = null): any {
         if (timestamp == null) {
             var currentTimestamp: number = this.app.timeline.pxToMilisec();
         } else {
@@ -779,7 +779,7 @@ class Workspace {
         } else {
             return null;
         }
-    }
+    }*/
 
     public transformShapes(showHelpers: boolean = true) {
         var currentTimestamp: number = this.app.timeline.pxToMilisec();
@@ -793,7 +793,7 @@ class Workspace {
                 if (showHelpers) {
                     helper.show();
                 }
-                if (layer.id == this.scopce) {
+                if (layer.id == this.scope) {
                     helper = this.workspaceContainer.parent().find('.base-fff');
                 }
 
@@ -809,7 +809,7 @@ class Workspace {
 
 
 
-    computeParameter(leftParam: number, rightParam: number, b: number): number {
+    /*computeParameter(leftParam: number, rightParam: number, b: number): number {
         var value: number = null;
         var absValue: number = Math.round((Math.abs(rightParam - leftParam)) * b);
         if (leftParam > rightParam) {
@@ -829,7 +829,7 @@ class Workspace {
             value = Number(leftParam) + Number(absValue);
         }
         return (Number(value));
-    }
+    }*/
 
     public renderShapes(scope: number = null) {
         $('#workspace').empty();
@@ -909,6 +909,47 @@ class Workspace {
             this.workspaceContainer.parents('.square').addClass('scope');
         } else {
             this.workspaceContainer = $('#workspace');
+        }
+    }
+
+    public renderSingleShapeWithChildren(id: number) {
+        var shapeEl: JQuery = $('#workspace').find('.shape[data-id="' + id + '"]');
+        var container: JQuery = this.workspaceContainer;
+        if (shapeEl.length) {
+            container = shapeEl.parent();
+        }
+
+        var layer: Layer = this.app.timeline.getLayer(id);
+        if (layer) {
+            var shape: JQuery = layer.renderShape(container, this.app.timeline.pxToMilisec(), this.scope);
+
+            this.app.timeline.layers.forEach((l: Layer, index: number) => {
+                if (l.parent == layer.id) {
+                    this.recursiveRenderShape(l.id, shape);
+                }
+            });
+        }
+
+        this.dragResize();
+        this.onChangeMode();
+        if (this.scope) {
+            this.workspaceContainer = this.workspaceWrapper.find('.square' + '[data-id="' + this.scope + '"]').addClass('scope');
+            this.workspaceContainer.parents('.square').addClass('scope');
+        } else {
+            this.workspaceContainer = $('#workspace');
+        }
+    }
+
+    private recursiveRenderShape(id: number, container: JQuery) {
+        var layer: Layer = this.app.timeline.getLayer(id);
+        if (layer) {
+            var shape: JQuery = layer.renderShape(container, this.app.timeline.pxToMilisec(), this.scope);
+
+            this.app.timeline.layers.forEach((l: Layer, index: number) => {
+                if (l.parent == layer.id) {
+                    this.recursiveRenderShape(l.id, shape);
+                }
+            });
         }
     }
 
@@ -1055,7 +1096,7 @@ class Workspace {
                                 left: ((ui.position.left + 1) / this.workspaceContainer.width()) * 100
                             }); 
                         });
-                        this.renderSingleShape(layer.id);
+                        this.renderSingleShapeWithChildren(layer.id);
                     }                              
                            
                 }
@@ -1128,7 +1169,7 @@ class Workspace {
                                 height: (($(event.target).height()) / this.workspaceContainer.height()) * 100
                             }); 
                         });
-                        this.renderSingleShape(layer.id);
+                        this.renderSingleShapeWithChildren(layer.id);
                     }                 
                 }
 
@@ -1228,7 +1269,7 @@ class Workspace {
 
 
     //TODO: upravit klonovani - nove vlastnosti z interpolace
-    getCurrentShapeOld(id: number): IShape {
+    /*getCurrentShapeOld(id: number): IShape {
         var shapeEl: JQuery = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
         if (shapeEl.length) {
             //var c = $.color.extract(shapeEl, 'background-color');
@@ -1322,7 +1363,7 @@ class Workspace {
         } else {
             return null;   
         }
-    }
+    }*/
 
     private getRandomColor() {
         var letters: string[] = '0123456789ABCDEF'.split('');
@@ -1401,7 +1442,7 @@ class Workspace {
                         k.shape.setBackground(this.color); 
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
                   
@@ -1434,7 +1475,7 @@ class Workspace {
                         textField.setFont(this.fontParameters);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
 
             }
@@ -1466,7 +1507,7 @@ class Workspace {
                         k.shape.setOpacity(opacity);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
                 
@@ -1493,7 +1534,7 @@ class Workspace {
                         k.shape.setScale(scale);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -1524,7 +1565,7 @@ class Workspace {
                             k.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
                         });
 
-                        this.renderSingleShape(layer.id);
+                        this.renderSingleShapeWithChildren(layer.id);
                     } else {
                         keyframe.shape.setX(dimension);
                         keyframe.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
@@ -1540,7 +1581,7 @@ class Workspace {
                             k.shape.setRelativeY((dimension / this.workspaceContainer.height()) * 100);
                         });
 
-                        this.renderSingleShape(layer.id);
+                        this.renderSingleShapeWithChildren(layer.id);
                     }
                 }
             }
@@ -1590,7 +1631,7 @@ class Workspace {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -1631,7 +1672,7 @@ class Workspace {
                         } 
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }           
             }
 
@@ -1659,7 +1700,7 @@ class Workspace {
                         k.shape.setPerspective(p);
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -1699,7 +1740,7 @@ class Workspace {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }
             }
 
@@ -1737,7 +1778,7 @@ class Workspace {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }                
             }
 
@@ -1775,7 +1816,7 @@ class Workspace {
                         }
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }                  
             }
 
@@ -1798,7 +1839,7 @@ class Workspace {
                         k.timing_function = this.bezier;
                     });
 
-                    this.renderSingleShape(layer.id);
+                    this.renderSingleShapeWithChildren(layer.id);
                 }  
 
                 this.app.timeline.renderKeyframes(layer.id);
@@ -1843,7 +1884,7 @@ class Workspace {
                 layer.idEl = null;
             }
             //this.renderShapes();
-            this.renderSingleShape(layer.id);
+            this.renderSingleShapeWithChildren(layer.id);
             this.transformShapes();
             this.app.timeline.renderLayers();
             this.app.timeline.selectLayer(layer.id);
@@ -2615,6 +2656,10 @@ class Workspace {
         //this.dragResize(); <- nefunguje
         this.app.timeline.renderLayers();
         this.renderShapes();
+        if (this.scope) {
+            this.app.timeline.getLayer(this.scope).lastTransformKeyframe = null;    
+        }
+        
         this.transformShapes();
         this.app.timeline.selectLayer(null);
     }

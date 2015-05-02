@@ -22,7 +22,7 @@
         this.layers = l;
 
         
-        this.tabsEl.append('<ul><li><a href="#code">Kód</a></li><li><a href="#preview">Náhled animace</a></li></ul>');
+        this.tabsEl.append('<ul><li><a href="#code">Vygenerovaný HTML kód animace</a></li><li><a href="#preview">Náhled vytvořené animace</a></li></ul>');
         this.tabsEl.append(this.codeTab);
         this.tabsEl.append(this.previewTab);
 
@@ -222,17 +222,21 @@
                     if (i == 0 && part != 0) {
                         cssObject['0%'] = { 'visibility': 'hidden'};
                     }
-                    percents.push(percent);
 
                     parentSize = this.app.workspace.workspaceSize;
                     if (item.parent != null) {
                         var k: Keyframe = this.app.timeline.getLayer(item.parent).getKeyframeByTimestamp(timestamp);
                         if (k == null) {
                             //compute dimensions
-                            parentSize = {
+                            /*parentSize = {
                                 width: this.app.workspace.getTransformAttr(item.parent, 'width', timestamp),
                                 height: this.app.workspace.getTransformAttr(item.parent, 'height', timestamp),
-                        }
+                            }*/
+                            var tmp: IShape = this.app.timeline.getLayer(item.parent).getShape(timestamp);
+                            parentSize = {
+                                width: tmp.parameters.width,
+                                height: tmp.parameters.height,
+                            }
                         } else {
                             parentSize = { width: k.shape.parameters.width, height: k.shape.parameters.height };   
                         }

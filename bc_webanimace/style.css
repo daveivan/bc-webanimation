@@ -790,7 +790,6 @@ text-align: center;
 }
 
 #code {
-
 }
 #dialog {
     margin: 0;
@@ -800,6 +799,7 @@ text-align: center;
 
 .ui-tabs {
     border: 0;
+    width: 100%;
 }
 
 .ui-tabs-panel {
@@ -808,19 +808,23 @@ text-align: center;
 
 .ui-tabs-nav {
     background: none;
-    background-color: #d0e5e8;
     border-radius: 0;
     border: 0;
+    margin: 0 auto !important;
+    text-align: center;
+    width: 430px;
 }
 
 .ui-tabs-nav li {
     border-radius: 0;
-    background: #8ed2dc !important;
     font-size: 14px;
+    border: none !important;
+    background: #fff !important;
+    margin-right: 7px !important;
 }
 
-li.ui-state-active {
-    background: #fff !important;
+li.ui-state-active a, li.ui-state-active a:hover {
+    background: none repeat scroll 0 0 #348391 !important;
 }
 
 .ui-dialog {
@@ -871,6 +875,7 @@ li.ui-state-active {
   transition: all 0.3s ease 0s;
   -moz-transition: all 0.3s ease 0s;
   -webkit-transition: all 0.3s ease 0s;
+    z-index: 100;
 }
 
 .ui-dialog-titlebar-close:hover {
@@ -879,7 +884,7 @@ li.ui-state-active {
 
 pre.prettyprint {
      width: 90%;
-    height: 400px;
+    height: 380px;
     border: 1px solid #909090;
     margin: 0 auto;
     overflow: auto;   
@@ -1161,8 +1166,8 @@ tr.first.to-background th{
 }
 
 iframe#previewFrame {
-    width: 100%;
-    height: 390px;
+    width: 98%;
+    height: 380px;
     border: 1px solid #d8d8d8;
 }
 
@@ -1312,7 +1317,7 @@ a.menu-item.disabled:hover {
     font-size: 12px !important;
 }
 
-.btn, .ui-dialog-buttonset > .ui-button  {
+.btn, .ui-dialog-buttonset > .ui-button, .ui-tabs-anchor  {
   border: 0 none !important;
   border-radius: 2px 2px 2px 2px !important;
   color: #FFFFFF !important;
@@ -1336,13 +1341,27 @@ a.menu-item.disabled:hover {
     padding: 5px 7px !important;
 }
 
-.btn.svg-btn, .download-btn, .animationset-btn, .ui-dialog-buttonset > .ui-button {
+.ui-tabs-anchor {
+    margin-top: 0;
+}
+
+.btn.svg-btn, .animationset-btn, .ui-dialog-buttonset > .ui-button, .ui-tabs-anchor {
   background: none repeat scroll 0 0 #2DB6CF !important;
   color: #FFFFFF;
 }
-.btn.svg-btn:hover, .download-btn:hover, .animationset-btn:hover, .ui-dialog-buttonset > .ui-button:hover {
+.btn.svg-btn:hover, .animationset-btn:hover, .ui-dialog-buttonset > .ui-button:hover, .ui-tabs-anchor:hover {
   background: none repeat scroll 0 0 #444444 !important;
   color: #FFFFFF;
+}
+
+.download-btn {
+ background: none repeat scroll 0 0 #2b891b !important;
+  color: #FFFFFF;   
+}
+
+.download-btn:hover {
+  background: none repeat scroll 0 0 #185a0d !important;
+  color: #FFFFFF;  
 }
 
 .animationset-btn {

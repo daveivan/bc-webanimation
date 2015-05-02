@@ -1733,10 +1733,10 @@ class Workspace {
                     layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
                         if (type === 'x') {
                             k.shape.setTranslateX(value);
-                            keyframe.shape.setRelativeTranslateX((value / keyframe.shape.parameters.width) * 100);
+                            k.shape.setRelativeTranslateX((value / keyframe.shape.parameters.width) * 100);
                         } else if (type === 'y') {
                             k.shape.setTranslateY(value);
-                            keyframe.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
+                            k.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
                         }
                     });
 

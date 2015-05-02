@@ -14,6 +14,8 @@ class ControlPanel {
 
     private toolPanelEl: JQuery = $('<div>').addClass('tool-panel');
 
+    private aboutDialogEl: JQuery = $('<div>').attr('id', 'dialog').html('<p></p>').attr('title', 'Informace o aplikaci');
+
     private newProjectEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn').addClass('new').addClass('tooltip').html('<i class="fa fa-eraser"></i>').attr('title', 'Nový projekt');
     private selectToolEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn').addClass('select').addClass('tooltip').html('<i class="fa fa-location-arrow fa-flip-horizontal"></i>').attr('title', 'Nástroj pro výběr');
     private createDivToolEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip').addClass('create-div').html('<i class="fa fa-stop"></i>').attr('title', 'Nový kontejner');
@@ -24,6 +26,7 @@ class ControlPanel {
     private saveEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip save').html('<i class="fa fa-floppy-o"></i>').attr('title', 'Uložit projekt');
     private loadEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip load').html('<i class="fa fa-file-text-o"></i>').attr('title', 'Načíst projekt ze souboru');
     private svgGalleryEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip svg-gallery').html('<i class="fa fa-smile-o"></i>').attr('title', 'SVG galerie');
+    private aboutEl: JQuery = $('<a>').attr('href', '#').addClass('tool-btn tooltip about').html('<i class="fa fa-info-circle"></i>').attr('title', 'O aplikaci');
 
     private controlPanelEl: JQuery = $('<div>').addClass('control-panel');
 
@@ -111,6 +114,8 @@ class ControlPanel {
         this.toolPanelEl.append(this.insertTextEl);
         this.toolPanelEl.append(this.insertSVGEl);
         this.toolPanelEl.append(this.svgGalleryEl);
+        this.toolPanelEl.append($('<div>').addClass('deliminer'));
+        this.toolPanelEl.append(this.aboutEl);
         this.containerEl.append(this.toolPanelEl);
 
         this.controlPanelEl.append(this.mainPanel);
@@ -750,6 +755,21 @@ class ControlPanel {
         this.svgGalleryEl.on('click', (event: JQueryEventObject) => {
             var svgGallery = new SvgGallery(this.app);
             //this.app.workspace.insertMode(false);
+        });
+
+        this.aboutEl.on('click', (e: JQueryEventObject) => {
+            this.aboutDialogEl.dialog({
+                draggable: false,
+                height: 400,
+                width: 700,
+                resizable: true,
+                modal: true,
+                closeOnEscape: true,
+                close: (event, ui) => {
+                    this.aboutDialogEl.remove();
+                },
+            });
+            $('.ui-dialog-titlebar-close').empty().append('X');
         });
 
         this.generateCodeEl.on('click', (event: JQueryEventObject) => {

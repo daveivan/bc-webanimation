@@ -1172,8 +1172,14 @@ var Layer = (function () {
             }
 
             if (isTransform) {
-                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
-                helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                if (params.perspective == 0) {
+                    //fix for Mozilla Firefox
+                    shape.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                    helper.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                } else {
+                    shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                    helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                }
             }
 
             shape.removeClass('novisible');
@@ -1195,9 +1201,15 @@ var Layer = (function () {
                 'border-top-right-radius': params.borderRadius[1] + '%',
                 'border-bottom-right-radius': params.borderRadius[2] + '%',
                 'border-bottom-left-radius': params.borderRadius[3] + '%',
-                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             });
+
+            //fix for mozilla firefox
+            if (params.perspective == 0) {
+                shape.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            } else {
+                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            }
 
             if (showHelpers) {
                 helper.css({
@@ -1206,9 +1218,15 @@ var Layer = (function () {
                     'width': params.relativeSize.width + '%',
                     'height': params.relativeSize.height + '%',
                     'z-index': (params.zindex + 1000),
-                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
+
+                //fix for mozilla firefox
+                if (params.perspective == 0) {
+                    helper.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                } else {
+                    helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                }
 
                 helper.css("left", "-=1");
                 helper.css("top", "-=1");
@@ -1474,19 +1492,21 @@ var Layer = (function () {
                 t += 'perspective(' + p.perspective + 'px) ';
             }
 
+            if (p.translate.x != 0 || p.translate.y != 0 || p.translate.z) {
+                t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, ' + p.translate.z + 'px) ';
+            }
+
+            if (p.scale != 1) {
+                t += 'scale(' + p.scale + ') ';
+            }
+
             if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
             if (p.skew.x != 0 || p.skew.y != 0) {
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
-            if (p.scale != 1) {
-                t += 'scale(' + p.scale + ') ';
-            }
 
-            if (p.translate.x != 0 || p.translate.y != 0 || p.translate.z) {
-                t += 'translateX(' + p.relativeTranslate.x + '%) translateY(' + p.relativeTranslate.y + '%) translateZ(' + p.translate.z + 'px)';
-            }
             cssObject['transform'] = t;
         }
 
@@ -1598,21 +1618,27 @@ var Layer = (function () {
         if (change.rotate || change.skew || change.scale || change.translate || change.perspective) {
             var t = "";
             if (change.perspective) {
-                t += 'perspective(' + p.perspective + 'px) ';
+                if (p.perspective != 0) {
+                    //fix for mozilla firefox
+                    t += 'perspective(' + p.perspective + 'px) ';
+                }
             }
 
             if (change.translate) {
                 t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, ' + p.translate.z + 'px) ';
             }
+
+            if (change.scale) {
+                t += 'scale(' + p.scale + ')';
+            }
+
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
             if (change.skew) {
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
-            if (change.scale) {
-                t += 'scale(' + p.scale + ')';
-            }
+
             cssObject['transform'] = t;
         }
 
@@ -1663,10 +1689,16 @@ var Layer = (function () {
                 'border-top-right-radius': params.borderRadius[1] + '%',
                 'border-bottom-right-radius': params.borderRadius[2] + '%',
                 'border-bottom-left-radius': params.borderRadius[3] + '%',
-                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             };
             shape.css(css);
+
+            if (params.perspective == 0) {
+                //fix for mozilla firefox
+                shape.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            } else {
+                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            }
 
             if (this.idEl) {
                 shape.attr('id', this.idEl);
@@ -1699,9 +1731,15 @@ var Layer = (function () {
                     'width': ((params.width + 2) / container.width()) * 100 + '%',
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     'z-index': this.globalShape.parameters.zindex + 1000,
-                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
+
+                if (params.perspective == 0) {
+                    //fix for mozilla firefox
+                    helper.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                } else {
+                    helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                }
 
                 helper.attr('data-id', keyframe.shape.id);
                 helpername.appendTo(helper);
@@ -1753,10 +1791,10 @@ var Timeline = (function () {
         this.pointerEl = $('<div class="pointer"><div class="pointer-top-wrapper"><div class="pointer-top"></div></div></div>');
         this.deleteConfirmEl = $('<div>').attr('id', 'delete-confirm').css({ 'display': 'none' });
         this.playEl = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
-        this.stopEl = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
+        this.stopEl = $('<a class="animation-btn stop-animation tooltip-top indent" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
         this.pauseEl = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
-        this.timelineScaleMinus = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zmenšit měřítko časové osy"><i class="fa fa-search-minus"></i></a>');
-        this.timelineScalePlus = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zvětšit měřítko časové osy"><i class="fa fa-search-plus"></i></a>');
+        this.timelineScaleMinus = $('<a class="scale-timeline tooltip-top animation-btn" href="#" title="Zmenšit měřítko časové osy"><i class="fa fa-search-minus"></i></a>');
+        this.timelineScalePlus = $('<a class="scale-timeline tooltip-top animation-btn indent" href="#" title="Zvětšit měřítko časové osy"><i class="fa fa-search-plus"></i></a>');
         this.contextMenuEl = $('<div>').addClass('context-menu');
         this.menuCreateKeyframe = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Nový snímek');
         this.menuCreateKeyframeOriginal = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Nový snímek z aktuální podoby');
@@ -2217,20 +2255,24 @@ var Timeline = (function () {
                     perspective: k.shape.parameters.perspective
                 };
 
+                var tf = { p0: k.timing_function.p0, p1: k.timing_function.p1, p2: k.timing_function.p2, p3: k.timing_function.p3 };
+
                 if (layer.type == 0 /* DIV */) {
                     var shape = new Rectangle(p);
-                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == 3 /* IMAGE */) {
                     var shape = new Img(p, layer.globalShape.getSrc());
-                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == 2 /* SVG */) {
                     var shape = new Svg(p, layer.globalShape.getSrc());
-                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == 1 /* TEXT */) {
                     var g = layer.globalShape;
                     var shape = new TextField(p, g.getContent(), k.shape.getColor(), k.shape.getSize(), g.getFamily());
-                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 }
+
+                shape.id = layer.id;
 
                 if (newKeyframe == null) {
                     var currentKeyframe = layer.getKeyframeByTimestamp(position);
@@ -2323,12 +2365,18 @@ var Timeline = (function () {
     Timeline.prototype.renderTimeline = function () {
         var _this = this;
         $('body').append(this.deleteConfirmEl);
-        $(this.timelineHeadEl).append(this.repeatEl);
-        $(this.timelineHeadEl).append(this.playEl);
-        $(this.timelineHeadEl).append(this.pauseEl);
-        $(this.timelineHeadEl).append(this.stopEl);
-        $(this.timelineHeadEl).append(this.timelineScaleMinus);
-        $(this.timelineHeadEl).append(this.timelineScalePlus);
+        var wrapperRepeat = $('<div>').addClass('wrapper-repeat');
+        wrapperRepeat.append(this.repeatEl);
+        $(this.timelineHeadEl).append(wrapperRepeat);
+        var wrapperPlay = $('<div>').addClass('wrapper-play');
+        wrapperPlay.append(this.playEl);
+        wrapperPlay.append(this.pauseEl);
+        wrapperPlay.append(this.stopEl);
+        $(this.timelineHeadEl).append(wrapperPlay);
+        var wrapperScale = $('<div>').addClass('wrapper-scale');
+        wrapperScale.append(this.timelineScaleMinus);
+        wrapperScale.append(this.timelineScalePlus);
+        $(this.timelineHeadEl).append(wrapperScale);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
@@ -2488,7 +2536,6 @@ var Timeline = (function () {
 
         $('.keyframe').draggable({
             axis: "x",
-            grid: [this.keyframeWidth, this.keyframeWidth],
             containment: 'tr',
             stop: function (event, ui) {
                 //update positon of keyframe
@@ -2529,12 +2576,6 @@ var Timeline = (function () {
                 }
 
                 _this.renderKeyframes(layerID);
-            },
-            drag: function (event, ui) {
-                if (ui.position.left < 11) {
-                } else {
-                    $('.keyframe').draggable("option", "grid", [_this.keyframeWidth, _this.keyframeWidth]);
-                }
             }
         });
         $('.tooltip-bottom').tooltipster({ position: 'bottom' });
@@ -3133,10 +3174,11 @@ var Timeline = (function () {
         var container = $('<div>').addClass('breadcrumb');
         var currentLayer = this.getLayer(scope);
         if (currentLayer) {
-            container.append($('<span>').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));
+            container.append($('<span>').addClass('scope-item').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));
             this.getParent(currentLayer.parent, container);
         }
-        container.prepend($('<span>').html('<a href="#" class="set-scope">Hlavní plátno</a>'));
+        container.prepend($('<span>').addClass('scope-item').html('<a href="#" class="set-scope">Hlavní plátno</a>'));
+        container.prepend($('<span>').addClass('b-title').html('Úroveň zanoření: '));
         this.keyframesFooterEl.append(container);
     };
 
@@ -3144,7 +3186,7 @@ var Timeline = (function () {
         var layer = null;
         layer = this.getLayer(parent);
         if (layer) {
-            container.prepend($('<span>').html('<a href="#" class="set-scope" data-id=' + layer.id + '>' + layer.name + '</a>'));
+            container.prepend($('<span>').addClass('scope-item').html('<a href="#" class="set-scope" data-id=' + layer.id + '>' + layer.name + '</a>'));
             this.getParent(layer.parent, container);
         }
         return layer;
@@ -3416,7 +3458,8 @@ var Workspace = (function () {
 
         $('html').on('keyup', function (e) {
             if (e.keyCode == 46) {
-                if (e.target.nodeName === 'BODY') {
+                var originTag = $(e.target).prop("tagName").toLowerCase();
+                if (originTag === 'body' || originTag != 'input') {
                     if ($('body').find('.keyframe.selected').length != 0) {
                         _this.app.timeline.onDeleteKeyframe(e);
                     } else {
@@ -4179,6 +4222,7 @@ var Workspace = (function () {
                         _this.app.controlPanel.updateSkew(shape.parameters.skew);
                         _this.app.controlPanel.updateScale(shape.parameters.scale);
                         _this.app.controlPanel.updateTranslate(shape.parameters.translate);
+                        _this.app.controlPanel.updatePerspective(shape.parameters.perspective);
 
                         //TODO - všechny update!!
                         (_this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
@@ -4944,9 +4988,24 @@ var Workspace = (function () {
     Workspace.prototype.saveSvgText = function (svg) {
         var xmlString = svg;
         var parser = new DOMParser();
-        var doc = parser.parseFromString(xmlString, "image/svg+xml");
+        var doc;
+        try  {
+            doc = parser.parseFromString(xmlString, "image/svg+xml");
+        } catch (e) {
+            alert('Nevalidní kód');
+            return false;
+        }
 
-        if (!this.isParseError(doc)) {
+        var isError;
+        try  {
+            isError = true;
+            isError = this.isParseError(doc);
+        } catch (e) {
+            //is IE
+            isError = false;
+        }
+
+        if (!isError) {
             var width = 150;
             var height = 150;
 
@@ -5083,63 +5142,64 @@ var Workspace = (function () {
             var reader = new FileReader();
             reader.onload = function (e) {
                 img.src = e.target.result;
+                img.onload = function (ev) {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
 
-                var canvas = document.createElement("canvas");
-                var ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0);
+                    var MAX_WIDTH = $('#workspace').width();
+                    var MAX_HEIGHT = $('#workspace').height();
+                    var width = img.width;
+                    var height = img.height;
 
-                var MAX_WIDTH = $('#workspace').width();
-                var MAX_HEIGHT = $('#workspace').height();
-                var width = img.width;
-                var height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
                     }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-                canvas.width = width;
-                canvas.height = height;
-                var ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, width, height);
+                    canvas.width = width;
+                    canvas.height = height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, width, height);
 
-                var dataurl = canvas.toDataURL("image/png");
-                var p = {
-                    top: 0,
-                    left: 0,
-                    width: width,
-                    height: height,
-                    relativeSize: { width: ((width / _this.workspaceContainer.width()) * 100), height: ((height / _this.workspaceContainer.height()) * 100) },
-                    relativePosition: { top: 0, left: 0 },
-                    background: { r: 255, g: 255, b: 255, a: 0 },
-                    opacity: 1,
-                    borderRadius: [0, 0, 0, 0],
-                    rotate: { x: 0, y: 0, z: 0 },
-                    skew: { x: 0, y: 0 },
-                    origin: { x: 50, y: 50 },
-                    zindex: _this.app.timeline.layers.length,
-                    scale: 1,
-                    translate: { x: 0, y: 0, z: 0 },
-                    relativeTranslate: { x: 0, y: 0 },
-                    perspective: 0
+                    var dataurl = canvas.toDataURL();
+                    var p = {
+                        top: 0,
+                        left: 0,
+                        width: width,
+                        height: height,
+                        relativeSize: { width: ((width / _this.workspaceContainer.width()) * 100), height: ((height / _this.workspaceContainer.height()) * 100) },
+                        relativePosition: { top: 0, left: 0 },
+                        background: { r: 255, g: 255, b: 255, a: 0 },
+                        opacity: 1,
+                        borderRadius: [0, 0, 0, 0],
+                        rotate: { x: 0, y: 0, z: 0 },
+                        skew: { x: 0, y: 0 },
+                        origin: { x: 50, y: 50 },
+                        zindex: _this.app.timeline.layers.length,
+                        scale: 1,
+                        translate: { x: 0, y: 0, z: 0 },
+                        relativeTranslate: { x: 0, y: 0 },
+                        perspective: 0
+                    };
+                    var image = new Img(p, dataurl);
+                    var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
+                    var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
+                    layer.parent = parent;
+                    if (layer.parent) {
+                        layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
+                    }
+                    var idLayer = _this.app.timeline.addLayer(layer);
+                    _this.renderSingleShape(idLayer);
+                    _this.transformShapes();
+                    _this.highlightShape([idLayer]);
                 };
-                var image = new Img(p, dataurl);
-                var layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), _this.getBezier(), image);
-                var parent = _this.workspaceContainer.data('id') ? _this.workspaceContainer.data('id') : null;
-                layer.parent = parent;
-                if (layer.parent) {
-                    layer.nesting = (_this.app.timeline.getLayer(layer.parent).nesting + 1);
-                }
-                var idLayer = _this.app.timeline.addLayer(layer);
-                _this.renderSingleShape(idLayer);
-                _this.transformShapes();
-                _this.highlightShape([idLayer]);
             };
 
             reader.readAsDataURL(file);
@@ -5214,6 +5274,12 @@ var Workspace = (function () {
     Workspace.prototype.onChangeMode = function () {
         var _this = this;
         var mode = this.app.controlPanel.Mode;
+        if (mode == 1 /* CREATE_DIV */) {
+            $('.workspace-wrapper').addClass('insert-mode');
+        } else {
+            $('.workspace-wrapper').removeClass('insert-mode');
+        }
+
         if (mode == 0 /* SELECT */) {
             $('.shape-helper').draggable('enable');
             $('.origin-point').draggable('enable');
@@ -5384,6 +5450,7 @@ var Workspace = (function () {
             layer.nesting = l.nesting;
         }
         var idLayer = this.app.timeline.addLayer(layer);
+        shape.id = idLayer;
 
         for (var i = this.app.timeline.layers.length - 1; i >= 0; i--) {
             if (this.app.timeline.layers[i].parent == l.id) {
@@ -5922,7 +5989,7 @@ var ControlPanel = (function () {
         });
 
         this.perspectiveSliderEl.slider({
-            min: -500,
+            min: 0,
             max: 500,
             step: 1,
             value: 0,
@@ -5957,8 +6024,12 @@ var ControlPanel = (function () {
         });
 
         this.perspectiveEl.on('change', function (e) {
-            _this.perspectiveSliderEl.slider('value', $(e.target).val());
-            _this.app.workspace.setPerspective($(e.target).val());
+            var v = $(e.target).val();
+            if (v < 0) {
+                v = 0;
+            }
+            _this.perspectiveSliderEl.slider('value', v);
+            _this.app.workspace.setPerspective(v);
         });
 
         this.scaleEl.on('change', function (e) {
@@ -6627,8 +6698,9 @@ var GenerateCode = (function () {
 
         this.previewTab.append(this.runEl);
         this.previewTab.append(this.previewEl);
-        this.previewEl.attr('src', 'data:text/html;charset=utf-8,' + encodehtml);
         this.previewEl.attr('srcdoc', encodehtml);
+        this.previewEl.attr('src', 'data:text/html;charset=utf-8,' + encodehtml);
+
         prettyPrint();
 
         $(pre).on('dblclick', function () {
@@ -6970,16 +7042,15 @@ var ImageLayer = (function (_super) {
         newLayer.nesting = obj.nesting;
         newLayer.isMultipleEdit = obj.isMultipleEdit;
         newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
+        newLayer.deleteKeyframe(0);
 
         obj._keyframes.forEach(function (k, i) {
-            if (k._timestamp != 0) {
-                var p = k._shape._parameters;
-                var s = new Img(p, null);
-                var f = k._timing_function;
-                var t = k._timestamp;
-                s.id = newLayer.id;
-                newLayer.addKeyframe(s, t, f);
-            }
+            var p = k._shape._parameters;
+            var s = new Img(p, null);
+            var f = k._timing_function;
+            var t = k._timestamp;
+            s.id = newLayer.id;
+            newLayer.addKeyframe(s, t, f);
         });
 
         return newLayer;
@@ -7103,16 +7174,15 @@ var RectangleLayer = (function (_super) {
         newLayer.nesting = obj.nesting;
         newLayer.isMultipleEdit = obj.isMultipleEdit;
         newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
+        newLayer.deleteKeyframe(0);
 
         obj._keyframes.forEach(function (k, i) {
-            if (k._timestamp != 0) {
-                var p = k._shape._parameters;
-                var s = new Rectangle(p);
-                var f = k._timing_function;
-                var t = k._timestamp;
-                s.id = newLayer.id;
-                newLayer.addKeyframe(s, t, f);
-            }
+            var p = k._shape._parameters;
+            var s = new Rectangle(p);
+            var f = k._timing_function;
+            var t = k._timestamp;
+            s.id = newLayer.id;
+            newLayer.addKeyframe(s, t, f);
         });
 
         return newLayer;
@@ -7323,16 +7393,15 @@ var SvgLayer = (function (_super) {
         newLayer.nesting = obj.nesting;
         newLayer.isMultipleEdit = obj.isMultipleEdit;
         newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
+        newLayer.deleteKeyframe(0);
 
         obj._keyframes.forEach(function (k, i) {
-            if (k._timestamp != 0) {
-                var p = k._shape._parameters;
-                var s = new Svg(p, null);
-                var f = k._timing_function;
-                var t = k._timestamp;
-                s.id = newLayer.id;
-                newLayer.addKeyframe(s, t, f);
-            }
+            var p = k._shape._parameters;
+            var s = new Svg(p, null);
+            var f = k._timing_function;
+            var t = k._timestamp;
+            s.id = newLayer.id;
+            newLayer.addKeyframe(s, t, f);
         });
 
         return newLayer;
@@ -7595,20 +7664,19 @@ var TextLayer = (function (_super) {
         newLayer.nesting = obj.nesting;
         newLayer.isMultipleEdit = obj.isMultipleEdit;
         newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
+        newLayer.deleteKeyframe(0);
 
         obj._keyframes.forEach(function (k, i) {
-            if (k._timestamp != 0) {
-                var p = k._shape._parameters;
-                var content = k._shape._content;
-                var color = k._shape.color;
-                var size = k._shape.size;
-                var family = k._shape.family;
-                var s = new TextField(p, content, color, size, family);
-                var f = k._timing_function;
-                var t = k._timestamp;
-                s.id = newLayer.id;
-                newLayer.addKeyframe(s, t, f);
-            }
+            var p = k._shape._parameters;
+            var content = k._shape._content;
+            var color = k._shape.color;
+            var size = k._shape.size;
+            var family = k._shape.family;
+            var s = new TextField(p, content, color, size, family);
+            var f = k._timing_function;
+            var t = k._timestamp;
+            s.id = newLayer.id;
+            newLayer.addKeyframe(s, t, f);
         });
 
         return newLayer;

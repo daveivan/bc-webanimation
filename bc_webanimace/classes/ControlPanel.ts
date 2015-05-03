@@ -465,7 +465,7 @@ class ControlPanel {
         });
 
         this.perspectiveSliderEl.slider({
-            min: -500,
+            min: 0,
             max: 500,
             step: 1,
             value: 0,
@@ -501,8 +501,12 @@ class ControlPanel {
         });
 
         this.perspectiveEl.on('change', (e: JQueryEventObject) => {
-            this.perspectiveSliderEl.slider('value', $(e.target).val());
-            this.app.workspace.setPerspective($(e.target).val());
+            var v: number = $(e.target).val();
+            if (v < 0) {
+                v = 0;
+            }
+            this.perspectiveSliderEl.slider('value', v);
+            this.app.workspace.setPerspective(v);
         });
 
         this.scaleEl.on('change', (e: JQueryEventObject) => {

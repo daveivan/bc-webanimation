@@ -82,7 +82,8 @@ class Workspace {
 
         $('html').on('keyup', (e: JQueryEventObject) => {
             if (e.keyCode == 46) {
-                if (e.target.nodeName === 'BODY') {
+                var originTag: string = $(e.target).prop("tagName").toLowerCase();
+                if(originTag === 'body' || originTag != 'input')  {
                     if ($('body').find('.keyframe.selected').length != 0) {
                         this.app.timeline.onDeleteKeyframe(e);
                     } else {
@@ -832,6 +833,7 @@ class Workspace {
                         this.app.controlPanel.updateSkew(shape.parameters.skew);
                         this.app.controlPanel.updateScale(shape.parameters.scale);
                         this.app.controlPanel.updateTranslate(shape.parameters.translate);
+                        this.app.controlPanel.updatePerspective(shape.parameters.perspective);
                         //TODO - všechny update!!
 
                         (this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').css({
@@ -1587,10 +1589,24 @@ class Workspace {
     saveSvgText(svg: string) {
         var xmlString = svg;
         var parser: DOMParser = new DOMParser();
-        var doc: XMLDocument = parser.parseFromString(xmlString, "image/svg+xml");
+        var doc: XMLDocument;
+        try {
+        doc = parser.parseFromString(xmlString, "image/svg+xml");
+        } catch (e) {
+            alert('Nevalidní kód');
+            return false;
+        }
 
-        if (!this.isParseError(doc)) {
+        var isError: boolean;
+        try {
+            isError = true;
+            isError = this.isParseError(doc);
+        } catch (e) {
+            //is IE
+            isError = false;
+        }
 
+        if (!isError) {
             var width: number = 150;
             var height: number = 150;
 
@@ -1725,63 +1741,64 @@ class Workspace {
             var reader = new FileReader();
             reader.onload = (e) => {
                 img.src = e.target.result;
+                img.onload = (ev) => {
+                    var canvas = document.createElement("canvas");
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0);
 
-                var canvas = document.createElement("canvas");
-                var ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0);
+                    var MAX_WIDTH: number = $('#workspace').width();
+                    var MAX_HEIGHT: number = $('#workspace').height();
+                    var width: number = img.width;
+                    var height: number = img.height;
 
-                var MAX_WIDTH: number = $('#workspace').width();
-                var MAX_HEIGHT: number = $('#workspace').height();
-                var width: number = img.width;
-                var height: number = img.height;
-
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
                     }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-                canvas.width = width;
-                canvas.height = height;
-                var ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0, width, height);
+                    canvas.width = width;
+                    canvas.height = height;
+                    var ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, width, height);
 
-                var dataurl = canvas.toDataURL("image/png");
-                var p: Parameters = {
-                    top: 0,
-                    left: 0,
-                    width: width,
-                    height: height,
-                    relativeSize: { width: ((width / this.workspaceContainer.width()) * 100), height: ((height / this.workspaceContainer.height()) * 100) },
-                    relativePosition: { top: 0, left: 0 },
-                    background: { r: 255, g: 255, b: 255, a: 0 },
-                    opacity: 1,
-                    borderRadius: [0, 0, 0, 0],
-                    rotate: { x: 0, y: 0, z: 0 },
-                    skew: { x: 0, y: 0 },
-                    origin: { x: 50, y: 50 },
-                    zindex: this.app.timeline.layers.length,
-                    scale: 1,
-                    translate: { x: 0, y: 0, z: 0 },
-                    relativeTranslate: { x: 0, y: 0 },
-                    perspective: 0,
+                    var dataurl = canvas.toDataURL();
+                    var p: Parameters = {
+                        top: 0,
+                        left: 0,
+                        width: width,
+                        height: height,
+                        relativeSize: { width: ((width / this.workspaceContainer.width()) * 100), height: ((height / this.workspaceContainer.height()) * 100) },
+                        relativePosition: { top: 0, left: 0 },
+                        background: { r: 255, g: 255, b: 255, a: 0 },
+                        opacity: 1,
+                        borderRadius: [0, 0, 0, 0],
+                        rotate: { x: 0, y: 0, z: 0 },
+                        skew: { x: 0, y: 0 },
+                        origin: { x: 50, y: 50 },
+                        zindex: this.app.timeline.layers.length,
+                        scale: 1,
+                        translate: { x: 0, y: 0, z: 0 },
+                        relativeTranslate: { x: 0, y: 0 },
+                        perspective: 0,
+                    };
+                    var image: IShape = new Img(p, dataurl);
+                    var layer: Layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), image);
+                    var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
+                    layer.parent = parent;
+                    if (layer.parent) {
+                        layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
+                    }
+                    var idLayer: number = this.app.timeline.addLayer(layer);
+                    this.renderSingleShape(idLayer);
+                    this.transformShapes();
+                    this.highlightShape([idLayer]);
                 };
-                var image: IShape = new Img(p, dataurl);
-                var layer: Layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), image);
-                var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
-                layer.parent = parent;
-                if (layer.parent) {
-                    layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
-                }
-                var idLayer: number = this.app.timeline.addLayer(layer);
-                this.renderSingleShape(idLayer);
-                this.transformShapes();
-                this.highlightShape([idLayer]);
             }
 
             reader.readAsDataURL(file);
@@ -1855,6 +1872,12 @@ class Workspace {
 
     public onChangeMode() {
         var mode: Mode = this.app.controlPanel.Mode;
+        if (mode == Mode.CREATE_DIV) {
+            $('.workspace-wrapper').addClass('insert-mode');
+        } else {
+            $('.workspace-wrapper').removeClass('insert-mode');
+        }
+
         if (mode == Mode.SELECT) {
             $('.shape-helper').draggable('enable');
             $('.origin-point').draggable('enable');
@@ -2023,7 +2046,7 @@ class Workspace {
             layer.nesting = l.nesting;
         }
         var idLayer: number = this.app.timeline.addLayer(layer);
-
+        shape.id = idLayer;
         //find childrens
         for (var i: number = this.app.timeline.layers.length - 1; i >= 0; i--) {
             if (this.app.timeline.layers[i].parent == l.id) {

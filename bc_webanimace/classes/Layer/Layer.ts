@@ -350,8 +350,14 @@
             }
 
             if (isTransform) {
-                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
-                helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                if (params.perspective == 0) {
+                    //fix for Mozilla Firefox
+                    shape.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                    helper.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                } else {
+                    shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)'});
+                    helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                }
             }
 
             shape.removeClass('novisible');
@@ -373,9 +379,16 @@
                 'border-top-right-radius': params.borderRadius[1] + '%',
                 'border-bottom-right-radius': params.borderRadius[2] + '%',
                 'border-bottom-left-radius': params.borderRadius[3] + '%',
-                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             });
+
+            //fix for mozilla firefox
+            if (params.perspective == 0) {
+                shape.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            } else {
+                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+
+            }
 
             if (showHelpers) {
                 helper.css({
@@ -384,9 +397,16 @@
                     'width': params.relativeSize.width + '%',
                     'height': params.relativeSize.height + '%',
                     'z-index': (params.zindex + 1000),
-                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
+
+                //fix for mozilla firefox
+                if (params.perspective == 0) {
+                    helper.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                } else {
+                    helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+
+                }
 
                 helper.css("left", "-=1");
                 helper.css("top", "-=1");
@@ -657,19 +677,21 @@
                 t += 'perspective(' + p.perspective + 'px) ';
             }
 
+            if (p.translate.x != 0 || p.translate.y != 0 || p.translate.z) {
+                t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, ' + p.translate.z + 'px) ';
+            }
+
+            if (p.scale != 1) {
+                t += 'scale(' + p.scale + ') ';
+            }
+
             if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
             if (p.skew.x != 0 || p.skew.y != 0) {
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
-            if (p.scale != 1) {
-                t += 'scale(' + p.scale + ') ';
-            }
 
-            if (p.translate.x != 0 || p.translate.y != 0 || p.translate.z) {
-                t += 'translateX(' + p.relativeTranslate.x + '%) translateY(' + p.relativeTranslate.y + '%) translateZ(' + p.translate.z + 'px)';
-            }
             cssObject['transform'] = t;
         }
 
@@ -752,21 +774,27 @@
         if (change.rotate || change.skew || change.scale || change.translate || change.perspective) {
             var t: string = "";
             if (change.perspective) {
-                t += 'perspective(' + p.perspective + 'px) ';
+                if (p.perspective != 0) {
+                    //fix for mozilla firefox
+                    t += 'perspective(' + p.perspective + 'px) ';
+                }
             }
 
             if (change.translate) {
                 t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, ' + p.translate.z + 'px) ';
             }
+
+            if (change.scale) {
+                t += 'scale(' + p.scale + ')';
+            }
+
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
             if (change.skew) {
                 t += 'skew(' + p.skew.x + 'deg , ' + p.skew.y + 'deg) ';
             }
-            if (change.scale) {
-                t += 'scale(' + p.scale + ')';
-            }
+
             cssObject['transform'] = t;
         }
 
@@ -815,10 +843,16 @@
                 'border-top-right-radius': params.borderRadius[1] + '%',
                 'border-bottom-right-radius': params.borderRadius[2] + '%',
                 'border-bottom-left-radius': params.borderRadius[3] + '%',
-                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             }
             shape.css(css);
+
+            if (params.perspective == 0) {
+                //fix for mozilla firefox
+                shape.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            } else {
+                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+            }
 
             if (this.idEl) {
                 shape.attr('id', this.idEl);
@@ -851,9 +885,15 @@
                     'width': ((params.width + 2) / container.width()) * 100 + '%',
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     'z-index': this.globalShape.parameters.zindex + 1000,
-                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
+
+                if (params.perspective == 0) {
+                    //fix for mozilla firefox
+                    helper.css({ 'transform': 'translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                } else {
+                    helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                }
 
 
                 helper.attr('data-id', keyframe.shape.id);

@@ -45,11 +45,11 @@ class Timeline {
     deleteConfirmEl: JQuery = $('<div>').attr('id', 'delete-confirm').css({ 'display': 'none' });
 
     playEl: JQuery = $('<a class="animation-btn play-animation tooltip-top" href="#" title="Přehrát animaci"><i class="fa fa-play"></i></a>');
-    stopEl: JQuery = $('<a class="animation-btn stop-animation tooltip-top" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
+    stopEl: JQuery = $('<a class="animation-btn stop-animation tooltip-top indent" href="#" title="Zastavit animaci"><i class="fa fa-stop"></i></a>');
     pauseEl: JQuery = $('<a class="animation-btn pause-animation tooltip-top" href="#" title="Pozastavit animaci"><i class="fa fa-pause"></i></a>');
 
-    timelineScaleMinus: JQuery = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zmenšit měřítko časové osy"><i class="fa fa-search-minus"></i></a>');
-    timelineScalePlus: JQuery = $('<a class="scale-minus tooltip-top animation-btn" href="#" title="Zvětšit měřítko časové osy"><i class="fa fa-search-plus"></i></a>');
+    timelineScaleMinus: JQuery = $('<a class="scale-timeline tooltip-top animation-btn" href="#" title="Zmenšit měřítko časové osy"><i class="fa fa-search-minus"></i></a>');
+    timelineScalePlus: JQuery = $('<a class="scale-timeline tooltip-top animation-btn indent" href="#" title="Zvětšit měřítko časové osy"><i class="fa fa-search-plus"></i></a>');
 
     private contextMenuEl: JQuery = $('<div>').addClass('context-menu');
     private menuCreateKeyframe: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-plus"></i> Nový snímek');
@@ -490,7 +490,7 @@ class Timeline {
                         k.shape.parameters.borderRadius[0],
                         k.shape.parameters.borderRadius[1],
                         k.shape.parameters.borderRadius[2],
-                        k.shape.parameters.borderRadius[3],
+                        k.shape.parameters.borderRadius[3]
                     ],
                     rotate: {
                         x: k.shape.parameters.rotate.x,
@@ -518,20 +518,24 @@ class Timeline {
                     perspective: k.shape.parameters.perspective,
                 }
 
+                var tf: Bezier_points = { p0: k.timing_function.p0, p1: k.timing_function.p1, p2: k.timing_function.p2, p3: k.timing_function.p3 };
+
                 if (layer.type == Type.DIV) {
                     var shape: IShape = new Rectangle(p);
-                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == Type.IMAGE) {
                     var shape: IShape = new Img(p, layer.globalShape.getSrc());
-                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == Type.SVG) {
                     var shape: IShape = new Svg(p, layer.globalShape.getSrc());
-                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == Type.TEXT) {
                     var g: any = layer.globalShape;
                     var shape: IShape = new TextField(p, g.getContent(), k.shape.getColor(), k.shape.getSize(), g.getFamily());
-                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
+                    var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 }
+
+                shape.id = layer.id;
 
                 if (newKeyframe == null) {
                     var currentKeyframe: Keyframe = layer.getKeyframeByTimestamp(position);
@@ -621,12 +625,18 @@ class Timeline {
 
     renderTimeline() {
         $('body').append(this.deleteConfirmEl);
-        $(this.timelineHeadEl).append(this.repeatEl);
-        $(this.timelineHeadEl).append(this.playEl);
-        $(this.timelineHeadEl).append(this.pauseEl);
-        $(this.timelineHeadEl).append(this.stopEl);
-        $(this.timelineHeadEl).append(this.timelineScaleMinus);
-        $(this.timelineHeadEl).append(this.timelineScalePlus);
+        var wrapperRepeat: JQuery = $('<div>').addClass('wrapper-repeat');
+        wrapperRepeat.append(this.repeatEl);
+        $(this.timelineHeadEl).append(wrapperRepeat);
+        var wrapperPlay: JQuery = $('<div>').addClass('wrapper-play');
+        wrapperPlay.append(this.playEl);
+        wrapperPlay.append(this.pauseEl);
+        wrapperPlay.append(this.stopEl);
+        $(this.timelineHeadEl).append(wrapperPlay);
+        var wrapperScale: JQuery = $('<div>').addClass('wrapper-scale');
+        wrapperScale.append(this.timelineScaleMinus);
+        wrapperScale.append(this.timelineScalePlus);
+        $(this.timelineHeadEl).append(wrapperScale);
         $(this.timelineContainer).append(this.timelineHeadEl);
         $(this.fixedWidthEl).append(this.layersEl);
         $(this.fixedWidthEl).append(this.keyframesEl);
@@ -786,7 +796,6 @@ class Timeline {
 
         $('.keyframe').draggable({
             axis: "x",
-            grid: [this.keyframeWidth, this.keyframeWidth],
             containment: 'tr',
             stop: (event, ui) => {
                 //update positon of keyframe
@@ -827,13 +836,7 @@ class Timeline {
                 }
 
                 this.renderKeyframes(layerID);
-            },
-            drag: (event, ui) => {
-                if (ui.position.left < 11) {
-                } else {
-                    $('.keyframe').draggable("option", "grid", [this.keyframeWidth, this.keyframeWidth]);
-                }
-            },
+            }
         });
         $('.tooltip-bottom').tooltipster({ position: 'bottom' });
     }
@@ -1409,10 +1412,11 @@ class Timeline {
         var container: JQuery = $('<div>').addClass('breadcrumb');
         var currentLayer: Layer = this.getLayer(scope);
         if (currentLayer) {
-            container.append($('<span>').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));
+            container.append($('<span>').addClass('scope-item').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));
             this.getParent(currentLayer.parent, container);
         }
-        container.prepend($('<span>').html('<a href="#" class="set-scope">Hlavní plátno</a>'));
+        container.prepend($('<span>').addClass('scope-item').html('<a href="#" class="set-scope">Hlavní plátno</a>'));
+        container.prepend($('<span>').addClass('b-title').html('Úroveň zanoření: '));
         this.keyframesFooterEl.append(container);
     }
 
@@ -1420,7 +1424,7 @@ class Timeline {
         var layer: Layer = null;
         layer = this.getLayer(parent);
         if (layer) {
-            container.prepend($('<span>').html('<a href="#" class="set-scope" data-id=' + layer.id + '>' + layer.name + '</a>'));
+            container.prepend($('<span>').addClass('scope-item').html('<a href="#" class="set-scope" data-id=' + layer.id + '>' + layer.name + '</a>'));
             this.getParent(layer.parent, container);
         }
         return layer;

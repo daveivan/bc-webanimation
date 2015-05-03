@@ -54,16 +54,15 @@
         newLayer.nesting = obj.nesting;
         newLayer.isMultipleEdit = obj.isMultipleEdit;
         newLayer.isVisibleOnWorkspace = obj.isVisibleOnWorkspace;
+        newLayer.deleteKeyframe(0);
 
         obj._keyframes.forEach((k: any, i: number) => {
-            if (k._timestamp != 0) {
                 var p: Parameters = k._shape._parameters;
                 var s: IShape = new Rectangle(p);
                 var f: Bezier_points = k._timing_function;
                 var t: number = k._timestamp;
                 s.id = newLayer.id;
                 newLayer.addKeyframe(s, t, f);
-            }
         });
 
         return newLayer;

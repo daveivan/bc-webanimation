@@ -78,8 +78,9 @@
 
         this.previewTab.append(this.runEl);
         this.previewTab.append(this.previewEl);
-        this.previewEl.attr('src', 'data:text/html;charset=utf-8,' + encodehtml);
         this.previewEl.attr('srcdoc', encodehtml);
+        this.previewEl.attr('src', 'data:text/html;charset=utf-8,' + encodehtml);
+
         prettyPrint();
 
         $(pre).on('dblclick', () => {

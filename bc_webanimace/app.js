@@ -1021,7 +1021,8 @@ var Layer = (function () {
             scale: rangeData.params.scale,
             translate: {
                 x: rangeData.params.translate.x,
-                y: rangeData.params.translate.y
+                y: rangeData.params.translate.y,
+                z: rangeData.params.translate.z
             },
             relativeTranslate: {
                 x: rangeData.params.relativeTranslate.x,
@@ -1062,7 +1063,6 @@ var Layer = (function () {
             var paramsRight = rng['r'].shape.parameters;
 
             if (paramsLeft.top != paramsRight.top) {
-                console.log('vypočitavam top');
                 isChange.top = true;
                 params['relativePosition']['top'] = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
                 params['top'] = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
@@ -1492,7 +1492,8 @@ var Layer = (function () {
             scale: rangeData.params.scale,
             translate: {
                 x: rangeData.params.translate.x,
-                y: rangeData.params.translate.y
+                y: rangeData.params.translate.y,
+                z: rangeData.params.translate.z
             },
             relativeTranslate: {
                 x: rangeData.params.relativeTranslate.x,
@@ -1631,6 +1632,11 @@ var Layer = (function () {
                 params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
             }
 
+            if (paramsLeft.translate.z != paramsRight.translate.z || left != this.lastTransformKeyframe) {
+                isTransform = true;
+                params['translate']['z'] = this.computeAttr(paramsLeft.translate.z, paramsRight.translate.z, bezier(p));
+            }
+
             //var isPerspective: boolean = false;
             if (paramsLeft.perspective != paramsRight.perspective || left != this.lastTransformKeyframe) {
                 isTransform = true;
@@ -1643,8 +1649,8 @@ var Layer = (function () {
             }
 
             if (isTransform) {
-                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
-                helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                shape.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
             }
 
             shape.removeClass('novisible');
@@ -1666,7 +1672,7 @@ var Layer = (function () {
                 'border-top-right-radius': params.borderRadius[1] + '%',
                 'border-bottom-right-radius': params.borderRadius[2] + '%',
                 'border-bottom-left-radius': params.borderRadius[3] + '%',
-                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             });
 
@@ -1677,7 +1683,7 @@ var Layer = (function () {
                     'width': params.relativeSize.width + '%',
                     'height': params.relativeSize.height + '%',
                     'z-index': (params.zindex + 1000),
-                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
 
@@ -1789,7 +1795,8 @@ var Layer = (function () {
             scale: rangeData.params.scale,
             translate: {
                 x: rangeData.params.translate.x,
-                y: rangeData.params.translate.y
+                y: rangeData.params.translate.y,
+                z: rangeData.params.translate.z
             },
             relativeTranslate: {
                 x: rangeData.params.relativeTranslate.x,
@@ -1836,6 +1843,7 @@ var Layer = (function () {
             params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
             params['relativeTranslate']['y'] = this.computeAttr(paramsLeft.relativeTranslate.y, paramsRight.relativeTranslate.y, bezier(p));
             params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
+            params['translate']['z'] = this.computeAttr(paramsLeft.translate.z, paramsRight.translate.z, bezier(p));
             params['perspective'] = this.computeAttr(paramsLeft.perspective, paramsRight.perspective, bezier(p));
         }
 
@@ -1900,7 +1908,8 @@ var Layer = (function () {
                 scale: this.computeAttr(rng['l'].shape.parameters.scale, rng['r'].shape.parameters.scale, bezier(p)),
                 translate: {
                     x: this.computeAttr(rng['l'].shape.parameters.translate.x, rng['r'].shape.parameters.translate.x, bezier(p)),
-                    y: this.computeAttr(rng['l'].shape.parameters.translate.y, rng['r'].shape.parameters.translate.y, bezier(p))
+                    y: this.computeAttr(rng['l'].shape.parameters.translate.y, rng['r'].shape.parameters.translate.y, bezier(p)),
+                    z: this.computeAttr(rng['l'].shape.parameters.translate.z, rng['r'].shape.parameters.translate.z, bezier(p))
                 },
                 relativeTranslate: {
                     x: this.computeAttr(rng['l'].shape.parameters.relativeTranslate.x, rng['r'].shape.parameters.relativeTranslate.x, bezier(p)),
@@ -2124,8 +2133,12 @@ var Layer = (function () {
             cssObject['border-bottom-left-radius'] = p.borderRadius[3] + '%';
         }
 
-        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1 || p.translate.x != 0 || p.translate.y != 0) {
+        if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 || p.skew.x != 0 || p.skew.y != 0 || p.scale != 1 || p.translate.x != 0 || p.translate.y != 0 || p.translate.z != 0 || p.perspective != 0) {
             var t = "";
+            if (p.perspective != 0) {
+                t += 'perspective(' + p.perspective + 'px) ';
+            }
+
             if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
@@ -2136,8 +2149,8 @@ var Layer = (function () {
                 t += 'scale(' + p.scale + ') ';
             }
 
-            if (p.translate.x != 0 || p.translate.y != 0) {
-                t += 'translateX(' + p.relativeTranslate.x + '%) translateY(' + p.relativeTranslate.y + '%)';
+            if (p.translate.x != 0 || p.translate.y != 0 || p.translate.z) {
+                t += 'translateX(' + p.relativeTranslate.x + '%) translateY(' + p.relativeTranslate.y + '%) translateZ(' + p.translate.z + 'px)';
             }
             cssObject['transform'] = t;
         }
@@ -2214,6 +2227,8 @@ var Layer = (function () {
                 change.translate = true;
             if (initP.translate.y != p.translate.y || initP.translate.y != 0)
                 change.translate = true;
+            if (initP.translate.z != p.translate.z || initP.translate.z != 0)
+                change.translate = true;
             if (p.perspective != 0)
                 change.perspective = true;
         });
@@ -2265,7 +2280,7 @@ var Layer = (function () {
 
             if (change.translate) {
                 //t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
-                t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, 0) ';
+                t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, ' + p.translate.z + 'px) ';
             }
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -2327,7 +2342,7 @@ var Layer = (function () {
                 'border-top-right-radius': params.borderRadius[1] + '%',
                 'border-bottom-right-radius': params.borderRadius[2] + '%',
                 'border-bottom-left-radius': params.borderRadius[3] + '%',
-                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
             };
             shape.css(css);
@@ -2364,7 +2379,7 @@ var Layer = (function () {
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
-                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%'
                 });
 
@@ -2810,9 +2825,11 @@ var Timeline = (function () {
                     zeroK.shape.setScale(1);
                     zeroK.shape.setTranslateX(0);
                     zeroK.shape.setTranslateY(0);
+                    zeroK.shape.setTranslateZ(0);
                     zeroK.shape.setRelativeTranslateX(0);
                     zeroK.shape.setRelativeTranslateY(0);
                     zeroK.shape.setOpacity(1);
+                    zeroK.shape.setPerspective(0);
                 }
             }
 
@@ -2891,7 +2908,8 @@ var Timeline = (function () {
                     scale: k.shape.parameters.scale,
                     translate: {
                         x: k.shape.parameters.translate.x,
-                        y: k.shape.parameters.translate.y
+                        y: k.shape.parameters.translate.y,
+                        z: k.shape.parameters.translate.z
                     },
                     relativeTranslate: {
                         x: k.shape.parameters.relativeTranslate.x,
@@ -4041,6 +4059,10 @@ var Shape = (function () {
         this._parameters.translate.y = val;
     };
 
+    Shape.prototype.setTranslateZ = function (val) {
+        this._parameters.translate.z = val;
+    };
+
     Shape.prototype.setRelativeTranslateX = function (val) {
         this._parameters.relativeTranslate.x = val;
     };
@@ -4068,6 +4090,8 @@ var Shape = (function () {
         } else if (name == 'translatex') {
             this.setTranslateX(val);
             this.setRelativeTranslateX((val / this.parameters.width) * 100);
+        } else if (name == 'translatez') {
+            this.setTranslateZ(val);
         } else if (name == 'scale') {
             this.setScale(val);
         } else if (name == 'originx') {
@@ -4717,7 +4741,7 @@ var Workspace = (function () {
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
             scale: 1,
-            translate: { x: 0, y: 0 },
+            translate: { x: 0, y: 0, z: 0 },
             relativeTranslate: { x: 0, y: 0 },
             perspective: 0
         };
@@ -5799,6 +5823,8 @@ var Workspace = (function () {
                 } else if (type === 'y') {
                     keyframe.shape.setTranslateY(value);
                     keyframe.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
+                } else if (type === 'z') {
+                    keyframe.shape.setTranslateZ(value);
                 }
 
                 if (layer.isMultipleEdit) {
@@ -5809,6 +5835,8 @@ var Workspace = (function () {
                         } else if (type === 'y') {
                             k.shape.setTranslateY(value);
                             k.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
+                        } else if (type === 'z') {
+                            k.shape.setTranslateZ(value);
                         }
                     });
 
@@ -6308,7 +6336,7 @@ var Workspace = (function () {
                 origin: { x: 50, y: 50 },
                 zindex: this.app.timeline.layers.length,
                 scale: 1,
-                translate: { x: 0, y: 0 },
+                translate: { x: 0, y: 0, z: 0 },
                 relativeTranslate: { x: 0, y: 0 },
                 perspective: 0
             };
@@ -6461,7 +6489,7 @@ var Workspace = (function () {
                     origin: { x: 50, y: 50 },
                     zindex: _this.app.timeline.layers.length,
                     scale: 1,
-                    translate: { x: 0, y: 0 },
+                    translate: { x: 0, y: 0, z: 0 },
                     relativeTranslate: { x: 0, y: 0 },
                     perspective: 0
                 };
@@ -6527,7 +6555,7 @@ var Workspace = (function () {
                             origin: { x: 50, y: 50 },
                             zindex: _this.app.timeline.layers.length,
                             scale: 1,
-                            translate: { x: 0, y: 0 },
+                            translate: { x: 0, y: 0, z: 0 },
                             relativeTranslate: { x: 0, y: 0 },
                             perspective: 0
                         };
@@ -6585,7 +6613,7 @@ var Workspace = (function () {
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
             scale: 1,
-            translate: { x: 0, y: 0 },
+            translate: { x: 0, y: 0, z: 0 },
             relativeTranslate: { x: 0, y: 0 },
             perspective: 0
         };
@@ -6872,7 +6900,7 @@ var Workspace = (function () {
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
-                translate: { x: 0, y: 0 },
+                translate: { x: 0, y: 0, z: 0 },
                 relativeTranslate: { x: 0, y: 0 },
                 perspective: 0
             };
@@ -6903,7 +6931,7 @@ var Workspace = (function () {
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
-                translate: { x: 0, y: 0 },
+                translate: { x: 0, y: 0, z: 0 },
                 relativeTranslate: { x: 0, y: 0 },
                 perspective: 0
             };
@@ -6976,6 +7004,8 @@ var ControlPanel = (function () {
         this.translateXSliderEl = $('<div>').addClass('translate-slider').attr('id', 'translatex');
         this.translateYEl = $('<input>').attr('id', 'translatey').addClass('translate');
         this.translateYSliderEl = $('<div>').addClass('translate-slider').attr('id', 'translatey');
+        this.translateZEl = $('<input>').attr('id', 'translatez').addClass('translate');
+        this.translateZSliderEl = $('<div>').addClass('translate-slider').attr('id', 'translatez');
         this.rotateXEl = $('<input>').attr('id', 'rx').addClass('number rotate');
         this.rotateXSliderEl = $('<div>').addClass('rotate-slider').attr('id', 'rx');
         this.rotateYEl = $('<input>').attr('id', 'ry').addClass('number rotate');
@@ -7287,6 +7317,11 @@ var ControlPanel = (function () {
         y.append(this.translateYEl);
         y.append(' px');
         expand.append(y);
+        var z = $('<span>').html('<p>z:</p>').addClass('group-form');
+        z.append(this.translateZSliderEl);
+        z.append(this.translateZEl);
+        z.append(' px');
+        expand.append(z);
         translate.append(expand);
         this.controlPanelEl.append(translate);
 
@@ -7470,6 +7505,11 @@ var ControlPanel = (function () {
         this.translateYEl.on('change', function (event) {
             _this.translateYSliderEl.slider('value', $(event.target).val());
             _this.app.workspace.setTranslate('y', parseInt($(event.target).val()));
+        });
+
+        this.translateZEl.on('change', function (event) {
+            _this.translateZSliderEl.slider('value', $(event.target).val());
+            _this.app.workspace.setTranslate('z', parseInt($(event.target).val()));
         });
 
         this.skewXEl.on('change', function (event) {
@@ -7905,6 +7945,11 @@ var ControlPanel = (function () {
         if (translate.y != null) {
             this.translateYSliderEl.slider('option', 'value', Number(translate.y));
             this.translateYEl.val(translate.y.toString());
+        }
+
+        if (translate.z != null) {
+            this.translateZSliderEl.slider('option', 'value', Number(translate.z));
+            this.translateZEl.val(translate.z.toString());
         }
     };
 
@@ -9140,7 +9185,7 @@ var SvgGallery = (function () {
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
             scale: 1,
-            translate: { x: 0, y: 0 },
+            translate: { x: 0, y: 0, z: 0 },
             relativeTranslate: { x: 0, y: 0 },
             perspective: 0
         };

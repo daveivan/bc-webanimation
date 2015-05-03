@@ -44,7 +44,7 @@
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
             scale: 1,
-            translate: { x: 0, y: 0 },
+            translate: { x: 0, y: 0, z: 0 },
             relativeTranslate: { x: 0, y: 0 },
             perspective: 0,
         };

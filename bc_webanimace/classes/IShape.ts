@@ -14,7 +14,7 @@
     skew: _2d;
     origin: _2d;
     scale: number;
-    translate: _2d;
+    translate: _3d;
     relativeTranslate: _2d;
     perspective: number;
 }
@@ -76,6 +76,8 @@ interface IShape {
     setTranslateX(val: number);
 
     setTranslateY(val: number);
+
+    setTranslateZ(val: number);
 
     setRelativeTranslateX(val: number);
 

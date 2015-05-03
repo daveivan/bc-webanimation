@@ -71,6 +71,8 @@ class ControlPanel {
     private translateXSliderEl: JQuery = $('<div>').addClass('translate-slider').attr('id', 'translatex');
     private translateYEl: JQuery = $('<input>').attr('id', 'translatey').addClass('translate');
     private translateYSliderEl: JQuery = $('<div>').addClass('translate-slider').attr('id', 'translatey');
+    private translateZEl: JQuery = $('<input>').attr('id', 'translatez').addClass('translate');
+    private translateZSliderEl: JQuery = $('<div>').addClass('translate-slider').attr('id', 'translatez');
 
     private rotateXEl: JQuery = $('<input>').attr('id', 'rx').addClass('number rotate');
     private rotateXSliderEl: JQuery = $('<div>').addClass('rotate-slider').attr('id', 'rx');
@@ -394,6 +396,11 @@ class ControlPanel {
         y.append(this.translateYEl);
         y.append(' px');
         expand.append(y);
+        var z: JQuery = $('<span>').html('<p>z:</p>').addClass('group-form');
+        z.append(this.translateZSliderEl);
+        z.append(this.translateZEl);
+        z.append(' px');
+        expand.append(z);
         translate.append(expand);
         this.controlPanelEl.append(translate);
 
@@ -576,6 +583,11 @@ class ControlPanel {
         this.translateYEl.on('change', (event: JQueryEventObject) => {
             this.translateYSliderEl.slider('value', $(event.target).val());
             this.app.workspace.setTranslate('y', parseInt($(event.target).val()));
+        });
+
+        this.translateZEl.on('change', (event: JQueryEventObject) => {
+            this.translateZSliderEl.slider('value', $(event.target).val());
+            this.app.workspace.setTranslate('z', parseInt($(event.target).val()));
         });
 
         this.skewXEl.on('change', (event: JQueryEventObject) => {
@@ -1008,7 +1020,7 @@ class ControlPanel {
         }
     }
 
-    updateTranslate(translate: _2d) {
+    updateTranslate(translate: _3d) {
         if (translate.x != null) {
             this.translateXSliderEl.slider('option', 'value', Number(translate.x));
             this.translateXEl.val(translate.x.toString());
@@ -1017,6 +1029,11 @@ class ControlPanel {
         if (translate.y != null) {
             this.translateYSliderEl.slider('option', 'value', Number(translate.y));
             this.translateYEl.val(translate.y.toString());
+        }
+
+        if (translate.z != null) {
+            this.translateZSliderEl.slider('option', 'value', Number(translate.z));
+            this.translateZEl.val(translate.z.toString());
         }
     }
 

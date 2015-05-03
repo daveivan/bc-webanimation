@@ -648,7 +648,7 @@ class Workspace {
             skew: { x: 0, y: 0 },
             origin: { x: 50, y: 50 },
             scale: 1,
-            translate: { x: 0, y: 0 },
+            translate: { x: 0, y: 0, z: 0 },
             relativeTranslate: { x: 0, y: 0 },
             perspective: 0,
     };
@@ -1727,6 +1727,8 @@ class Workspace {
                 } else if (type === 'y') {
                     keyframe.shape.setTranslateY(value);
                     keyframe.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
+                } else if (type === 'z') {
+                    keyframe.shape.setTranslateZ(value);
                 }
 
                 if (layer.isMultipleEdit) {
@@ -1737,6 +1739,8 @@ class Workspace {
                         } else if (type === 'y') {
                             k.shape.setTranslateY(value);
                             k.shape.setRelativeTranslateY((value / keyframe.shape.parameters.height) * 100);
+                        } else if (type === 'z') {
+                            k.shape.setTranslateZ(value);
                         }
                     });
 
@@ -2228,7 +2232,7 @@ class Workspace {
                 origin: { x: 50, y: 50 },
                 zindex: this.app.timeline.layers.length,
                 scale: 1,
-                translate: { x: 0, y: 0 },
+                translate: { x: 0, y: 0, z: 0 },
                 relativeTranslate: { x: 0, y: 0 },
                 perspective: 0,
             };
@@ -2378,7 +2382,7 @@ class Workspace {
                     origin: { x: 50, y: 50 },
                     zindex: this.app.timeline.layers.length,
                     scale: 1,
-                    translate: { x: 0, y: 0 },
+                    translate: { x: 0, y: 0, z: 0 },
                     relativeTranslate: { x: 0, y: 0 },
                     perspective: 0,
             };
@@ -2443,7 +2447,7 @@ class Workspace {
                             origin: { x: 50, y: 50 },
                             zindex: this.app.timeline.layers.length,
                             scale: 1,
-                            translate: { x: 0, y: 0 },
+                            translate: { x: 0, y: 0, z: 0 },
                             relativeTranslate: { x: 0, y: 0 },
                             perspective: 0,
                     };
@@ -2500,7 +2504,7 @@ class Workspace {
             origin: { x: 50, y: 50 },
             zindex: this.app.timeline.layers.length,
             scale: 1,
-            translate: { x: 0, y: 0 },
+            translate: { x: 0, y: 0, z: 0 },
             relativeTranslate: { x: 0, y: 0 },
             perspective: 0,
     }
@@ -2785,7 +2789,7 @@ class Workspace {
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
-                translate: { x: 0, y: 0 },
+                translate: { x: 0, y: 0, z: 0 },
                 relativeTranslate: { x: 0, y: 0 },
                 perspective: 0,
         };
@@ -2816,7 +2820,7 @@ class Workspace {
                 skew: { x: 0, y: 0 },
                 origin: { x: 50, y: 50 },
                 scale: 1,
-                translate: { x: 0, y: 0 },
+                translate: { x: 0, y: 0, z: 0 },
                 relativeTranslate: { x: 0, y: 0 },
                 perspective: 0,
             };

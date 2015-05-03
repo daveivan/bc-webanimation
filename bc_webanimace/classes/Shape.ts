@@ -133,6 +133,10 @@
         this._parameters.translate.y = val;
     }
 
+    setTranslateZ(val: number) {
+        this._parameters.translate.z = val;
+    }
+
     setRelativeTranslateX(val: number) {
         this._parameters.relativeTranslate.x = val;
     }
@@ -160,6 +164,8 @@
         } else if (name == 'translatex') {
             this.setTranslateX(val);
             this.setRelativeTranslateX((val / this.parameters.width) * 100);
+        } else if (name == 'translatez') {
+            this.setTranslateZ(val);
         } else if (name == 'scale') {
             this.setScale(val);
         } else if (name == 'originx') {

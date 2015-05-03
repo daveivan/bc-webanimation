@@ -201,6 +201,7 @@
             translate: {
                 x: rangeData.params.translate.x,
                 y: rangeData.params.translate.y,
+                z: rangeData.params.translate.z,
             },
             relativeTranslate : {
                 x: rangeData.params.relativeTranslate.x,
@@ -240,7 +241,6 @@
             var paramsRight: Parameters = rng['r'].shape.parameters;
 
             if (paramsLeft.top != paramsRight.top) {
-                console.log('vypočitavam top');
                 isChange.top = true;
                 params['relativePosition']['top'] = this.computeAttr(paramsLeft.relativePosition.top, paramsRight.relativePosition.top, bezier(p));
                 params['top'] = Math.round(this.computeAttr(paramsLeft.top, paramsRight.top, bezier(p)));
@@ -669,6 +669,7 @@
             translate: {
                 x: rangeData.params.translate.x,
                 y: rangeData.params.translate.y,
+                z: rangeData.params.translate.z,
             },
             relativeTranslate: {
                 x: rangeData.params.relativeTranslate.x,
@@ -806,6 +807,11 @@
                 params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
             }
 
+            if (paramsLeft.translate.z != paramsRight.translate.z || left != this.lastTransformKeyframe) {
+                isTransform = true;
+                params['translate']['z'] = this.computeAttr(paramsLeft.translate.z, paramsRight.translate.z, bezier(p));
+            }
+
             //var isPerspective: boolean = false;
             if (paramsLeft.perspective != paramsRight.perspective || left != this.lastTransformKeyframe) {
                 isTransform = true;
@@ -818,8 +824,8 @@
             }
 
             if (isTransform) {
-                shape.css({ 'transform': 'perspective('+ params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
-                helper.css({ 'transform': 'perspective(' + params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                shape.css({ 'transform': 'perspective('+ params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
+                helper.css({ 'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)' });
             }
 
             shape.removeClass('novisible');
@@ -841,7 +847,7 @@
                 'border-top-right-radius': params.borderRadius[1] + '%',
                 'border-bottom-right-radius': params.borderRadius[2] + '%',
                 'border-bottom-left-radius': params.borderRadius[3] + '%',
-                'transform': 'perspective('+ params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             });
 
@@ -852,7 +858,7 @@
                     'width': params.relativeSize.width + '%',
                     'height': params.relativeSize.height + '%',
                     'z-index': (params.zindex + 1000),
-                    'transform': 'perspective(' + params.perspective +'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
 
@@ -965,6 +971,7 @@
             translate: {
                 x: rangeData.params.translate.x,
                 y: rangeData.params.translate.y,
+                z: rangeData.params.translate.z,
             },
             relativeTranslate: {
                 x: rangeData.params.relativeTranslate.x,
@@ -1010,6 +1017,7 @@
             params['translate']['x'] = this.computeAttr(paramsLeft.translate.x, paramsRight.translate.x, bezier(p));
             params['relativeTranslate']['y'] = this.computeAttr(paramsLeft.relativeTranslate.y, paramsRight.relativeTranslate.y, bezier(p));
             params['translate']['y'] = this.computeAttr(paramsLeft.translate.y, paramsRight.translate.y, bezier(p));
+            params['translate']['z'] = this.computeAttr(paramsLeft.translate.z, paramsRight.translate.z, bezier(p));
             params['perspective'] = this.computeAttr(paramsLeft.perspective, paramsRight.perspective, bezier(p));
         }
 
@@ -1075,6 +1083,7 @@
                 translate: {
                     x: this.computeAttr(rng['l'].shape.parameters.translate.x, rng['r'].shape.parameters.translate.x, bezier(p)),
                     y: this.computeAttr(rng['l'].shape.parameters.translate.y, rng['r'].shape.parameters.translate.y, bezier(p)),
+                    z: this.computeAttr(rng['l'].shape.parameters.translate.z, rng['r'].shape.parameters.translate.z, bezier(p)),
                 },
                 relativeTranslate: {
                     x: this.computeAttr(rng['l'].shape.parameters.relativeTranslate.x, rng['r'].shape.parameters.relativeTranslate.x, bezier(p)),
@@ -1303,8 +1312,13 @@
         if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z != 0 ||
                 p.skew.x != 0 || p.skew.y != 0 ||
                 p.scale != 1 ||
-                p.translate.x != 0 || p.translate.y != 0) {
+                p.translate.x != 0 || p.translate.y != 0 || p.translate.z != 0 ||
+                p.perspective != 0    ) {
             var t: string = "";
+            if (p.perspective != 0) {
+                t += 'perspective(' + p.perspective + 'px) ';
+            }
+
             if (p.rotate.x != 0 || p.rotate.y != 0 || p.rotate.z) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
             }
@@ -1315,8 +1329,8 @@
                 t += 'scale(' + p.scale + ') ';
             }
 
-            if (p.translate.x != 0 || p.translate.y != 0) {
-                t += 'translateX(' + p.relativeTranslate.x + '%) translateY(' + p.relativeTranslate.y + '%)';
+            if (p.translate.x != 0 || p.translate.y != 0 || p.translate.z) {
+                t += 'translateX(' + p.relativeTranslate.x + '%) translateY(' + p.relativeTranslate.y + '%) translateZ(' + p.translate.z + 'px)';
             }
             cssObject['transform'] = t;
         }
@@ -1370,6 +1384,7 @@
             if (initP.scale != p.scale || initP.scale != 1) change.scale = true;
             if (initP.translate.x != p.translate.x || initP.translate.x != 0) change.translate = true;
             if (initP.translate.y != p.translate.y || initP.translate.y != 0) change.translate = true;
+            if (initP.translate.z != p.translate.z || initP.translate.z != 0) change.translate = true;
             if (p.perspective != 0) change.perspective = true;
         });
 
@@ -1416,7 +1431,7 @@
 
             if (change.translate) {
                 //t += 'translateX(' + p.translate.x + 'px) translateY(' + p.translate.y + 'px)';
-                t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, 0) ';
+                t += 'translate3d(' + p.relativeTranslate.x + '%, ' + p.relativeTranslate.y + '%, ' + p.translate.z + 'px) ';
             }
             if (change.rotate) {
                 t += 'rotateX(' + p.rotate.x + 'deg) rotateY(' + p.rotate.y + 'deg) rotateZ(' + p.rotate.z + 'deg) ';
@@ -1476,7 +1491,7 @@
                 'border-top-right-radius': params.borderRadius[1] + '%',
                 'border-bottom-right-radius': params.borderRadius[2] + '%',
                 'border-bottom-left-radius': params.borderRadius[3] + '%',
-                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                 'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
             }
             shape.css(css);
@@ -1513,7 +1528,7 @@
                     'height': ((params.height + 2) / container.height()) * 100 + '%',
                     //'z-index': params.zindex + 1000,
                     'z-index': this.globalShape.parameters.zindex + 1000,
-                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
+                    'transform': 'perspective(' + params.perspective + 'px) translateX(' + params.relativeTranslate.x + '%) translateY(' + params.relativeTranslate.y + '%) translateZ(' + params.translate.z + 'px) scale(' + params.scale + ') rotateX(' + params.rotate.x + 'deg) rotateY(' + params.rotate.y + 'deg) rotateZ(' + params.rotate.z + 'deg) skew(' + params.skew.x + 'deg , ' + params.skew.y + 'deg)',
                     'transform-origin': params.origin.x + '% ' + params.origin.y + '%',
                 });
 

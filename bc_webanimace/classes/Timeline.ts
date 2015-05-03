@@ -441,9 +441,11 @@ class Timeline
                     zeroK.shape.setScale(1);
                     zeroK.shape.setTranslateX(0);
                     zeroK.shape.setTranslateY(0);
+                    zeroK.shape.setTranslateZ(0);
                     zeroK.shape.setRelativeTranslateX(0);
                     zeroK.shape.setRelativeTranslateY(0);
                     zeroK.shape.setOpacity(1);
+                    zeroK.shape.setPerspective(0);
                 }
             }
 
@@ -524,6 +526,7 @@ class Timeline
                     translate: {
                         x: k.shape.parameters.translate.x,
                         y: k.shape.parameters.translate.y,
+                        z: k.shape.parameters.translate.z,
                     },
                     relativeTranslate: {
                         x: k.shape.parameters.relativeTranslate.x,

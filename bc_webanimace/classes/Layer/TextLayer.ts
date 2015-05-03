@@ -103,7 +103,7 @@
         var params: Parameters = super.getParameters(position);
 
         var t: any = this.globalShape;
-        var shape: IShape = new TextField(params, t.getContent(), fontParams.color, fontParams.size, t.getFamily);
+        var shape: IShape = new TextField(params, t.getContent(), fontParams.color, fontParams.size, t.getFamily());
 
         return shape;
     }

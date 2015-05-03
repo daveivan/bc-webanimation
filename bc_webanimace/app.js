@@ -7553,7 +7553,7 @@ var TextLayer = (function (_super) {
         var params = _super.prototype.getParameters.call(this, position);
 
         var t = this.globalShape;
-        var shape = new TextField(params, t.getContent(), fontParams.color, fontParams.size, t.getFamily);
+        var shape = new TextField(params, t.getContent(), fontParams.color, fontParams.size, t.getFamily());
 
         return shape;
     };

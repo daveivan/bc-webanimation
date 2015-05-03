@@ -1,6 +1,5 @@
-﻿///<reference path="Layer.ts" />
-class Timeline
-{
+﻿///<reference path="Layer/Layer.ts" />
+class Timeline {
     timelineContainer: JQuery;
     layers: Array<Layer>;
     //array of arrays, for rendering layers by scope
@@ -62,6 +61,7 @@ class Timeline
 
     private menuRenameLayer: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-pencil"></i> Přejmenovat vrstvu');
     private menuDeleteLayer: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-trash"></i> Smazat vrstvu');
+
     constructor(app: Application, timelineContainer: JQuery) {
         this.app = app;
         this.timelineContainer = timelineContainer;
@@ -83,7 +83,7 @@ class Timeline
 
         this.deleteLayerEl.on('click', (event: JQueryEventObject) => {
             if (!this.deleteLayerEl.hasClass('disabled')) {
-                this.deleteLayers(event);   
+                this.deleteLayers(event);
             }
             return false;
         });
@@ -109,7 +109,6 @@ class Timeline
         });
 
         $('body').on('change', '#repeat', (event: JQueryEventObject) => {
-            console.log('repeat event');
             this._repeat = $('#repeat').is(':checked');
             this.renderAnimationRange();
         });
@@ -117,8 +116,6 @@ class Timeline
         this.keyframesEl.on('click', (event: JQueryEventObject) => {
             if ($(event.target).hasClass('keyframes')) {
                 this.app.controlPanel.displayMainPanel(false, 'bezier');
-                /*$('.timing-function').removeClass('selected');
-                $('.keyframe').removeClass('selected');  */ 
             }
         });
 
@@ -128,17 +125,9 @@ class Timeline
             this.showPause();
             this.runTimeline();
             var int = this.miliSecPerFrame / (this.keyframeWidth / 2);
-            /*clearTimeout(this.playInterval);*/
-            /*this.playInterval = setInterval(() => {
-                console.log((new Date()).getMilliseconds());
-                this.pointerPosition += 2;
-                this.pointerEl.css('left', this.pointerPosition - 1);
-                this.app.workspace.transformShapes();
-            }, (this.miliSecPerFrame / (this.keyframeWidth / 2)));*/
         });
 
         this.stopEl.on('click', (event: JQueryEventObject) => {
-            //clearTimeout(this.playInterval);
             this.playMode = Animation_playing.STOP;
             $('.shape-helper').show();
             this.showPlay();
@@ -164,7 +153,7 @@ class Timeline
                 return false;
             }
             var currentIndex: number = this.allowedTimes.indexOf(this.miliSecPerFrame);
-            if(currentIndex > 0) {
+            if (currentIndex > 0) {
                 this.miliSecPerFrame = this.allowedTimes[currentIndex - 1];
             }
 
@@ -191,7 +180,7 @@ class Timeline
                 return false;
             }
             var currentIndex: number = this.allowedTimes.indexOf(this.miliSecPerFrame);
-            if (currentIndex < this.allowedTimes.length-1) {
+            if (currentIndex < this.allowedTimes.length - 1) {
                 this.miliSecPerFrame = this.allowedTimes[currentIndex + 1];
             }
 
@@ -213,22 +202,18 @@ class Timeline
         });
 
         $(document).on('mousedown', 'td', (event: JQueryEventObject) => {
-            console.log('onClickRow');
             this.onClickRow(event);
         });
 
         $(document).on('dblclick', 'td', (event: JQueryEventObject) => {
-            console.log('onDblClick');
             this.onCreateKeyframe(event);
         });
 
         $(document).on('mousedown', '.keyframes > table > tbody', (event: JQueryEventObject) => {
-            console.log('mousedown tbody');
             this.onClickTable(event);
         });
 
         $(document).on('mousedown', '.keyframes > table > thead', (event: JQueryEventObject) => {
-            console.log('mousedown thead');
             this.onClickChangePosition(event);
         });
 
@@ -261,7 +246,7 @@ class Timeline
 
                 this.contextMenuEl.addClass('active');
                 e.preventDefault();
-                return false;   
+                return false;
             }
         });
 
@@ -388,11 +373,10 @@ class Timeline
                     return false;
                 }
             }
-            
+
         });
 
         this.keyframesTableEl.on('mouseup', '.keyframe', (event: JQueryEventObject) => {
-            console.log('keyframe click');
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
             this.keyframesTableEl.find('.timing-function').removeClass('selected');
             $(event.target).addClass('selected');
@@ -402,16 +386,15 @@ class Timeline
         });
 
         this.keyframesTableEl.on('click', '.timing-function p', (event: JQueryEventObject) => {
-            console.log('timing function click');
             var keyframeEl: JQuery = $(event.target).parent('.timing-function').prev('.keyframe');
 
 
             this.keyframesTableEl.find('.keyframe').removeClass('selected');
-            this.keyframesTableEl.find('.timing-function').removeClass('selected');  
+            this.keyframesTableEl.find('.timing-function').removeClass('selected');
             $(event.target).parent('.timing-function').addClass('selected');
             keyframeEl.addClass('selected');
             var k: Keyframe = this.getLayer(parseInt(keyframeEl.data('layer'))).getKeyframe(parseInt(keyframeEl.data('index')));
-            this.app.workspace.updateBezierCurveByKeyframe(k);       
+            this.app.workspace.updateBezierCurveByKeyframe(k);
         });
 
         this.timelineContainer.ready((event: JQueryEventObject) => {
@@ -433,7 +416,7 @@ class Timeline
                 allow = confirm('Aplikovat na vrstvu animaci? Stávající snímky budou smazány!');
                 if (allow) {
 
-                    for (var i = keyframes.length-1; i > 0; i--) {
+                    for (var i = keyframes.length - 1; i > 0; i--) {
                         layer.deleteKeyframe(i);
                     }
 
@@ -477,7 +460,7 @@ class Timeline
                     });
                 });
 
-                this.renderLayers();   
+                this.renderLayers();
             }
         }
     }
@@ -533,7 +516,7 @@ class Timeline
                         y: k.shape.parameters.relativeTranslate.y,
                     },
                     perspective: k.shape.parameters.perspective,
-            }
+                }
 
                 if (layer.type == Type.DIV) {
                     var shape: IShape = new Rectangle(p);
@@ -545,7 +528,7 @@ class Timeline
                     var shape: IShape = new Svg(p, layer.globalShape.getSrc());
                     var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
                 } else if (layer.type == Type.TEXT) {
-                    var g: TextField = layer.globalShape;
+                    var g: any = layer.globalShape;
                     var shape: IShape = new TextField(p, g.getContent(), k.shape.getColor(), k.shape.getSize(), g.getFamily());
                     var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, k.timing_function);
                 }
@@ -577,7 +560,7 @@ class Timeline
 
     showPlay() {
         $('.pause-animation').hide();
-        $('.play-animation').show();  
+        $('.play-animation').show();
     }
 
     runTimeline() {
@@ -671,7 +654,6 @@ class Timeline
     private renderRow(id: number, selector: string = null) {
         var existTrEl: JQuery = this.keyframesTableEl.find('.layer-row').first().clone();
         if (existTrEl.length != 0) {
-            console.log('existuje');
             existTrEl.removeClass();
             existTrEl.addClass('layer-row').attr('data-id', id);
             if (selector != null) {
@@ -681,7 +663,6 @@ class Timeline
             this.keyframesTableEl.find('tbody').append(existTrEl);
 
         } else {
-            console.log('neexistuje');
             var trEl: JQuery = $('<tr>').addClass('layer-row').attr('data-id', id);
 
             if (selector != null) {
@@ -717,11 +698,10 @@ class Timeline
             }
 
             tdEl.appendTo(trEl);
-        }        
+        }
 
         this.keyframeCount += 10;
         this.fixedWidthEl.width((this.keyframeWidth) * this.keyframeCount + 350 + 15);
-        //this.renderHeader();
     }
 
     renderAnimationRange() {
@@ -779,21 +759,21 @@ class Timeline
                 }));
 
                 if (index != (keyframes.length - 1)) {
-                   
-                    keyframesTdEl.append($('<div>').addClass('timing-function').html('<p class="tooltip-bottom" title="Kliknutím editujte časovou funkci">(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 +')</p>').css({
+
+                    keyframesTdEl.append($('<div>').addClass('timing-function').html('<p class="tooltip-bottom" title="Kliknutím editujte časovou funkci">(' + keyframe.timing_function.p0 + ', ' + keyframe.timing_function.p1 + ', ' + keyframe.timing_function.p2 + ', ' + keyframe.timing_function.p3 + ')</p>').css({
                         'left': this.milisecToPx(keyframe.timestamp) + 5,
-                        'width': this.milisecToPx(keyframes[index+1].timestamp - keyframe.timestamp) - 10,
-                    }));   
+                        'width': this.milisecToPx(keyframes[index + 1].timestamp - keyframe.timestamp) - 10,
+                    }));
                 }
-            }); 
-            
-            rowEl.prepend(keyframesTdEl);  
+            });
+
+            rowEl.prepend(keyframesTdEl);
         }
         if (!isAll) {
-            this.renderAnimationRange();   
+            this.renderAnimationRange();
         }
 
-        var c = keyframes[keyframes.length-1].timestamp / this.miliSecPerFrame;
+        var c = keyframes[keyframes.length - 1].timestamp / this.miliSecPerFrame;
         var renderHeaderNeeded: boolean = false;
         while (c > (this.keyframeCount - this.expandTimelineBound)) {
             renderHeaderNeeded = true;
@@ -846,16 +826,10 @@ class Timeline
                     layer.updatePosition(keyframeID, ms);
                 }
 
-                /*var countK = ms / this.miliSecPerFrame;
-                if (countK > (this.keyframeCount - this.expandTimelineBound)) {
-                    this.expandFrames();
-                }*/
-
                 this.renderKeyframes(layerID);
             },
             drag: (event, ui) => {
                 if (ui.position.left < 11) {
-                    console.log($('.keyframe').draggable("option", "grid", [10, 10]));
                 } else {
                     $('.keyframe').draggable("option", "grid", [this.keyframeWidth, this.keyframeWidth]);
                 }
@@ -865,8 +839,6 @@ class Timeline
     }
 
     renderLayers() {
-        console.log('Rendering layers...');
-
         //remove layers list
         this.layersEl.empty();
         this.keyframesTableEl.find('tbody').empty();
@@ -911,7 +883,7 @@ class Timeline
 
         //add jeditable plugin
         var me: any = this;
-        $('.editable').editable(function (value: string, settings: any) {
+        $('.editable').editable(function(value: string, settings: any) {
             me.onChangeName($(this).attr('id'), value);
             me.app.workspace.renderShapes();
             me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
@@ -921,8 +893,8 @@ class Timeline
             width: 150,
             onblur: 'submit',
             event: 'dblclick',
-                cssClass: 'editable-input'
-            });
+            cssClass: 'editable-input'
+        });
     }
 
     renderSingleLayer(layer: Layer, index: number) {
@@ -948,18 +920,18 @@ class Timeline
 
             //add jeditable plugin
             var me: any = this;
-            $('.editable').editable(function (value: string, settings: any) {
+            $('.editable').editable(function(value: string, settings: any) {
                 me.onChangeName($(this).attr('id'), value);
                 me.app.workspace.renderShapes();
                 me.app.workspace.highlightShape([$(this).closest('.layer').data('id')]);
                 me.app.workspace.transformShapes();
                 return (value);
             }, {
-                    width: 150,
-                    onblur: 'submit',
-                    event: 'dblclick',
-                    cssClass: 'editable-input'
-                });
+                width: 150,
+                onblur: 'submit',
+                event: 'dblclick',
+                cssClass: 'editable-input'
+            });
 
             $('.tooltip-right').tooltipster({ position: 'right' });
             this.setVisibility(layer.id, visibleEl, false);
@@ -982,20 +954,18 @@ class Timeline
             //highlight shape
             this.app.workspace.highlightShape([id]);
         } else {
-            this.app.workspace.highlightShape(null); 
+            this.app.workspace.highlightShape(null);
         }
     }
 
-    private renderHeader()
-    {
+    private renderHeader() {
         var head: JQuery = $('<tr class="first"></tr>');
         var numCells: number = this.keyframeCount / this.groupKeyframes;
 
         var milisec: number = 0;
-        for (var i: number = 0; i < numCells; i++)
-        {
+        for (var i: number = 0; i < numCells; i++) {
             milisec += this.miliSecPerFrame * this.groupKeyframes;
-            head.append('<th colspan="' + this.groupKeyframes + '">'+ milisec/1000 +' s</th>');
+            head.append('<th colspan="' + this.groupKeyframes + '">' + milisec / 1000 + ' s</th>');
         }
 
         this.keyframesTableEl.find('thead').empty().append(head);
@@ -1005,17 +975,10 @@ class Timeline
         this.keyframesTableEl.find('tbody tr.disabled').remove();
         this.layersEl.find('.layer.disabled').remove();
         var index: number = this.layers.push(layer);
-        /*if (layer.parent == null) {
-            (this.groupedLayers[0]).push(layer);
-        } else {
-            if (!this.groupedLayers[layer.parent]) {
-                this.groupedLayers[layer.parent] = new Array<Layer>();
-            }
-            (this.groupedLayers[layer.parent]).push(layer);
-        }*/
+
         layer.order = this.layers.length;
-        //this.renderLayers();
-        this.renderSingleLayer(layer, index-1);
+
+        this.renderSingleLayer(layer, index - 1);
 
         this.selectLayer(layer.id);
         this.layersWrapperEl.stop(true, true).animate({ scrollTop: this.layersWrapperEl[0].scrollHeight - 50 }, 300);
@@ -1032,7 +995,7 @@ class Timeline
         for (var i: number = this.layers.length - 1; i >= 0; i--) {
             if (this.layers[i].parent == deletedLayer.id) {
                 this.deleteLayer(i);
-            }   
+            }
         }
     }
 
@@ -1056,10 +1019,9 @@ class Timeline
                     this.selectLayer(this.layersEl.find('.layer').last().data('id'));
                     this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight()));
                     this.layersWrapperEl.perfectScrollbar('update');
-                    //this.scrollTo(this.layersEl.find('.layer').last().data('id'));   
                     this.deleteConfirmEl.dialog("destroy");
                 },
-                Cancel: function () {
+                Cancel: function() {
                     $(this).dialog("destroy");
                 }
             }
@@ -1068,8 +1030,6 @@ class Timeline
     }
 
     deleteLayers(e: JQueryEventObject) {
-        console.log('Deleting layers...');
-
         //iteration from end of array of selected layers
         var selectedLayers: Array<JQueryEventObject> = this.layersEl.find('div.layer.selected').get();
 
@@ -1081,7 +1041,6 @@ class Timeline
                 buttons: {
                     "Smazat": () => {
                         for (var i: number = selectedLayers.length - 1; i >= 0; i--) {
-                            //this.layers.splice(parseInt($(selectedLayers[i]).attr('id')), 1);
                             this.deleteLayer(parseInt($(selectedLayers[i]).attr('id')));
                         }
 
@@ -1096,10 +1055,9 @@ class Timeline
                         this.selectLayer(this.layersEl.find('.layer').last().data('id'));
                         this.layersWrapperEl.scrollTop(this.layersWrapperEl.scrollTop() - (this.layersEl.find('.layer').outerHeight() * selectedLayers.length));
                         this.layersWrapperEl.perfectScrollbar('update');
-                        //this.scrollTo(this.layersEl.find('.layer').last().data('id'));   
                         this.deleteConfirmEl.dialog("destroy");
                     },
-                    Cancel: function () {
+                    Cancel: function() {
                         $(this).dialog("destroy");
                     }
                 }
@@ -1108,12 +1066,11 @@ class Timeline
         }
     }
 
-    private sort(e: JQueryEventObject, ui)
-    {
+    private sort(e: JQueryEventObject, ui) {
         var order: Array<string> = $(e.target).sortable('toArray');
         var firstSelectedEl: JQuery = $(this.layersEl.find('.selected').get(0));
 
-        var outOfScopeLayers: Array < Layer> = new Array<Layer>();
+        var outOfScopeLayers: Array<Layer> = new Array<Layer>();
         this.layers.forEach((layer: Layer, index: number) => {
             if (layer.parent != this.app.workspace.scope) {
                 outOfScopeLayers.push(layer);
@@ -1121,17 +1078,11 @@ class Timeline
         });
 
         var tmpLayers: Array<Layer> = new Array<Layer>();
-        
+
         order.forEach((value: string, index: number) => {
             var layer: Layer = this.layers[parseInt(value)];
             tmpLayers.push(layer);
-            //TODO - update z-index podle poradi (brat v potaz keyframe nebo aktualizace do global shape?)
-            /*var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
-            if (keyframe == null) {
-                keyframe = layer.addKeyframe(this.app.workspace.getCurrentShape(layer.id), this.pxToMilisec(), this.app.workspace.bezier);
-                this.renderKeyframes(layer.id);
-            }
-            keyframe.shape.setZindex(index);*/
+
             layer.globalShape.setZindex(index);
         });
 
@@ -1146,16 +1097,15 @@ class Timeline
     }
 
     //on click name layer
-    private onClickLayer(e: JQueryEventObject, ui)
-    {
+    private onClickLayer(e: JQueryEventObject, ui) {
         //select row by selected layer
         var id: number = parseInt($(e.target).closest('.layer').data('id'));
         if (!isNaN(id)) {
             this.keyframesTableEl.find('tbody tr').removeClass('selected');
             this.keyframesTableEl.find('tbody tr' + '[data-id="' + id + '"]').addClass('selected');
             //highlight selected shapes
-            var selectedLayersID: Array<number> = this.layersEl.find('.selected').map(function () { return $(this).data('id'); }).get();
-            
+            var selectedLayersID: Array<number> = this.layersEl.find('.selected').map(function() { return $(this).data('id'); }).get();
+
             this.app.workspace.highlightShape(selectedLayersID);
         }
     }
@@ -1168,8 +1118,7 @@ class Timeline
         }
     }
 
-    private onScroll(e: JQueryEventObject)
-    {
+    private onScroll(e: JQueryEventObject) {
         var posX = this.layersWrapperEl.scrollLeft();
         var posY = this.layersWrapperEl.scrollTop();
         this.layersEl.css('left', posX);
@@ -1184,7 +1133,8 @@ class Timeline
         this.layersEl.multisortable({
             items: '> div.layer:not(.disabled)',
             handle: '.handle',
-            axis: 'y', delay: 150,
+            axis: 'y',
+            delay: 150,
             scroll: true,
             stop: (e: JQueryEventObject) => {
                 this.sort(e, null);
@@ -1198,8 +1148,6 @@ class Timeline
             containment: 'parent',
             handle: '.pointer-top-wrapper',
             start: (event: JQueryEventObject, ui) => {
-                /*this.keyframesTableEl.find('.keyframe').removeClass('selected');
-                this.keyframesTableEl.find('.timing-function').removeClass('selected');*/
                 this.app.controlPanel.displayMainPanel(false, 'bezier');
                 $('.shape-helper').hide();
             },
@@ -1209,7 +1157,7 @@ class Timeline
             },
             stop: (event: JQueryEventObject, ui) => {
                 var posX = Math.round(ui.position.left / this.keyframeWidth) * this.keyframeWidth;
-                this.pointerPosition = posX;  
+                this.pointerPosition = posX;
                 this.pointerEl.css('left', this.pointerPosition - 1);
                 $('.shape-helper').show();
                 this.app.workspace.transformShapes();
@@ -1221,17 +1169,11 @@ class Timeline
 
     private onClickTable(e: JQueryEventObject) {
         this.app.controlPanel.displayMainPanel(false, 'bezier');
-        /*if (!$(e.target).hasClass('pointer')) {
-            this.keyframesTableEl.find('.timing-function').removeClass('selected');
-            this.keyframesTableEl.find('.keyframe').removeClass('selected');
-        }*/
     }
 
     private onClickChangePosition(e: JQueryEventObject) {
         if (!$(e.target).hasClass('pointer')) {
             if (!$(e.target).hasClass('keyframe')) {
-                /*this.keyframesTableEl.find('.timing-function').removeClass('selected');
-                this.keyframesTableEl.find('.keyframe').removeClass('selected');*/
                 this.app.controlPanel.displayMainPanel(false, 'bezier');
             } else {
                 if (!$(e.target).is(':last-child')) {
@@ -1240,7 +1182,7 @@ class Timeline
                     this.app.controlPanel.displayMainPanel(false, 'bezier');
                     $('.delete-keyframe').removeClass('disabled');
                     $(e.target).addClass('selected');
-                }   
+                }
             }
             var n = $(e.target).parents('table');
             var posX = e.pageX - $(n).offset().left;
@@ -1286,7 +1228,6 @@ class Timeline
     }
 
     onCreateKeyframe(e: JQueryEventObject) {
-        console.log('Creating keyframe...');
         var idLayer: number = parseInt($(e.target).closest('tr.selected').data('id'));
         var n = $('body').find('.keyframes > table');
         var posX = e.pageX - $(n).offset().left;
@@ -1299,45 +1240,24 @@ class Timeline
     createKeyframe(idLayer: number, position: number, currentView: boolean = false) {
         if ($.isNumeric(idLayer)) {
             var layer: Layer = this.getLayer(idLayer);
-            /*if (layer.parent != null) {
-                var arrayMax = Function.prototype.apply.bind(Math.max, null);
-                var parentLayer: Layer = this.getLayer(layer.parent);
-                var maxTimestamp: number = arrayMax(parentLayer.timestamps);
-                if (position > maxTimestamp && maxTimestamp != 0) {
-                    position = maxTimestamp;
-                    alert('Doba animace je omezena animací nadřazeného prvku na ' + maxTimestamp / 1000 + 's. Snímek bude posunut na tuto pozici.');
-                }
-            }
-            if (layer.getKeyframeByTimestamp(position) === null) {
-
-                layer.addKeyframe(this.app.workspace.getCurrentShape(idLayer), position, this.app.workspace.getBezier());
-
-                var countK = position / this.miliSecPerFrame;
-                if (countK > (this.keyframeCount - this.expandTimelineBound)) {
-                    this.expandFrames();
-                }
-
-                this.renderKeyframes(idLayer);
-                this.app.workspace.transformShapes();
-            }*/
 
             if (currentView) {
                 var shape: IShape = this.app.workspace.getCurrentShape(idLayer);
             } else {
                 var shape: IShape = this.app.workspace.getCurrentShape(idLayer, position);
             }
-            
+
             this.app.workspace.addKeyframe(layer, shape, position, this.app.workspace.getBezier());
 
             this.app.workspace.transformShapes();
-        }      
+        }
     }
 
     pxToMilisec(px: number = null): number {
         if (px == null) {
             return ((this.pointerPosition / this.keyframeWidth) * this.miliSecPerFrame);
         } else {
-            return ((px / this.keyframeWidth) * this.miliSecPerFrame);   
+            return ((px / this.keyframeWidth) * this.miliSecPerFrame);
         }
     }
 
@@ -1346,7 +1266,6 @@ class Timeline
     }
 
     onDeleteKeyframe(e: JQueryEventObject) {
-        console.log('onDeleteKEyframe');
         if (this.deleteKeyframeEl.hasClass('disabled')) {
             e.preventDefault();
             return false;
@@ -1357,12 +1276,11 @@ class Timeline
             resizable: false,
             buttons: {
                 "Smazat": () => {
-                    console.log('Deleting keyframe...');
                     var keyframeEl = this.keyframesTableEl.find('tbody .keyframe.selected');
 
                     if (keyframeEl.length) {
                         var layer: Layer = this.getLayer(keyframeEl.data('layer'));
-                        
+
                         var k: Keyframe = layer.getKeyframe(keyframeEl.data('index'));
                         if (layer.getAllKeyframes().length > 2) {
 
@@ -1379,10 +1297,10 @@ class Timeline
                         this.renderKeyframes(keyframeEl.data('layer'));
                         this.app.workspace.transformShapes();
                         this.app.controlPanel.displayMainPanel(false, 'bezier');
-                    }  
+                    }
                     this.deleteConfirmEl.dialog("destroy");
                 },
-                Cancel: function () {
+                Cancel: function() {
                     $(this).dialog("destroy");
                 }
             }
@@ -1399,7 +1317,7 @@ class Timeline
                 var tmp: number = this.checkChildTimestamps(child, limit, localMax);
                 if (tmp > ret)
                     ret = tmp;
-            }   
+            }
         });
         return ret;
     }
@@ -1428,7 +1346,7 @@ class Timeline
                 } else {
                     link.html('<i class="fa fa-eye-slash"></i>');
                     link.tooltipster('content', 'Viditelnost: Zobrazit');
-                    link.addClass('invisible');   
+                    link.addClass('invisible');
                 }
             }
             this.app.workspace.transformShapes();
@@ -1462,7 +1380,7 @@ class Timeline
                     link.removeClass('ismultiple');
                 }
             }
-        }        
+        }
     }
 
     get repeat() {
@@ -1491,7 +1409,7 @@ class Timeline
         var container: JQuery = $('<div>').addClass('breadcrumb');
         var currentLayer: Layer = this.getLayer(scope);
         if (currentLayer) {
-            container.append($('<span>').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));   
+            container.append($('<span>').html('<a href="#" class="set-scope" data-id=' + currentLayer.id + '>' + currentLayer.name + '</a>'));
             this.getParent(currentLayer.parent, container);
         }
         container.prepend($('<span>').html('<a href="#" class="set-scope">Hlavní plátno</a>'));
@@ -1503,13 +1421,12 @@ class Timeline
         layer = this.getLayer(parent);
         if (layer) {
             container.prepend($('<span>').html('<a href="#" class="set-scope" data-id=' + layer.id + '>' + layer.name + '</a>'));
-            this.getParent(layer.parent, container);            
+            this.getParent(layer.parent, container);
         }
-        return layer; 
+        return layer;
     }
 
     getSortedArray() {
         return this.layersEl.sortable('toArray');
     }
 }
-

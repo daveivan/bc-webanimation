@@ -1,4 +1,4 @@
-﻿///<reference path="Shape.ts" />
+﻿///<reference path="Object/Shape.ts" />
 class Workspace {
     private workspaceContainer: JQuery;
     private workspaceWrapper: JQuery;
@@ -58,72 +58,6 @@ class Workspace {
 
         this.workspaceContainer.css(this._workspaceSize);
 
-        //performance test
-        /*$(document).on('ready', (e: JQueryEventObject) => {
-            console.log('onReady');
-
-            function rand(min, max) {
-                return Math.floor(Math.random() * (max - min + 1)) + min;
-            }
-            for (var i = 0; i < 50; i++) {
-                var diameter: number = rand(10, 30);
-                var params: Parameters = {
-                    top: 0,
-                    left: 0,
-                    width: diameter,
-                    height: diameter,
-                    relativePosition: {
-                        top: (0 / this.workspaceContainer.height()) * 100,
-                        left: (0 / this.workspaceContainer.width()) * 100,
-                    },
-                    relativeSize: {
-                        width: (diameter / this.workspaceContainer.width()) * 100,
-                        height: (diameter / this.workspaceContainer.height()) * 100,
-                    },
-                    background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
-                    opacity: 1,
-                    zindex: this.app.timeline.layers.length,
-                    borderRadius: [20, 20, 20, 20],
-                    rotate: { x: 0, y: 0, z: 0 },
-                    skew: { x: 0, y: 0 },
-                    origin: { x: 50, y: 50 },
-                };
-                console.log(params.background);
-                var shape: IShape = new Rectangle(params);
-                var layer: Layer = new RectangleLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), shape);
-                var idLayer: number = this.app.timeline.addLayer(layer);
-                var t = rand(0, this._workspaceSize.height);
-                var l = rand(0, this._workspaceSize.width);
-                var paramsNew: Parameters = {
-                    top: t,
-                    left: l,
-                    width: diameter,
-                    height: diameter,
-                    relativePosition: {
-                        top: (t / this.workspaceContainer.height()) * 100,
-                        left: (l / this.workspaceContainer.width()) * 100,
-                    },
-                    relativeSize: {
-                        width: (diameter / this.workspaceContainer.width()) * 100,
-                        height: (diameter / this.workspaceContainer.height()) * 100,
-                    },
-                    background: { r: rand(1, 254), g: rand(1, 254), b: rand(1, 254), a: 1 },
-                    opacity: 1,
-                    zindex: this.app.timeline.layers.length,
-                    borderRadius: [20, 20, 20, 20],
-                    rotate: { x: 0, y: 0, z: 0 },
-                    skew: { x: 0, y: 0 },
-                    origin: { x: 50, y: 50 },
-                };
-
-                layer.addKeyframe(new Rectangle(paramsNew), 4000, this.getBezier());
-                this.app.timeline.renderKeyframes(layer.id);
-                this.renderSingleShape(layer.id);
-            }
-            //this.renderShapes();
-            this.transformShapes();
-        });*/
-
         $(document).on('mousedown', (e: JQueryEventObject) => {
             //hide context menu
             if (!$(e.target).parents().hasClass('context-menu')) {
@@ -133,32 +67,18 @@ class Workspace {
         });
 
         this.workspaceWrapper.on('mousedown', (event: JQueryEventObject) => {
-            //if ($(event.target).is('#workspace')) {
-                if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
-                    this.onDrawSquare(event);     
-                }
+            if (this.app.controlPanel.Mode == Mode.CREATE_DIV) {
+                this.onDrawSquare(event);
+            }
 
             if (!$(event.target).hasClass('shape-helper') && !$(event.target).closest('.text').length) {
                 this.app.controlPanel.displayMainPanel(false, 'font');
-            } else if($(event.target).closest('.text').length) {
+            } else if ($(event.target).closest('.text').length) {
                 this.app.controlPanel.displayMainPanel(true, 'font');
             }
 
             this.app.controlPanel.displayMainPanel(false, 'bezier');
-
-            //this.app.controlPanel.displayMainPanel(false, 'bezier');
-            //this.app.controlPanel.displayMainPanel(false, 'font');
-                /*$('.timing-function').removeClass('selected');
-                $('.keyframe').removeClass('selected');*/    
-            
-            //}   
         });
-
-        /*this.workspaceWrapper.on('click', (event: JQueryEventObject) => {
-            this.app.controlPanel.displayMainPanel(false, 'bezier');
-            this.app.controlPanel.displayMainPanel(false, 'font');
-
-        });*/
 
         $('html').on('keyup', (e: JQueryEventObject) => {
             if (e.keyCode == 46) {
@@ -166,7 +86,7 @@ class Workspace {
                     if ($('body').find('.keyframe.selected').length != 0) {
                         this.app.timeline.onDeleteKeyframe(e);
                     } else {
-                        this.app.timeline.deleteLayers(e);    
+                        this.app.timeline.deleteLayers(e);
                     }
                 }
             }
@@ -191,22 +111,11 @@ class Workspace {
                 if (!$(e.target).parents().hasClass('context-menu') && !$(e.target).hasClass('shape-helper') && !$(e.target).hasClass('origin-point') && !$(e.target).hasClass('ui-resizable-handle')) {
                     this.app.timeline.selectLayer(null);
                 }
-            } 
-
-            /*if ($(e.target).hasClass('shape-helper')) {
-                if (e.button == 2) {
-                    console.log('right click');
-
-                    return false;
-                }
-            }*/
+            }
         });
 
         this.workspaceContainer.on('contextmenu', (event: JQueryEventObject) => {
             if (!$(event.target).hasClass('shape-helper')) {
-                //kontextova nabidka pro presun i na aktualni objekt
-
-                console.log('contextmenu_current');
                 this.contextMenuEl.empty();
 
                 if (this.movedLayer != null) {
@@ -229,11 +138,6 @@ class Workspace {
                 this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemMoveHere.attr('data-id', targetID)));
                 this.contextMenuEl.find('ul').append($('<li></li>').append(this.menuItemMoveCancel.attr('data-id', targetID)));
 
-                /*this.contextMenuEl.appendTo(this.workspaceContainer);
-                this.contextMenuEl.css({
-                    'top': event.pageY - this.workspaceContainer.offset().top,
-                    'left': event.pageX - this.workspaceContainer.offset().left,
-                });*/
                 this.contextMenuEl.appendTo($('body'));
                 this.contextMenuEl.css({
                     'top': event.pageY - $('body').offset().top,
@@ -242,8 +146,6 @@ class Workspace {
                 this.contextMenuEl.focus();
 
                 this.contextMenuEl.addClass('active');
-
-
 
                 this.menuItemMoveCancel.on('click', (e: JQueryEventObject) => {
                     if ($(e.target).hasClass('disabled')) {
@@ -261,7 +163,6 @@ class Workspace {
                     }
 
                     var destID: number = parseInt($(e.target).data('id'));
-                    console.log('descID: ' + destID);
                     if (destID == 0) {
                         if (this.movedLayer) {
                             this.movedLayer.parent = null;
@@ -272,10 +173,9 @@ class Workspace {
                         var destLayer: Layer = this.app.timeline.getLayer(destID);
                         if (this.movedLayer) {
                             this.movedLayer.parent = destLayer.id;
-                            //this.movedLayer.nesting = (destLayer.nesting + 1);
 
                             this.updateNesting(this.movedLayer);
-                        }   
+                        }
                     }
 
                     this.renderShapes();
@@ -287,14 +187,13 @@ class Workspace {
                 });
 
                 event.preventDefault();
-                return false; 
+                return false;
             }
         });
 
         this.workspaceWrapper.on('contextmenu', '.shape-helper', (event: JQueryEventObject) => {
-            console.log('contextmenu');
             this.contextMenuEl.empty();
-            
+
             var scopedLayers: Array<Layer> = new Array<Layer>();
             var outOfScopeLayers: Array<Layer> = new Array<Layer>();
             this.app.timeline.layers.forEach((layer: Layer, index: number) => {
@@ -310,7 +209,7 @@ class Workspace {
                 this.menuItemToBackground.removeClass('disabled');
             }
 
-            if (parseInt($(event.target).closest('.shape-helper').data('id')) === scopedLayers[scopedLayers.length-1].id) {
+            if (parseInt($(event.target).closest('.shape-helper').data('id')) === scopedLayers[scopedLayers.length - 1].id) {
                 this.menuItemToForeground.addClass('disabled');
             } else {
                 this.menuItemToForeground.removeClass('disabled');
@@ -348,7 +247,6 @@ class Workspace {
                     this.contextMenuEl.remove();
                 });
             }
-            
 
             this.contextMenuEl.appendTo($('body'));
             this.contextMenuEl.css({
@@ -407,7 +305,7 @@ class Workspace {
                 var layer: Layer = this.app.timeline.getLayer(id);
 
                 scopedLayers.forEach((layer: Layer, index: number) => {
-                    if (layer.id == id && index < (scopedLayers.length-1)) {
+                    if (layer.id == id && index < (scopedLayers.length - 1)) {
                         var tmp: Layer = scopedLayers[index + 1];
                         scopedLayers[index + 1] = layer;
                         scopedLayers[index] = tmp;
@@ -466,8 +364,6 @@ class Workspace {
                 var destLayer: Layer = this.app.timeline.getLayer(destID);
                 if (this.movedLayer) {
                     this.movedLayer.parent = destLayer.id;
-                    //this.movedLayer.nesting = (destLayer.nesting + 1);
-
                     this.updateNesting(this.movedLayer);
                 }
 
@@ -493,7 +389,6 @@ class Workspace {
                     layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
                 }
                 var idLayer: number = this.app.timeline.addLayer(layer);
-                //this.renderShapes();
                 this.workspaceWrapper.find('.tmp-shape').remove();
                 this.renderSingleShape(idLayer);
                 this.transformShapes();
@@ -503,7 +398,6 @@ class Workspace {
                 $('.tool-btn').removeClass('active');
                 $('.tool-btn.select').addClass('active');
                 this.onChangeMode();
-                //this.app.controlPanel.displayMainPanel(false, 'bezier');
             }
         });
 
@@ -513,34 +407,24 @@ class Workspace {
                 var id: number = $(event.target).closest('.shape-helper').data('id');
                 this.app.timeline.selectLayer(id);
                 this.app.timeline.scrollTo(id);
-            } 
+            }
         });
-
-        //fix for draggable origin point
-        /*this.workspaceContainer.on('click', '.shape-helper', (event: JQueryEventObject) => {
-            if (this.app.controlPanel.Mode == Mode.SELECT) {
-                var id: number = $(event.target).closest('.shape-helper').data('id');
-                this.app.timeline.selectLayer(id);
-                this.app.timeline.scrollTo(id); 
-            } 
-        });*/
 
         this.workspaceContainer.on('mouseover', '.shape-helper, .ui-resizable-handle', (event: JQueryEventObject) => {
             if (this.app.controlPanel.Mode == Mode.SELECT) {
-                $(event.target).closest('.shape-helper').find('.helpername').show();   
+                $(event.target).closest('.shape-helper').find('.helpername').show();
             }
         });
 
         this.workspaceContainer.on('mouseout', '.shape-helper, .ui-resizable-handle', (event: JQueryEventObject) => {
             if (this.app.controlPanel.Mode == Mode.SELECT) {
-                $(event.target).closest('.shape-helper').find('.helpername').hide();   
+                $(event.target).closest('.shape-helper').find('.helpername').hide();
             }
         });
 
         $(document).ready(() => {
             this.app.controlPanel.displayMainPanel(false, 'font');
             $(document).on('click', '.breadcrumb span:last-child .set-scope', (e: JQueryEventObject) => {
-                console.log('prevent');
                 e.preventDefault();
                 return false;
             });
@@ -557,17 +441,6 @@ class Workspace {
                 var scopedLayer: Layer = this.app.timeline.getLayer(this._scope);
                 this.setScope(scopedLayer.parent);
             });
-
-            /*$(document).on('mousedown', '.shape-helper', (e: JQueryEventObject) => {
-                console.log('click helper');
-                if (e.button == 2) {
-                    console.log('right click');
-
-                    return false;
-                }
-
-                return true;
-            });*/
         });
     }
 
@@ -585,21 +458,17 @@ class Workspace {
         });
     }
 
-    private onDrawSquare(e: JQueryEventObject) {     
+    private onDrawSquare(e: JQueryEventObject) {
         var new_object: JQuery = $('<div>').addClass('shape-helper rect tmp-shape');
-        console.log(e);
         var click_y: number = e.pageY - this.workspaceContainer.offset().top;
         var click_x: number = e.pageX - this.workspaceContainer.offset().left;
         new_object.css({
             'top': click_y,
             'left': click_x,
-            //'background': this.getRandomColor(),
             'background': 'rgba(' + this.color.r + ', ' + this.color.g + ', ' + this.color.b + ', ' + this.color.a + ')',
             'z-index': this.app.timeline.layers.length,
             'opacity': this.opacity,
         });
-
-        //new_object.appendTo(this.workspaceContainer);
 
         this.workspaceWrapper.on('mousemove', (event: JQueryEventObject) => {
             this.onChangeSizeSquare(event, click_y, click_x, new_object);
@@ -618,7 +487,6 @@ class Workspace {
         new_x = (move_x < click_x) ? (click_x - width) : click_x;
         new_y = (move_y < click_y) ? (click_y - height) : click_y;
 
-        //var c = $.color.extract(new_object, 'background-color');
         var barva = parseCSSColor(new_object.css('background-color'));
         var c: rgba = {
             r: barva[0],
@@ -651,7 +519,7 @@ class Workspace {
             translate: { x: 0, y: 0, z: 0 },
             relativeTranslate: { x: 0, y: 0 },
             perspective: 0,
-    };
+        };
 
         new_object.css({
             'width': width,
@@ -671,115 +539,6 @@ class Workspace {
             this.createdLayer = false;
         }
     }
-
-    /*getTransformAttr(idLayer: number, attr: string, timestamp: number = null): any {
-        if (timestamp == null) {
-            var currentTimestamp: number = this.app.timeline.pxToMilisec();
-        } else {
-            var currentTimestamp: number = timestamp;
-        }
-        var layer: Layer = this.app.timeline.getLayer(idLayer);
-        if (layer) {
-            var keyframe: Keyframe = layer.getKeyframeByTimestamp(currentTimestamp);
-            if (keyframe == null) {
-                keyframe = layer.getKeyframe(0);
-            }
-            var timestamps: Array<number> = layer.timestamps;
-
-            var left = null;
-            var right = null;
-            var index = 0;
-            for (var i = timestamps.length; i--;) {
-                if (timestamps[i] < currentTimestamp && (left === null || left < timestamps[i])) {
-                    left = timestamps[i];
-                }
-                if (timestamps[i] >= currentTimestamp && (right === null || right > timestamps[i])) {
-                    right = timestamps[i];
-                    index = i;
-                }
-            };
-
-            if (left === null && right === currentTimestamp && timestamps.length >= 2) {
-                left = right;
-                right = timestamps[index + 1];
-            }
-
-            var params: Parameters = null;
-            var interval: Array<Keyframe> = new Array<Keyframe>();
-            if (left != null) {
-                interval['left'] = layer.getKeyframeByTimestamp(left);
-                params = interval['left'].shape.parameters;
-            }
-            if (right != null) {
-                interval['right'] = layer.getKeyframeByTimestamp(right);
-                params = interval['right'].shape.parameters;
-            }
-
-            if (Object.keys(interval).length == 2) {
-                //var bezier = BezierEasing(0.25, 0.1, 0.0, 1.0);
-                var fn: Bezier_points = interval['right'].timing_function;
-                var bezier = BezierEasing(fn.p0, fn.p1, fn.p2, fn.p3);
-                var p: number = (currentTimestamp - left) / (right - left);
-                
-                params = {
-                    top: this.computeParameter(interval['left'].shape.parameters.top, interval['right'].shape.parameters.top, bezier(p)),
-                    left: this.computeParameter(interval['left'].shape.parameters.left, interval['right'].shape.parameters.left, bezier(p)),
-                    width: this.computeParameter(interval['left'].shape.parameters.width, interval['right'].shape.parameters.width, bezier(p)),
-                    height: this.computeParameter(interval['left'].shape.parameters.height, interval['right'].shape.parameters.height, bezier(p)),
-                    background: {
-                        r: this.computeParameter(interval['left'].shape.parameters.background.r, interval['right'].shape.parameters.background.r, bezier(p)),
-                        g: this.computeParameter(interval['left'].shape.parameters.background.g, interval['right'].shape.parameters.background.g, bezier(p)),
-                        b: this.computeParameter(interval['left'].shape.parameters.background.b, interval['right'].shape.parameters.background.b, bezier(p)),
-                        a: this.computeOpacity(interval['left'].shape.parameters.background.a, interval['right'].shape.parameters.background.a, bezier(p)),
-                    },
-                    opacity: this.computeOpacity(interval['left'].shape.parameters.opacity, interval['right'].shape.parameters.opacity, bezier(p)),
-                    borderRadius: [
-                        this.computeParameter(interval['left'].shape.parameters.borderRadius[0], interval['right'].shape.parameters.borderRadius[0], bezier(p)),
-                        this.computeParameter(interval['left'].shape.parameters.borderRadius[1], interval['right'].shape.parameters.borderRadius[1], bezier(p)),
-                        this.computeParameter(interval['left'].shape.parameters.borderRadius[2], interval['right'].shape.parameters.borderRadius[2], bezier(p)),
-                        this.computeParameter(interval['left'].shape.parameters.borderRadius[3], interval['right'].shape.parameters.borderRadius[3], bezier(p))
-                    ],
-                    rotate: {
-                        x: this.computeParameter(interval['left'].shape.parameters.rotate.x, interval['right'].shape.parameters.rotate.x, bezier(p)),
-                        y: this.computeParameter(interval['left'].shape.parameters.rotate.y, interval['right'].shape.parameters.rotate.y, bezier(p)),
-                        z: this.computeParameter(interval['left'].shape.parameters.rotate.z, interval['right'].shape.parameters.rotate.z, bezier(p)),
-                    },
-                    skew: {
-                        x: this.computeParameter(interval['left'].shape.parameters.skew.x, interval['right'].shape.parameters.skew.x, bezier(p)),
-                        y: this.computeParameter(interval['left'].shape.parameters.skew.y, interval['right'].shape.parameters.skew.y, bezier(p)),
-                    },
-                    origin: {
-                        x: this.computeOpacity(interval['left'].shape.parameters.origin.x, interval['right'].shape.parameters.origin.x, bezier(p)),
-                        y: this.computeOpacity(interval['left'].shape.parameters.origin.y, interval['right'].shape.parameters.origin.y, bezier(p)),
-                    },
-                    zindex: interval['left'].shape.parameters.zindex,
-                    relativePosition: {
-                        top: this.computeParameter(interval['left'].shape.parameters.relativePosition.top, interval['right'].shape.parameters.relativePosition.top, bezier(p)),
-                        left: this.computeParameter(interval['left'].shape.parameters.relativePosition.left, interval['right'].shape.parameters.relativePosition.left, bezier(p)),
-                    },
-                    relativeSize: {
-                        width: this.computeParameter(interval['left'].shape.parameters.relativeSize.width, interval['right'].shape.parameters.relativeSize.width, bezier(p)),
-                        height: this.computeParameter(interval['left'].shape.parameters.relativeSize.height, interval['right'].shape.parameters.relativeSize.height, bezier(p)),
-                    },
-                    scale: this.computeOpacity(interval['left'].shape.parameters.scale, interval['right'].shape.parameters.scale, bezier(p)),
-                    translate: {
-                        x: this.computeParameter(interval['left'].shape.parameters.translate.x, interval['right'].shape.parameters.translate.x, bezier(p)),
-                        y: this.computeParameter(interval['left'].shape.parameters.translate.y, interval['right'].shape.parameters.translate.y, bezier(p)),
-                    },
-                    relativeTranslate: {
-                        x: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.x, interval['right'].shape.parameters.relativeTranslate.x, bezier(p)),
-                        y: this.computeParameter(interval['left'].shape.parameters.relativeTranslate.y, interval['right'].shape.parameters.relativeTranslate.y, bezier(p)),
-                    },
-                    perspective: this.computeParameter(interval['left'].shape.parameters.perspective, interval['right'].shape.parameters.perspective, bezier(p)),
-                }
-                
-            }
-            
-            return params[attr];
-        } else {
-            return null;
-        }
-    }*/
 
     public transformShapes(showHelpers: boolean = true) {
         var currentTimestamp: number = this.app.timeline.pxToMilisec();
@@ -807,30 +566,6 @@ class Workspace {
         });
     }
 
-
-
-    /*computeParameter(leftParam: number, rightParam: number, b: number): number {
-        var value: number = null;
-        var absValue: number = Math.round((Math.abs(rightParam - leftParam)) * b);
-        if (leftParam > rightParam) {
-            value = leftParam - absValue;
-        } else {
-            value = leftParam + absValue;
-        }
-        return value;
-    }
-
-    computeOpacity(leftParam: number, rightParam: number, b: number): number {
-        var value: number = null;
-        var absValue: number = (Math.abs(rightParam - leftParam)) * b;
-        if (leftParam > rightParam) {
-            value = Number(leftParam) - Number(absValue);
-        } else {
-            value = Number(leftParam) + Number(absValue);
-        }
-        return (Number(value));
-    }*/
-
     public renderShapes(scope: number = null) {
         $('#workspace').empty();
         var existing: boolean = false;
@@ -840,7 +575,7 @@ class Workspace {
             nesting = scopedLayer.nesting;
         }
 
-        for (var n: number = nesting; ; n++) {
+        for (var n: number = nesting;; n++) {
             existing = false;
             var container: JQuery;
             if (n == 0) {
@@ -871,8 +606,6 @@ class Workspace {
             });
 
             //white-base for container with transparent background
-            console.log('xx: ' + this.workspaceContainer.width());
-            console.log(this.workspaceContainer.parent().width());
             this.workspaceContainer.parent().append($('<div>').addClass('base-fff').css({
                 'background-color': '#fff',
                 'width': (this.workspaceContainer.width() / this.workspaceContainer.parent().width()) * 100 + '%',
@@ -953,110 +686,12 @@ class Workspace {
         }
     }
 
-    public renderShapesOld() {
-        console.log('Rendering workspace..');
-        var layers: Array<Layer> = this.app.timeline.layers;
-        this.workspaceContainer.empty();
-
-        layers.forEach((item: Layer, index: number) => {
-            var shape: JQuery = $('<div>').addClass('shape square');
-            var helper: JQuery = $('<div>').addClass('shape-helper');
-            helper.append($('<div>').addClass('origin-point'));
-            if (item.idEl) {
-                var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + item.name + '<span class="div-id">#' + item.idEl + '</span></p>');
-            } else {
-                var helpername: JQuery = $('<div>').addClass('helpername').html('<p>' + item.name + '</p>');   
-            }
-
-            //get keyframe by pointer position
-            var keyframe: Keyframe = item.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
-
-            //if no keyframe, take get init keyframe
-            if (keyframe == null) {
-                keyframe = item.getKeyframe(0);
-            }
-            if (keyframe != null) {
-                if (keyframe.shape instanceof Img) {
-                    shape = $('<img>').addClass('shape image');
-                }
-
-                if (keyframe.shape instanceof TextField) {
-                    var l: any = item;
-                    shape = $('<span>').addClass('shape froala text').html(l.globalShape.getContent());
-                }
-            
-                var params: Parameters = keyframe.shape.parameters;
-                var css = {
-                    'top': params.top,
-                    'left': params.left,
-                    'width': params.width,
-                    'height': params.height,
-                    'background': 'rgba(' + params.background.r + ',' + params.background.g + ',' + params.background.b + ',' + params.background.a + ')',
-                    'border': params.border,
-                    'z-index': params.zindex,
-                    'opacity': params.opacity,
-                    'border-top-left-radius': params.borderRadius[0],
-                    'border-top-right-radius': params.borderRadius[1],
-                    'border-bottom-right-radius': params.borderRadius[2],
-                    'border-bottom-left-radius': params.borderRadius[3],
-                }
-                shape.css(css);
-                if (item.idEl) {
-                    shape.attr('id', item.idEl);
-                }
-                helper.css({
-                    'top': params.top - 1,
-                    'left': params.left - 1,
-                    'width': params.width + 2,
-                    'height': params.height + 2,       
-                    'z-index': params.zindex + 1000,       
-                });
-
-                if (keyframe.shape instanceof Img) {
-                    var img: any = keyframe.shape;
-                    shape.attr('src', img.getSrc());
-                }
-
-                if (keyframe.shape instanceof TextField) {
-                    var text: any = keyframe.shape;
-                    shape.css({
-                        'color': 'rgba(' + text.getColor().r + ',' + text.getColor().g + ',' + text.getColor().b + ')',
-                        'font-size': text.getSize(),
-                        'font-family': text.getFamily(),
-                    });
-                    shape.froala({
-                        inlineMode: true,
-                        paragraphy: false,
-                        allowedTags: [],
-                        buttons: [],
-                        placeholder: 'Zadejte text...',
-                    });
-
-                    shape.on('editable.contentChanged', (e, editor) => {
-                        this.onChangeText(shape.data('id'), editor.trackHTML);
-                    });
-                }
-
-                shape.attr('data-id', keyframe.shape.id); 
-                helper.attr('data-id', keyframe.shape.id);
-                helpername.appendTo(helper);
-                shape.appendTo(this.workspaceContainer);
-                helper.appendTo(this.workspaceContainer);
-            }
-        });
-
-        this.dragResize();
-        this.onChangeMode();
-    }
-
-
     dragResize() {
         $('.origin-point').draggable();
         //hook draging on shapes
         $('.shape-helper').draggable({
             scroll: false,
             drag: (event: JQueryEventObject, ui) => {
-                console.log('dragging helper');
                 var id: number = $(event.target).data('id');
                 this.workspaceContainer.find('.shape[data-id="' + id + '"]').css({
                     'top': ui.position.top + 1,
@@ -1069,12 +704,10 @@ class Workspace {
                 var currentShape: IShape = this.getCurrentShape(layer.id);
                 if (keyframe == null) {
                     if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                        //layer.addKeyframe(currentShape, this.app.timeline.pxToMilisec(), this.bezier);
-                        //this.app.timeline.renderKeyframes(layer.id);
                         keyframe = this.addKeyframe(layer, currentShape, this.app.timeline.pxToMilisec(), this.bezier);
                     }
-                } 
-                
+                }
+
                 if (keyframe) {
                     keyframe.shape.setPosition({
                         top: ui.position.top + 1,
@@ -1094,11 +727,11 @@ class Workspace {
                             k.shape.setRelativePosition({
                                 top: ((ui.position.top + 1) / this.workspaceContainer.height()) * 100,
                                 left: ((ui.position.left + 1) / this.workspaceContainer.width()) * 100
-                            }); 
+                            });
                         });
                         this.renderSingleShapeWithChildren(layer.id);
-                    }                              
-                           
+                    }
+
                 }
 
                 this.transformShapes();
@@ -1127,8 +760,6 @@ class Workspace {
                 var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
                 if (keyframe == null) {
                     if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                        //layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                        //this.app.timeline.renderKeyframes(layer.id);
                         keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                     }
                 }
@@ -1148,8 +779,8 @@ class Workspace {
                     keyframe.shape.setRelativeDimensions({
                         width: (($(event.target).width()) / this.workspaceContainer.width()) * 100,
                         height: (($(event.target).height()) / this.workspaceContainer.height()) * 100
-                    });   
-                    
+                    });
+
                     if (layer.isMultipleEdit) {
                         layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
                             k.shape.setPosition({
@@ -1167,20 +798,19 @@ class Workspace {
                             k.shape.setRelativeDimensions({
                                 width: (($(event.target).width()) / this.workspaceContainer.width()) * 100,
                                 height: (($(event.target).height()) / this.workspaceContainer.height()) * 100
-                            }); 
+                            });
                         });
                         this.renderSingleShapeWithChildren(layer.id);
-                    }                 
+                    }
                 }
 
                 this.transformShapes();
                 this.app.timeline.selectLayer(layer.id);
             },
-        });       
+        });
     }
 
     highlightShape(arrayID: Array<number>) {
-        //var originPoint: JQuery = $('<div>').addClass('origin-point');
         this.workspaceContainer.find('.shape-helper').removeClass('highlight');
         this.workspaceContainer.find('.shape-helper').find('.origin-point').hide();
 
@@ -1220,7 +850,6 @@ class Workspace {
 
                         if (this.app.controlPanel.originMode) {
                             (this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]')).find('.origin-point').show();
-                            console.log('is origin mode');
                             $('.origin-point').draggable('option', {
                                 drag: (event: JQueryEventObject, ui) => {
                                     var xPercent: number = ui.position.left / shape.parameters.width * 100;
@@ -1267,156 +896,6 @@ class Workspace {
         }
     }
 
-
-    //TODO: upravit klonovani - nove vlastnosti z interpolace
-    /*getCurrentShapeOld(id: number): IShape {
-        var shapeEl: JQuery = this.workspaceContainer.find('.shape[data-id="' + id + '"]');
-        if (shapeEl.length) {
-            //var c = $.color.extract(shapeEl, 'background-color');
-            var barva = parseCSSColor(shapeEl.css('background-color'));
-            var c: rgba = {
-                r: barva[0],
-                g: barva[1],
-                b: barva[2],
-                a: barva[3], 
-            }
-            //var topPx: number = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().top + 1;
-            //var leftPx: number = this.workspaceContainer.find('.shape-helper[data-id="' + id + '"]').position().left + 1;
-            var topPx: number = shapeEl.position().top;
-            var leftPx: number = shapeEl.position().left;
-            var params: Parameters = {
-                top: topPx,
-                left: leftPx,
-                width: shapeEl.width(),
-                height: shapeEl.height(),
-                relativePosition: {
-                    top: (topPx / shapeEl.parent().height() * 100),
-                    left: (leftPx / shapeEl.parent().width() * 100),
-                },
-                relativeSize: {
-                    width: (shapeEl.width() / shapeEl.parent().width() * 100),
-                    height: (shapeEl.height() / shapeEl.parent().height() * 100),
-                },
-                background: c,
-                //opacity: parseFloat(shapeEl.css('opacity')),
-                opacity: parseFloat(shapeEl.attr('data-opacity')),
-                zindex: parseInt(shapeEl.css('z-index')),
-                borderRadius: [
-                    parseInt(shapeEl.css('border-top-left-radius')),
-                    parseInt(shapeEl.css('border-top-right-radius')),
-                    parseInt(shapeEl.css('border-bottom-right-radius')),
-                    parseInt(shapeEl.css('border-bottom-left-radius'))
-                ],
-                rotate: {
-                    x: this.getTransformAttr(id, 'rotate').x,
-                    y: this.getTransformAttr(id, 'rotate').y,
-                    z: this.getTransformAttr(id, 'rotate').z,
-                },
-                skew: {
-                    x: this.getTransformAttr(id, 'skew').x,
-                    y: this.getTransformAttr(id, 'skew').y,
-                },
-                origin: {
-                    x: this.getTransformAttr(id, 'origin').x,
-                    y: this.getTransformAttr(id, 'origin').y,
-                },
-                scale: this.getTransformAttr(id, 'scale'),
-                translate: {
-                    x: this.getTransformAttr(id, 'translate').x,
-                    y: this.getTransformAttr(id, 'translate').y,
-                },
-                relativeTranslate: {
-                    x: (this.getTransformAttr(id, 'translate').x / shapeEl.width() * 100),
-                    y: (this.getTransformAttr(id, 'translate').y / shapeEl.height() * 100),
-                },
-                perspective: this.getTransformAttr(id, 'perspective'),
-        };
-
-            //console.log(shapeEl.attr('data-opacity'));
-
-            //if background is transparent
-            if (c.a == 0) {
-                params['background']['r'] = this.color.r;
-                params['background']['g'] = this.color.g;
-                params['background']['b'] = this.color.b;
-            }
-
-            if (this.app.timeline.getLayer(id).globalShape instanceof Img) {
-                var shape: IShape = new Img(params, shapeEl.attr('src'));
-            } else if (this.app.timeline.getLayer(id).globalShape instanceof TextField) {
-                var color: rgb = {
-                    r: this.getPartOfRGBA(shapeEl.css('color'), 'r'),
-                    g: this.getPartOfRGBA(shapeEl.css('color'), 'g'),
-                    b: this.getPartOfRGBA(shapeEl.css('color'), 'b'),
-                };
-                var size: number = parseFloat(shapeEl.css('font-size'));
-                var font: string = shapeEl.css('font-family');
-                var shape: IShape = new TextField(params, shapeEl.html().toString(), color, size, font);
-            } else if (this.app.timeline.getLayer(id).globalShape instanceof Svg) {
-                var shape: IShape = new Svg(params, this.app.timeline.getLayer(id).globalShape.getSrc());
-            } else {
-                var shape: IShape = new Rectangle(params);   
-            }
-            shape.id = id;
-
-            return shape;
-        } else {
-            return null;   
-        }
-    }*/
-
-    private getRandomColor() {
-        var letters: string[] = '0123456789ABCDEF'.split('');
-        var color: string = '#';
-        for (var i: number = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
-        }
-        return color;
-    }
-
-    convertHex(hex, opacity){
-        hex = hex.replace('#', '');
-        var r = parseInt(hex.substring(0, 2), 16);
-        var g = parseInt(hex.substring(2, 4), 16);
-        var b = parseInt(hex.substring(4, 6), 16);
-        var result = 'rgba(' + r + ',' + g + ',' + b + ',' + opacity / 100 + ')';
-        return result;
-    }
-
-    convertPartColor(hex: string, part: string): number {
-        hex = hex.replace('#', '');
-        if (part == 'r') {
-            var value: number = parseInt(hex.substring(0, 2), 16);
-        } else if(part == 'g') {
-            var value: number = parseInt(hex.substring(2, 4), 16);
-        } else if(part == 'b') {
-            var value: number = parseInt(hex.substring(4, 6), 16);
-        }
-
-        return value;
-    }
-
-    getPartOfRGBA(rgb: string, part: string): number {
-        var parts = rgb.match(/\d+/g);
-        if (part == 'r') {
-            return parseInt(parts[0]);
-        } else if (part == 'g') {
-            return parseInt(parts[1]);
-        } else if (part == 'b') {
-            return parseInt(parts[2]);
-        } else if (part == 'a') {
-            return parseInt(parts[3]);
-        }
-    }
-
-    parseRotation(style: any, index: number): number {
-        var s = style.split(';');
-        var t = s[s.length - 2];
-        var x = t.match(/\(.*?\)/g)[index];
-        x = x.substr(1, x.length - 2);
-        return parseInt(x.replace('deg', ''));
-    }
-
     setColor(c: rgb, alpha: number) {
         this.color = {
             r: c.r,
@@ -1429,26 +908,24 @@ class Workspace {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
             if (keyframe != null) {
-                keyframe.shape.setBackground(this.color); 
+                keyframe.shape.setBackground(this.color);
 
                 if (layer.isMultipleEdit) {
                     layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
-                        k.shape.setBackground(this.color); 
+                        k.shape.setBackground(this.color);
                     });
 
                     this.renderSingleShapeWithChildren(layer.id);
                 }
             }
-                  
+
 
             this.transformShapes();
-            this.app.timeline.selectLayer(layer.id);   
+            this.app.timeline.selectLayer(layer.id);
         }
     }
 
@@ -1459,8 +936,6 @@ class Workspace {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null && newKeyframe) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
@@ -1468,7 +943,7 @@ class Workspace {
             if (keyframe != null) {
                 var textField: any = keyframe.shape;
                 textField.setFont(this.fontParameters);
-                  
+
                 if (layer.isMultipleEdit) {
                     layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
                         var textField: any = k.shape;
@@ -1480,10 +955,10 @@ class Workspace {
 
             }
             var l: any = layer;
-            l.globalShape.setFamily(this.fontParameters.fontFamily); 
+            l.globalShape.setFamily(this.fontParameters.fontFamily);
 
             this.transformShapes();
-            this.app.timeline.selectLayer(layer.id);               
+            this.app.timeline.selectLayer(layer.id);
         }
     }
 
@@ -1494,8 +969,6 @@ class Workspace {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
@@ -1510,10 +983,10 @@ class Workspace {
                     this.renderSingleShapeWithChildren(layer.id);
                 }
             }
-                
+
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
-        }        
+        }
     }
 
     setScale(scale: number) {
@@ -1522,8 +995,6 @@ class Workspace {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
@@ -1544,23 +1015,19 @@ class Workspace {
     }
 
     setDimension(axis: string, dimension: number) {
-        console.log('nastavuju dimensions');
         var layer: Layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
-            if(keyframe != null) {
+            if (keyframe != null) {
                 if (axis === 'x') {
 
                     if (layer.isMultipleEdit) {
                         layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
-                            console.log(k.timestamp);
                             k.shape.setX(dimension);
                             k.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
                         });
@@ -1570,8 +1037,7 @@ class Workspace {
                         keyframe.shape.setX(dimension);
                         keyframe.shape.setRelativeX((dimension / this.workspaceContainer.width()) * 100);
                     }
-                } else if(axis === 'y')
-                {
+                } else if (axis === 'y') {
                     keyframe.shape.setY(dimension);
                     keyframe.shape.setRelativeY((dimension / this.workspaceContainer.height()) * 100);
 
@@ -1588,22 +1054,19 @@ class Workspace {
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
-        }           
+        }
     }
 
     setBorderRadius(type: string, value: number) {
-        console.log('Setting border radius');
         var layer: Layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
-            if(keyframe != null) {
+            if (keyframe != null) {
                 if (type === 'tl') {
                     keyframe.shape.setBorderRadiusTopLeft(value);
                 } else if (type === 'tr') {
@@ -1637,18 +1100,15 @@ class Workspace {
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
-        }           
+        }
     }
 
     set3DRotate(type: string, value: number) {
-        console.log('setting rotate');
         var layer: Layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
@@ -1659,8 +1119,8 @@ class Workspace {
                     keyframe.shape.setRotateY(value);
                 } else if (type === 'z') {
                     keyframe.shape.setRotateZ(value);
-                }  
-                
+                }
+
                 if (layer.isMultipleEdit) {
                     layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
                         if (type === 'x') {
@@ -1669,16 +1129,16 @@ class Workspace {
                             k.shape.setRotateY(value);
                         } else if (type === 'z') {
                             k.shape.setRotateZ(value);
-                        } 
+                        }
                     });
 
                     this.renderSingleShapeWithChildren(layer.id);
-                }           
+                }
             }
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
-        }                   
+        }
     }
 
     setPerspective(p: number) {
@@ -1687,8 +1147,6 @@ class Workspace {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
@@ -1706,7 +1164,7 @@ class Workspace {
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
-        }       
+        }
     }
 
     setTranslate(type: string, value: number) {
@@ -1715,8 +1173,6 @@ class Workspace {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
@@ -1754,14 +1210,11 @@ class Workspace {
     }
 
     setTransformOrigin(type: string, value: number) {
-        console.log('setting transform-origin');
         var layer: Layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
@@ -1772,7 +1225,7 @@ class Workspace {
                 } else if (type === 'y') {
                     keyframe.shape.setOriginY(value);
                 }
-                
+
                 if (layer.isMultipleEdit) {
                     layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
                         if (type === 'x') {
@@ -1783,34 +1236,30 @@ class Workspace {
                     });
 
                     this.renderSingleShapeWithChildren(layer.id);
-                }                
+                }
             }
 
             this.transformShapes();
             this.app.timeline.selectLayer(layer.id);
-        }          
+        }
     }
 
     setSkew(type: string, value: number) {
-        console.log('setting skew');
         var layer: Layer = this.getHighlightedLayer();
         if (layer) {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe == null) {
                 if (confirm('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?')) {
-                    //keyframe = layer.addKeyframe(this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
-                    //this.app.timeline.renderKeyframes(layer.id);
                     keyframe = this.addKeyframe(layer, this.getCurrentShape(layer.id), this.app.timeline.pxToMilisec(), this.bezier);
                 }
             }
             if (keyframe != null) {
                 if (type === 'x') {
                     keyframe.shape.setSkewX(value);
-                    console.log(value);
                 } else if (type === 'y') {
                     keyframe.shape.setSkewY(value);
-                }   
-                
+                }
+
                 if (layer.isMultipleEdit) {
                     layer.getAllKeyframes().forEach((k: Keyframe, index: number) => {
                         if (type === 'x') {
@@ -1821,7 +1270,7 @@ class Workspace {
                     });
 
                     this.renderSingleShapeWithChildren(layer.id);
-                }                  
+                }
             }
 
             this.transformShapes();
@@ -1832,7 +1281,7 @@ class Workspace {
     setBezier(fn: Bezier_points) {
         this.bezier = fn;
         var layer: Layer = this.getHighlightedLayer();
-        if (layer) {         
+        if (layer) {
             var keyframeID: number = this.app.timeline.getSelectedKeyframeID(layer.id);
             var keyframe: Keyframe = layer.getKeyframe(keyframeID);
             if (keyframe != null) {
@@ -1844,12 +1293,12 @@ class Workspace {
                     });
 
                     this.renderSingleShapeWithChildren(layer.id);
-                }  
+                }
 
                 this.app.timeline.renderKeyframes(layer.id);
                 this.app.timeline.selectLayer(layer.id, keyframeID);
             }
-        }  
+        }
     }
 
     updateBezierCurve(layer: Layer) {
@@ -1858,7 +1307,7 @@ class Workspace {
             var keyframe: Keyframe = layer.getKeyframeByTimestamp(this.app.timeline.pxToMilisec());
             if (keyframe) {
                 this.app.controlPanel.updateBezierCurve(keyframe.timing_function);
-            } 
+            }
         }
     }
 
@@ -1882,17 +1331,17 @@ class Workspace {
                     }
                 });
                 if (unique) {
-                    layer.idEl = this.webalize(id);   
+                    layer.idEl = this.webalize(id);
                 }
             } else {
                 layer.idEl = null;
             }
-            //this.renderShapes();
+
             this.renderSingleShapeWithChildren(layer.id);
             this.transformShapes();
             this.app.timeline.renderLayers();
             this.app.timeline.selectLayer(layer.id);
-        } 
+        }
     }
 
     isEmpty(str) {
@@ -1926,7 +1375,7 @@ class Workspace {
                 width: x,
                 height: this._workspaceSize.height,
             };
-        } else if(y != null) {
+        } else if (y != null) {
             newDimension = {
                 width: this._workspaceSize.width,
                 height: y,
@@ -1957,107 +1406,55 @@ class Workspace {
     }
 
     loadMode() {
-            this.dialogEl.empty();
-            $('body').find(this.dialogEl).remove();
-            this.dialogEl.append(this.loadAreaWrapper);
-            $('body').append(this.dialogEl);
-            this.dialogEl.dialog({
-                title: 'Nahrát projekt ze souboru',
-                autoOpen: true,
-                draggable: false,
-                width: 550,
-                resizable: false,
-                modal: true,
-                closeOnEscape: true,
-                close: (event, ui) => {
-                    this.dialogEl.remove();
-                    this.app.controlPanel.Mode = Mode.SELECT;
-                    this.onChangeMode();
-                    $('.tool-btn').removeClass('active');
-                    $('.tool-btn.select').addClass('active');
-                },
-            });
-            $('.ui-dialog-titlebar-close').empty().append('X');
+        this.dialogEl.empty();
+        $('body').find(this.dialogEl).remove();
+        this.dialogEl.append(this.loadAreaWrapper);
+        $('body').append(this.dialogEl);
+        this.dialogEl.dialog({
+            title: 'Nahrát projekt ze souboru',
+            autoOpen: true,
+            draggable: false,
+            width: 550,
+            resizable: false,
+            modal: true,
+            closeOnEscape: true,
+            close: (event, ui) => {
+                this.dialogEl.remove();
+                this.app.controlPanel.Mode = Mode.SELECT;
+                this.onChangeMode();
+                $('.tool-btn').removeClass('active');
+                $('.tool-btn.select').addClass('active');
+            },
+        });
+        $('.ui-dialog-titlebar-close').empty().append('X');
 
-            //zpracovani souboru
+        this.loadArea.on('dragenter', (event: JQueryEventObject) => {
+            $(event.target).addClass('over');
+        });
 
-            this.loadArea.on('dragenter', (event: JQueryEventObject) => {
-                console.log('enter');
-                $(event.target).addClass('over');
-            });
+        this.loadArea.on('dragleave', (event: JQueryEventObject) => {
+            $(event.target).removeClass('over');
+        });
 
-            this.loadArea.on('dragleave', (event: JQueryEventObject) => {
-                $(event.target).removeClass('over');
-            });
+        this.loadArea.on('dragover', (event: JQueryEventObject) => {
+            event.preventDefault();
+        });
 
-            this.loadArea.on('dragover', (event: JQueryEventObject) => {
-                console.log('over');
-                event.preventDefault();
-            });
+        this.loadArea.on('drop', (event: JQueryEventObject) => {
+            event.stopPropagation();
+            event.preventDefault();
+            var files = (<DragEvent>event.originalEvent).dataTransfer.files;
+            this.uploadFile(files);
+            $(event.target).removeClass('over');
+        });
 
-            this.loadArea.on('drop', (event: JQueryEventObject) => {
-                console.log('upload');
-                event.stopPropagation();
-                event.preventDefault();
-                var files = (<DragEvent>event.originalEvent).dataTransfer.files;
-                this.uploadFile(files);
-                $(event.target).removeClass('over');
-            });
-
-            this.loadBtn.on('change', (event: any) => {
-                this.uploadFile(event.target.files);
-            });
+        this.loadBtn.on('change', (event: any) => {
+            this.uploadFile(event.target.files);
+        });
 
         this.loadArea.on('click', (event: JQueryEventObject) => {
             this.loadBtn.click();
         });
-    }
-
-    loadModeOld(active: boolean = true) {
-        if (active) {
-            this.workspaceOverlay.empty();
-            this.workspaceOverlay.append(this.loadArea);
-            this.workspaceWrapper.append(this.workspaceOverlay);
-            this.workspaceOverlay.css({
-                'height': this.workspaceWrapper.outerHeight(),
-                'width': this.workspaceWrapper.outerWidth(),
-            });
-
-            //zpracovani souboru
-            $('.load-area > p').on('dragenter', (event: JQueryEventObject) => {
-                console.log('vp');
-                $('.upload-area').addClass('over');
-            });
-
-            this.loadArea.on('dragenter', (event: JQueryEventObject) => {
-                console.log('enter');
-                $(event.target).addClass('over');
-            });
-
-            this.loadArea.on('dragleave', (event: JQueryEventObject) => {
-                $(event.target).removeClass('over');
-            });
-
-            this.loadArea.on('dragover', (event: JQueryEventObject) => {
-                console.log('over');
-                event.preventDefault();
-            });
-
-            this.loadArea.on('drop', (event: JQueryEventObject) => {
-                console.log('upload');
-                event.stopPropagation();
-                event.preventDefault();
-                var files = (<DragEvent>event.originalEvent).dataTransfer.files;
-                this.uploadFile(files);
-                $(event.target).removeClass('over');
-            });
-
-            this.loadBtn.on('change', (event: any) => {
-                this.uploadFile(event.target.files);
-            });
-        } else {
-            this.workspaceOverlay.remove();
-        }
     }
 
     uploadFile(files: FileList) {
@@ -2073,7 +1470,7 @@ class Workspace {
                     dialogClass: 'message-dialog',
                     modal: false,
                     buttons: {
-                        Ok: function () {
+                        Ok: function() {
                             $(this).dialog("close");
                         }
                     }
@@ -2154,7 +1551,6 @@ class Workspace {
         $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.svgUploadArea.on('dragenter', (event: JQueryEventObject) => {
-            console.log('enter');
             $(event.target).addClass('over');
         });
 
@@ -2163,12 +1559,10 @@ class Workspace {
         });
 
         this.svgUploadArea.on('dragover', (event: JQueryEventObject) => {
-            console.log('over');
             event.preventDefault();
         });
 
         this.svgUploadArea.on('drop', (event: JQueryEventObject) => {
-            console.log('upload');
             event.stopPropagation();
             event.preventDefault();
             var files = (<DragEvent>event.originalEvent).dataTransfer.files;
@@ -2191,8 +1585,6 @@ class Workspace {
     }
 
     saveSvgText(svg: string) {
-        console.log('Inserting SVG');
-
         var xmlString = svg;
         var parser: DOMParser = new DOMParser();
         var doc: XMLDocument = parser.parseFromString(xmlString, "image/svg+xml");
@@ -2237,7 +1629,6 @@ class Workspace {
                 perspective: 0,
             };
 
-            //var svg: IShape = new Svg(p, doc);
             var svgShape: IShape = new Svg(p, xmlString);
             var layer: Layer = new SvgLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), svgShape);
             var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
@@ -2258,7 +1649,7 @@ class Workspace {
             this.onChangeMode();
         } else {
             alert('Nevalidní kód');
-        }     
+        }
     }
 
     imageMode() {
@@ -2285,7 +1676,6 @@ class Workspace {
         $('.ui-dialog-titlebar-close').empty().append('X');
 
         this.uploadArea.on('dragenter', (event: JQueryEventObject) => {
-            console.log('enter');
             $(event.target).addClass('over');
         });
 
@@ -2294,12 +1684,10 @@ class Workspace {
         });
 
         this.uploadArea.on('dragover', (event: JQueryEventObject) => {
-            console.log('over');
             event.preventDefault();
         });
 
         this.uploadArea.on('drop', (event: JQueryEventObject) => {
-            console.log('upload');
             event.stopPropagation();
             event.preventDefault();
             var files = (<DragEvent>event.originalEvent).dataTransfer.files;
@@ -2308,7 +1696,6 @@ class Workspace {
         });
 
         this.uploadBtn.on('change', (event: any) => {
-            console.log('pick image');
             this.uploadImage(event.target.files);
         });
 
@@ -2334,7 +1721,6 @@ class Workspace {
     uploadImage(files: FileList) {
         var file: File = files[0];
         if (file.type.match('image.*')) {
-            console.log('isImage');
             var img = new Image();
             var reader = new FileReader();
             reader.onload = (e) => {
@@ -2366,7 +1752,6 @@ class Workspace {
                 ctx.drawImage(img, 0, 0, width, height);
 
                 var dataurl = canvas.toDataURL("image/png");
-                console.log(dataurl);
                 var p: Parameters = {
                     top: 0,
                     left: 0,
@@ -2385,7 +1770,7 @@ class Workspace {
                     translate: { x: 0, y: 0, z: 0 },
                     relativeTranslate: { x: 0, y: 0 },
                     perspective: 0,
-            };
+                };
                 var image: IShape = new Img(p, dataurl);
                 var layer: Layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), image);
                 var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
@@ -2394,7 +1779,6 @@ class Workspace {
                     layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
                 }
                 var idLayer: number = this.app.timeline.addLayer(layer);
-                //this.renderShapes();
                 this.renderSingleShape(idLayer);
                 this.transformShapes();
                 this.highlightShape([idLayer]);
@@ -2407,7 +1791,7 @@ class Workspace {
                 dialogClass: 'message-dialog',
                 modal: false,
                 buttons: {
-                    Ok: function () {
+                    Ok: function() {
                         $(this).dialog("close");
                     }
                 }
@@ -2423,71 +1807,11 @@ class Workspace {
         this.onChangeMode();
     }
 
-    uploadImageOld(files: FileList) {
-        var image: File = files[0];
-        if (image.type.match('image.*')) {
-            var reader: FileReader = new FileReader();
-            reader.onload = ((theFile) => {
-                return (e) => {
-
-                    var img = new Image();
-                    img.onload = () => {
-                        var p: Parameters = {
-                            top: 0,
-                            left: 0,
-                            width: img.width,
-                            height: img.height,
-                            relativeSize: { width: ((img.width / this.workspaceContainer.width()) * 100), height: ((img.height / this.workspaceContainer.height()) * 100) },
-                            relativePosition: { top: 0, left: 0 },
-                            background: { r: 255, g: 255, b: 255, a: 0 },
-                            opacity: 1,
-                            borderRadius: [0, 0, 0, 0],
-                            rotate: { x: 0, y: 0, z: 0 },
-                            skew: { x: 0, y: 0 },
-                            origin: { x: 50, y: 50 },
-                            zindex: this.app.timeline.layers.length,
-                            scale: 1,
-                            translate: { x: 0, y: 0, z: 0 },
-                            relativeTranslate: { x: 0, y: 0 },
-                            perspective: 0,
-                    };
-                        var image: IShape = new Img(p, e.target.result);
-                        var layer: Layer = new ImageLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), image);
-                        var parent: number = this.workspaceContainer.data('id') ? this.workspaceContainer.data('id') : null;
-                        layer.parent = parent;
-                        if (layer.parent) {
-                            layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
-                        }
-                        var idLayer: number = this.app.timeline.addLayer(layer);
-                        //this.renderShapes();
-                        this.renderSingleShape(idLayer);
-                        this.transformShapes();
-                        this.highlightShape([idLayer]);
-
-                        this.uploadBtn.val('');
-
-                        this.app.controlPanel.Mode = Mode.SELECT;
-                        $('.tool-btn.select').addClass('active');
-                        this.onChangeMode();
-                    }
-
-                    img.src = e.target.result;
-                    //create image layer
-                };
-            })(image);
-
-            reader.readAsDataURL(image);
-        }
-    }
-
     onCreateText(e: JQueryEventObject) {
-        console.log('creating textfield');
-
         var top: number = e.pageY - this.workspaceContainer.offset().top - 10;
         var left: number = e.pageX - this.workspaceContainer.offset().left - 5;
         var width: number = 150;
         var height: number = 75;
-        //top: ((shape.parameters.top) / this.workspaceContainer.height()) * 100,
 
         var params: Parameters = {
             top: top,
@@ -2507,7 +1831,7 @@ class Workspace {
             translate: { x: 0, y: 0, z: 0 },
             relativeTranslate: { x: 0, y: 0 },
             perspective: 0,
-    }
+        }
 
         var shape: IShape = new TextField(params, null, this.fontParameters.color, this.fontParameters.size, this.fontParameters.fontFamily);
         var layer: Layer = new TextLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), shape);
@@ -2517,7 +1841,6 @@ class Workspace {
             layer.nesting = (this.app.timeline.getLayer(layer.parent).nesting + 1);
         }
         var idLayer: number = this.app.timeline.addLayer(layer);
-        //this.renderShapes();
         this.renderSingleShape(layer.id);
         this.transformShapes();
         this.highlightShape([idLayer]);
@@ -2526,13 +1849,11 @@ class Workspace {
     }
 
     public onChangeText(id: number, text: string) {
-        console.log(text);
         var shape: any = this.app.timeline.getLayer(id).globalShape;
         shape.setContent(text);
     }
 
     public onChangeMode() {
-        console.log('onChangeMode');
         var mode: Mode = this.app.controlPanel.Mode;
         if (mode == Mode.SELECT) {
             $('.shape-helper').draggable('enable');
@@ -2546,16 +1867,12 @@ class Workspace {
 
         if (mode == Mode.IMAGE || mode == Mode.SVG || mode == Mode.LOAD) {
             if (mode == Mode.IMAGE) {
-                this.imageMode();   
+                this.imageMode();
             } else if (mode == Mode.SVG) {
                 this.svgMode();
             } else if (mode == Mode.LOAD) {
                 this.loadMode();
             }
-        } else {
-            //this.insertMode(false);
-            //this.svgMode(false);
-            //this.loadMode(false);
         }
 
         if (mode == Mode.TEXT) {
@@ -2623,21 +1940,14 @@ class Workspace {
                 alert('Doba animace je omezena animací nadřazeného prvku na ' + maxTimestamp / 1000 + 's. Snímek bude posunut na tuto pozici.');
             }
         }
-        
+
         if (layer.getKeyframeByTimestamp(timestamp) === null) {
-
             var newKeyframe: Keyframe = layer.addKeyframe(shape, timestamp, this.app.workspace.getBezier());
-
-            /*var countK = timestamp / this.app.timeline.miliSecPerFrame;
-            if (countK > (this.app.timeline.keyframeCount - this.app.timeline.expandTimelineBound)) {
-                this.app.timeline.expandFrames();
-            }*/
-
             this.app.timeline.renderKeyframes(layer.id);
             return newKeyframe;
         } else {
             return null;
-        }     
+        }
     }
 
     setScope(id: number) {
@@ -2657,13 +1967,12 @@ class Workspace {
             $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });
         }
         this.app.timeline.buildBreadcrumb(this.scope);
-        //this.dragResize(); <- nefunguje
         this.app.timeline.renderLayers();
         this.renderShapes();
         if (this.scope) {
-            this.app.timeline.getLayer(this.scope).lastTransformKeyframe = null;    
+            this.app.timeline.getLayer(this.scope).lastTransformKeyframe = null;
         }
-        
+
         this.transformShapes();
         this.app.timeline.selectLayer(null);
     }
@@ -2673,7 +1982,6 @@ class Workspace {
     }
 
     isParseError(parsedDocument: XMLDocument) {
-        // parser and parsererrorNS could be cached on startup for efficiency
         var parser = new DOMParser(),
             errorneousParse = parser.parseFromString('<', 'text/xml'),
             parsererrorNS = errorneousParse.getElementsByTagName("parsererror")[0].namespaceURI;
@@ -2695,16 +2003,16 @@ class Workspace {
             shape.setRelativePosition({
                 top: ((shape.parameters.top) / this.workspaceContainer.height()) * 100,
                 left: ((shape.parameters.left) / this.workspaceContainer.width()) * 100,
-            });   
+            });
         }
         if (shape instanceof Rectangle) {
-            var layer: Layer = new RectangleLayer(l.name + ' - kopie', this.getBezier(), shape);   
+            var layer: Layer = new RectangleLayer(l.name + ' - kopie', this.getBezier(), shape);
         } else if (shape instanceof TextField) {
-            var layer: Layer = new TextLayer(l.name + ' - kopie', this.getBezier(), shape);   
+            var layer: Layer = new TextLayer(l.name + ' - kopie', this.getBezier(), shape);
         } else if (shape instanceof Svg) {
-            var layer: Layer = new SvgLayer(l.name + ' - kopie', this.getBezier(), shape);   
+            var layer: Layer = new SvgLayer(l.name + ' - kopie', this.getBezier(), shape);
         } else if (shape instanceof Img) {
-            var layer: Layer = new ImageLayer(l.name + ' - kopie', this.getBezier(), shape);   
+            var layer: Layer = new ImageLayer(l.name + ' - kopie', this.getBezier(), shape);
         }
         if (idParent == null) {
             layer.parent = l.parent;
@@ -2715,7 +2023,6 @@ class Workspace {
             layer.nesting = l.nesting;
         }
         var idLayer: number = this.app.timeline.addLayer(layer);
-        //this.renderSingleShape(idLayer);
 
         //find childrens
         for (var i: number = this.app.timeline.layers.length - 1; i >= 0; i--) {
@@ -2737,35 +2044,15 @@ class Workspace {
         var idLayer: number = this.app.timeline.addLayer(layer);
         this.renderSingleShape(idLayer);
         this.transformShapes();
-        this.highlightShape([idLayer]);   
+        this.highlightShape([idLayer]);
     }
 
-    private confirmNewKeyframe() {
-        var def = $.Deferred();
-        var deleteConfirmEl = $('<div>').attr('id', 'delete-confirm').css({ 'display': 'none' });
-        deleteConfirmEl.attr('title', 'Vytvořit nový snímek?').html('Chcete z nového nastavení elementu vytvořit na aktuální pozici nový snímek?');
-        deleteConfirmEl.dialog({
-            dialogClass: 'delete-confirm',
-            resizable: false,
-            buttons: {
-                "Ano": function() {
-                    $(this).dialog("close");
-                    def.resolve(true);
-                },
-                Cancel: function () {
-                    $(this).dialog("close");
-                    def.resolve(false);
-                }
-            }
-        });
-
-        return def.promise();
-    }
 
     performanceTest(n: number = 5) {
         function rand(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
+
         for (var i = 0; i < n; i++) {
             var diameter: number = rand(10, 30);
             var params: Parameters = {
@@ -2792,7 +2079,7 @@ class Workspace {
                 translate: { x: 0, y: 0, z: 0 },
                 relativeTranslate: { x: 0, y: 0 },
                 perspective: 0,
-        };
+            };
 
             var shape: IShape = new Rectangle(params);
             var layer: Layer = new RectangleLayer('Vrstva ' + (Layer.counter + 1), this.getBezier(), shape);
@@ -2829,7 +2116,6 @@ class Workspace {
             this.app.timeline.renderKeyframes(layer.id);
             this.renderSingleShape(layer.id);
         }
-        //this.renderShapes();
         this.transformShapes();
     }
-} 
+}

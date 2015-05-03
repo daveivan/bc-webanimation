@@ -18,9 +18,7 @@ class Application {
     workspace: Workspace;
     controlPanel: ControlPanel;
 
-    constructor()
-    {
-        console.log('Start Application');
+    constructor() {
         this.timeline = new Timeline(this, this.timelineEl);
         this.workspace = new Workspace(this, this.workspaceEl, this.workspaceWrapperEl);
         this.controlPanel = new ControlPanel(this, this.topContainerEl);
@@ -37,12 +35,11 @@ class Application {
 
 
 $(document).ready(() => {
-    console.log('DOM Loaded');
     new Application();
     $('.tooltip').tooltipster({ position: 'right', maxWidth: 200 });
     $('.tooltip-delay').tooltipster({ position: 'right', maxWidth: 200, delay: 600 });
     $('.tooltip-top').tooltipster({ position: 'top' });
     $('.workspace-wrapper').perfectScrollbar({ includePadding: true, });
 
-    window.onbeforeunload = function () { return "Opravdu chcete opustit stránku? Neuložený projekt bude ztracený!" };
+    window.onbeforeunload = function() { return "Opravdu chcete opustit stránku? Neuložený projekt bude ztracený!" };
 });

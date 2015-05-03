@@ -21,7 +21,7 @@
         this.app = app;
         this.layers = l;
 
-        
+
         this.tabsEl.append('<ul><li><a href="#code">Vygenerovaný HTML kód animace</a></li><li><a href="#preview">Náhled vytvořené animace</a></li></ul>');
         this.tabsEl.append(this.codeTab);
         this.tabsEl.append(this.previewTab);
@@ -55,12 +55,11 @@
         this.downloadBtnEl.on('click', (e: JQueryEventObject) => {
             var blob = new Blob([this.resultHtml], { type: "text/html;charset=utf-8" });
 
-            saveAs(blob, "animation.html");  
+            saveAs(blob, "animation.html");
         });
     }
 
     generate(): string {
-        console.log('generate code');
         this.dialogEl.dialog('open');
 
         var html: string = '<!DOCTYPE html>\n<html lang="cs">\n<head>\n  <meta charset="UTF-8">\n  <title></title>\n';
@@ -116,7 +115,7 @@
 
         var markup: string = '  <div id="workspace">\n';
         shapes.find('.shape').each(function(index) {
-            markup += '    ' + ($(this).addClass('object'+$(this).data('id')).prop('outerHTML')) + '\n';
+            markup += '    ' + ($(this).addClass('object' + $(this).data('id')).prop('outerHTML')) + '\n';
         });
         markup += '  </div>';
         return markup;
@@ -129,7 +128,7 @@
                 //if layer is root
                 markup += layer.getObject();
                 markup += this.getChildsObject(layer.id);
-                if(layer instanceof RectangleLayer)
+                if (layer instanceof RectangleLayer)
                     markup += '    </div>\n';
                 else if (layer instanceof TextLayer)
                     markup += '</span>\n';
@@ -138,6 +137,7 @@
         markup += '  </div>';
         return markup;
     }
+
     getChildsObject(parent: number): string {
         var value: string = '';
         this.layers.forEach((layer: Layer, index: number) => {
@@ -192,8 +192,8 @@
             } else {
                 if (duration != 0) {
                     cssObject['-webkit-animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's forwards';
-                    cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's forwards';  
-                }      
+                    cssObject['animation'] = nameElement + ' ' + (duration / 1000) + 's linear ' + 0 + 's forwards';
+                }
             }
 
             css += this.gCss(cssObject);
@@ -209,18 +209,10 @@
                     var part: number = ((keyframe.timestamp) / duration);
 
                     var percent: string = (part * 100).toString() + '%';
-                    //if infinite animation and not 100% append it to last keyframe
-                    /*if (this.app.timeline.repeat && i == item.timestamps.length-1 && part != 1) {
-                        percent += ' ,100%';
-                    }
-                    //if infinite animation and set delay, append delay to first keyframe
-                    if (this.app.timeline.repeat && i == 0 && part != 0) {
-                        percent += ', 0%';
-                    }*/
 
                     //if first keyframe and not 0, make object invisible
                     if (i == 0 && part != 0) {
-                        cssObject['0%'] = { 'visibility': 'hidden'};
+                        cssObject['0%'] = { 'visibility': 'hidden' };
                     }
 
                     parentSize = this.app.workspace.workspaceSize;
@@ -228,17 +220,13 @@
                         var k: Keyframe = this.app.timeline.getLayer(item.parent).getKeyframeByTimestamp(timestamp);
                         if (k == null) {
                             //compute dimensions
-                            /*parentSize = {
-                                width: this.app.workspace.getTransformAttr(item.parent, 'width', timestamp),
-                                height: this.app.workspace.getTransformAttr(item.parent, 'height', timestamp),
-                            }*/
                             var tmp: IShape = this.app.timeline.getLayer(item.parent).getShape(timestamp);
                             parentSize = {
                                 width: tmp.parameters.width,
                                 height: tmp.parameters.height,
                             }
                         } else {
-                            parentSize = { width: k.shape.parameters.width, height: k.shape.parameters.height };   
+                            parentSize = { width: k.shape.parameters.width, height: k.shape.parameters.height };
                         }
                     }
                     cssObject[percent] = item.getKeyframeStyle(timestamp, parentSize);
@@ -253,7 +241,7 @@
                     if (i == 0 && part != 0) {
                         cssObject[percent]['visibility'] = 'hidden';
                         //fix, if only 2 keyframes
-                        if (item.timestamps.length == 2 && ((item.timestamps[item.timestamps.length-1] / duration) != 1) ) {
+                        if (item.timestamps.length == 2 && ((item.timestamps[item.timestamps.length - 1] / duration) != 1)) {
                             cssObject[((part * 100) + 0.1).toString() + '%'] = { 'visibility': 'visible' };
                         }
                     }
@@ -297,7 +285,7 @@
         return css;
     }
 
-    gKeyframe (frameData) {
+    gKeyframe(frameData) {
         var frameName = frameData.name || "";
         var css = '';
         var prefix: Array<string> = ['-webkit-keyframes', 'keyframes'];
@@ -327,11 +315,11 @@
         var text = doc.getElementById(element);
         var range, selection;
 
-        
-            selection = window.getSelection();
-            range = document.createRange();
-            range.selectNodeContents(text);
-            selection.removeAllRanges();
-            selection.addRange(range);
+
+        selection = window.getSelection();
+        range = document.createRange();
+        range.selectNodeContents(text);
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
 }

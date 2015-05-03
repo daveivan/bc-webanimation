@@ -1,6 +1,6 @@
-﻿class ImageLayer extends Layer {
+﻿class SvgLayer extends Layer {
     constructor(name: string, fn: Bezier_points, shape: IShape = null) {
-        super(name, fn, Type.IMAGE, shape);
+        super(name, fn, Type.SVG, shape);
     }
 
     transform(position: number, shape: JQuery, helper: JQuery, currentLayerId: number, app: Application, showHelper: boolean) {
@@ -9,13 +9,10 @@
 
     getShape(position: number): IShape {
         var params: Parameters = super.getParameters(position);
-        var shape: IShape = new Img(params, this.globalShape.getSrc());
+
+        var shape: IShape = new Svg(params, this.globalShape.getSrc());
 
         return shape;
-    }
-
-    jsem() {
-        console.log('jsem obrázek');
     }
 
     getInitStyles(nameElement: string, workspaceSize: Dimensions) {
@@ -30,22 +27,31 @@
 
     getObject(): string {
         var g: any = this.globalShape;
-        var object: string = Array(this.nesting + 1).join('  ') + '    <img class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
+        var object: string = Array(this.nesting + 1).join('  ') + '    <img class="svg object' + this.id + '" src="' + g.base64 + '">\n';
         if (this.idEl != null) {
-            object = Array(this.nesting + 1).join('  ') + '    <img id="' + this.idEl + '" class="image object' + this.id + '" src="' + g.getSrc() + '">\n';
+            object = Array(this.nesting + 1).join('  ') + '    <img id="' + this.idEl + '" class="svg object' + this.id + '" src="' + g.base64 + '">\n';
         }
         return object;
     }
 
     renderShape(container: JQuery, position: number, currentScope: number): JQuery {
-        var shape = $('<img>').addClass('shape image');
+        var svgShape: any = this.globalShape;
+        var blob = new Blob([svgShape.getSrc()], { type: 'image/svg+xml' });
+        var shape = $('<img>').addClass('shape svg');
 
-        var imgShape: any = this.globalShape;
-        shape.attr('src', imgShape.getSrc());
-
+        this.readFile(blob, (e) => {
+            shape.attr('src', e.target.result);
+        });
         shape = super.renderShapeCore(shape, container, position, currentScope);
 
         return shape;
+
+    }
+
+    readFile(file, onLoadCallback) {
+        var reader = new FileReader();
+        reader.onload = onLoadCallback;
+        reader.readAsDataURL(file);
     }
 
     static parseJson(obj: any): Layer {
@@ -55,8 +61,8 @@
         var params: Parameters = obj._globalShape._parameters;
         var src: string = obj._globalShape._src;
 
-        var img: IShape = new Img(params, src);
-        var newLayer: Layer = new ImageLayer(name, fn, img);
+        var img: IShape = new Svg(params, src);
+        var newLayer: Layer = new SvgLayer(name, fn, img);
         newLayer.id = obj.id;
         newLayer.order = obj._order;
         newLayer.idEl = obj._idEl;
@@ -69,7 +75,7 @@
         obj._keyframes.forEach((k: any, i: number) => {
             if (k._timestamp != 0) {
                 var p: Parameters = k._shape._parameters;
-                var s: IShape = new Img(p, null);
+                var s: IShape = new Svg(p, null);
                 var f: Bezier_points = k._timing_function;
                 var t: number = k._timestamp;
                 s.id = newLayer.id;
@@ -79,4 +85,4 @@
 
         return newLayer;
     }
-} 
+}

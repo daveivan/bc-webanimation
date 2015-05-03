@@ -40,4 +40,4 @@
     public setFamily(family: string) {
         this.family = family;
     }
-}   
+}

@@ -154,7 +154,7 @@
             this.setOpacity(val);
         } else if (name == 'rotatey') {
             this.setRotateY(val);
-        } else if(name == 'rotatez') {
+        } else if (name == 'rotatez') {
             this.setRotateZ(val);
         } else if (name == 'rotatex') {
             this.setRotateX(val);
@@ -180,4 +180,4 @@
             this.setSkewY(val);
         }
     }
-}  
+}

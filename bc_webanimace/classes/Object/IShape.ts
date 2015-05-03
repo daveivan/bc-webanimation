@@ -21,7 +21,7 @@
 
 interface IShape {
     parameters: Parameters;
-    id:number;
+    id: number;
 
     setBorder(border: string);
 

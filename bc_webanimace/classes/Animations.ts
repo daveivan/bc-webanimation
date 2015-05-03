@@ -6,7 +6,7 @@
                 {
                     timestamp: [0, 500, 1000],
                     parameters: {
-                        opacity: 1, 
+                        opacity: 1,
                     },
                 },
                 {
@@ -22,7 +22,7 @@
             keyframes: [
                 {
                     timestamp: [0, 400, 1060, 1600, 2000],
-                    bezier: {p0: 0.215, p1: 0.610, p2: 0.355, p3: 1.000},
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1.000 },
                     parameters: {
                         translatey: 0,
                         originx: 50,
@@ -191,7 +191,7 @@
             keyframes: [
                 {
                     timestamp: [0],
-                    bezier: {p0: 0.42, p1: 0, p2: 0.58, p3: 1},
+                    bezier: { p0: 0.42, p1: 0, p2: 0.58, p3: 1 },
                     parameters: {
                         originx: 0,
                         originy: 0,
@@ -310,7 +310,7 @@
                         scale: 1,
                         translatey: 0,
                     },
-                },{
+                }, {
                     timestamp: [400],
                     bezier: { p0: 0.55, p1: 0.055, p2: 0.675, p3: 0.190 },
                     parameters: {
@@ -790,4 +790,4 @@
             ],
         },
     ];
-} 
+}

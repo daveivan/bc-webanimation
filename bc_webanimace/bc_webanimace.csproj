@@ -94,38 +94,26 @@
     <TypeScriptCompile Include="classes\ControlPanel.ts" />
     <TypeScriptCompile Include="classes\GenerateCode.ts" />
     <TypeScriptCompile Include="classes\Helpers.ts" />
-    <TypeScriptCompile Include="classes\ImageLayer.ts" />
-    <TypeScriptCompile Include="classes\Img.ts" />
+    <TypeScriptCompile Include="classes\Layer\ImageLayer.ts" />
+    <TypeScriptCompile Include="classes\Object\Img.ts" />
     <TypeScriptCompile Include="classes\Keyframe.ts" />
-    <TypeScriptCompile Include="classes\Layer.ts" />
+    <TypeScriptCompile Include="classes\Layer\Layer.ts" />
     <TypeScriptCompile Include="assets\jqueryui\jqueryui.d.ts" />
-    <TypeScriptCompile Include="classes\Properties\BezierCurve.ts" />
-    <TypeScriptCompile Include="classes\Properties\BorderRadius.ts" />
-    <TypeScriptCompile Include="classes\Properties\Font.ts" />
-    <TypeScriptCompile Include="classes\Properties\IProperty.ts" />
-    <TypeScriptCompile Include="classes\Properties\Background.ts" />
-    <TypeScriptCompile Include="classes\Properties\ObjectDimension.ts" />
-    <TypeScriptCompile Include="classes\Properties\Opacity.ts" />
-    <TypeScriptCompile Include="classes\Properties\Rotate.ts" />
-    <TypeScriptCompile Include="classes\Properties\Skew.ts" />
-    <TypeScriptCompile Include="classes\Properties\TransformOrigin.ts" />
-    <TypeScriptCompile Include="classes\Properties\WorkspaceDimension.ts" />
-    <TypeScriptCompile Include="classes\Rectangle.ts" />
-    <TypeScriptCompile Include="classes\IShape.ts" />
-    <TypeScriptCompile Include="classes\RectangleLayer.ts" />
-    <TypeScriptCompile Include="classes\Shape.ts" />
-    <TypeScriptCompile Include="classes\Svg.ts" />
+    <TypeScriptCompile Include="classes\Object\Rectangle.ts" />
+    <TypeScriptCompile Include="classes\Object\IShape.ts" />
+    <TypeScriptCompile Include="classes\Layer\RectangleLayer.ts" />
+    <TypeScriptCompile Include="classes\Object\Shape.ts" />
+    <TypeScriptCompile Include="classes\Object\Svg.ts" />
     <TypeScriptCompile Include="classes\SvgGallery.ts" />
-    <TypeScriptCompile Include="classes\SvgLayer.ts" />
-    <TypeScriptCompile Include="classes\TextField.ts" />
-    <TypeScriptCompile Include="classes\TextLayer.ts" />
+    <TypeScriptCompile Include="classes\Layer\SvgLayer.ts" />
+    <TypeScriptCompile Include="classes\Object\TextField.ts" />
+    <TypeScriptCompile Include="classes\Layer\TextLayer.ts" />
     <TypeScriptCompile Include="classes\Timeline.ts" />
     <TypeScriptCompile Include="classes\Workspace.ts" />
     <TypeScriptCompile Include="assets\tooltipster\jquery.tooltipster.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
-    <Content Include="getFiles.php" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>

@@ -108,10 +108,6 @@
         return shape;
     }
 
-    jsem() {
-        console.log('jsem text');
-    }
-
     getInitStyles(nameElement: string, workspaceSize: Dimensions) {
         var shape: any = (this.getKeyframeByTimestamp(this.timestamps[0])).shape;
 
@@ -142,8 +138,8 @@
             if (initShape.color.g != s.color.g) change.color = true;
             if (initShape.color.b != s.color.b) change.color = true;
         });
-        if(change.size) cssObject['font-size'] = (shape.getSize() / 16) + 'em';
-        if(change.color) cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
+        if (change.size) cssObject['font-size'] = (shape.getSize() / 16) + 'em';
+        if (change.color) cssObject['color'] = 'rgb(' + shape.color.r + ',' + shape.color.g + ',' + shape.color.b + ')';
 
         return cssObject;
     }
@@ -160,7 +156,7 @@
     renderShape(container: JQuery, position: number, currentScope: number): JQuery {
         var layer: any = this.globalShape;
         var shape = $('<span>').addClass('shape froala text').html(layer.getContent());
-        
+
         var globalTextShape: any = this.globalShape;
         var keyframe: Keyframe = this.getKeyframeByTimestamp(position);
 
@@ -171,7 +167,7 @@
         var textShape: any = keyframe.shape;
         shape.css({
             'color': 'rgba(' + textShape.getColor().r + ',' + textShape.getColor().g + ',' + textShape.getColor().b + ')',
-            'font-size': (textShape.getSize()/ 16) + 'em',
+            'font-size': (textShape.getSize() / 16) + 'em',
             'font-family': globalTextShape.getFamily(),
         });
         shape.froala({
@@ -230,4 +226,4 @@
 
         return newLayer;
     }
-} 
+}

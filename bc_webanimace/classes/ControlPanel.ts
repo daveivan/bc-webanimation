@@ -9,7 +9,7 @@ class ControlPanel {
     private initFontSize: number = 16;
     private initTextColor: rgb = { r: 0, g: 0, b: 0 };
     private isOriginVisible: boolean = false;
-    private isLockedBorderRadius:boolean = true;
+    private isLockedBorderRadius: boolean = true;
     private fontFamily: Array<string> = ['Segoe UI', 'Georgia', 'Times', 'Arial', 'Calibri', 'Verdana', 'serif', 'sans-serif'];
 
     private toolPanelEl: JQuery = $('<div>').addClass('tool-panel');
@@ -32,7 +32,7 @@ class ControlPanel {
 
     private bgPickerEl: JQuery = $('<input type="text" id="picker"></input>');
     private bgOpacityEl: JQuery = $('<input>').attr('id', 'bgopacity').addClass('number');
-    private bgOpacitySliderEl: JQuery = $('<div>').addClass('bgopacity-slider'); 
+    private bgOpacitySliderEl: JQuery = $('<div>').addClass('bgopacity-slider');
     private colorPicker: any;
 
     private mainPanel: JQuery = $('<div>').addClass('main-panel');
@@ -123,30 +123,6 @@ class ControlPanel {
         this.controlPanelEl.append(this.mainPanel);
         this.controlPanelEl.append($('<div>').addClass('clearfix'));
 
-
-        //NEW NEW NEW
-        /*var propery1: IProperty = new WorkspaceDimension(this.app);
-        this.controlPanelEl.append(propery1.renderPropery(this.itemControlEl.clone()));
-        var propery2: IProperty = new Background();
-        this.controlPanelEl.append(propery2.renderPropery(this.itemControlEl.clone()));
-        var propery3: IProperty = new Opacity();
-        this.controlPanelEl.append(propery3.renderPropery(this.itemControlEl.clone()));
-        var propery4: IProperty = new ObjectDimension();
-        this.controlPanelEl.append(propery4.renderPropery(this.itemControlEl.clone()));
-        var propery5: IProperty = new BorderRadius();
-        this.controlPanelEl.append(propery5.renderPropery(this.itemControlEl.clone()));
-        var propery6: IProperty = new Font();
-        this.controlPanelEl.append(propery6.renderPropery(this.itemControlEl.clone()));
-        var propery7: IProperty = new TransformOrigin();
-        this.controlPanelEl.append(propery7.renderPropery(this.itemControlEl.clone()));
-        var propery8: IProperty = new Rotate();
-        this.controlPanelEl.append(propery8.renderPropery(this.itemControlEl.clone()));
-        var propery9: IProperty = new Skew();
-        this.controlPanelEl.append(propery9.renderPropery(this.itemControlEl.clone()));
-        var propery10: IProperty = new BezierCurve();
-        this.controlPanelEl.append(propery10.renderPropery(this.itemControlEl.clone()));*/
-        //NEW NEW NEW /end
-
         //Animation set
         var ans = Animations.animations;
         ans.forEach((v, i) => {
@@ -158,7 +134,7 @@ class ControlPanel {
         var row: JQuery = $('<div>').addClass('row tooltip-delay').attr('title', 'Vloží vybranou animaci, která se skládá ze setu klíčových snímků. Animace se aplikuje na právě vybranou vrstvu a nahradí stávající klíčové snímky.');
         row.append(this.animationSetSelectEl);
         row.append(this.animationSetSubmitEl);
-        var expand: JQuery = $('<div>').addClass('expand').css({'margin-top': '5px'});
+        var expand: JQuery = $('<div>').addClass('expand').css({ 'margin-top': '5px' });
         expand.append(row);
         animation.append(expand);
         this.controlPanelEl.append(animation);
@@ -204,11 +180,9 @@ class ControlPanel {
         expand.append(this.graph);
         expand.append($('<span>').addClass('cubic-bezier').html('cubic-bezier(<span id="p0">0</span>, <span id="p1">0</span>, <span id="p2">0</span>, <span id="p3">0</span>)'));
         curve.append(expand);
-        
+
         this.curve = curve;
-        //this.displayMainPanel(true, 'bezier');
         this.mainPanel.append(curve);
-        //this.controlPanelEl.append(curve);
 
         //background
         var newItem: JQuery = this.itemControlEl.clone();
@@ -296,7 +270,6 @@ class ControlPanel {
 
         this.font = font;
         this.mainPanel.append(font);
-        //this.controlPanelEl.append(font);
 
         //opacity
         var scale: JQuery = this.itemControlEl.clone();
@@ -412,7 +385,7 @@ class ControlPanel {
             $('.workspace-wrapper').perfectScrollbar('update');
         });
 
-  
+
         this.colorPicker = this.bgPickerEl.colpick({
             layout: 'hex',
             submit: true,
@@ -440,7 +413,6 @@ class ControlPanel {
                 $(el).css('border-color', '#' + hex);
                 if (!bySetColor) $(el).val(hex);
                 if (!bySetColor) {
-                    //this.app.workspace.setColor(rgb);
                     this.app.workspace.setFont({
                         color: rgb,
                         fontFamily: this.fontFamilyEl.val(),
@@ -450,7 +422,6 @@ class ControlPanel {
             },
         }).on('change', (e: JQueryEventObject) => {
             this.textColorPicker.colpickSetColor($(e.target).val());
-            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()));
             this.app.workspace.setFont({
                 color: $.colpick.hexToRgb($(e.target).val()),
                 fontFamily: this.fontFamilyEl.val(),
@@ -517,7 +488,7 @@ class ControlPanel {
 
             stop: (event, ui) => {
                 this.app.workspace.setBezier(this.renderWrap(this.ctx));
-            },            
+            },
         }
 
         this.point1.draggable(options);
@@ -611,7 +582,7 @@ class ControlPanel {
         });
 
         this.transformOriginVisibleEl.on('change', (event: JQueryEventObject) => {
-          
+
             if ($(event.target).is(':checked')) {
                 this.isOriginVisible = true;
             } else {
@@ -659,7 +630,7 @@ class ControlPanel {
             } else {
                 this.isLockedBorderRadius = true;
                 this.borderRadiusSwitch.removeClass('unlocked').addClass('locked');
-                this.borderRadiusSwitch.find('i').removeClass('fa-unlock').addClass('fa-lock');        
+                this.borderRadiusSwitch.find('i').removeClass('fa-unlock').addClass('fa-lock');
             }
         });
 
@@ -729,7 +700,7 @@ class ControlPanel {
                     this.app.workspace.setWorkspaceDimension(800, 360);
                     this.app.timeline.renderLayers();
                     this.app.workspace.renderShapes();
-                }                
+                }
             }
         });
 
@@ -748,7 +719,7 @@ class ControlPanel {
         this.insertTextEl.on('click', (event: JQueryEventObject) => {
             this._mode = Mode.TEXT;
             $('.tool-btn').removeClass('active');
-            $(event.target).closest('a').addClass('active'); 
+            $(event.target).closest('a').addClass('active');
             this.app.workspace.onChangeMode();
         });
 
@@ -766,7 +737,6 @@ class ControlPanel {
 
         this.svgGalleryEl.on('click', (event: JQueryEventObject) => {
             var svgGallery = new SvgGallery(this.app);
-            //this.app.workspace.insertMode(false);
         });
 
         this.aboutEl.on('click', (e: JQueryEventObject) => {
@@ -786,7 +756,6 @@ class ControlPanel {
 
         this.generateCodeEl.on('click', (event: JQueryEventObject) => {
             var generator = new GenerateCode(this.app, this.app.timeline.layers);
-            //this.app.workspace.insertMode(false);
             generator.generate();
         });
 
@@ -804,7 +773,7 @@ class ControlPanel {
                 var datetime: string = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
                 datetime += '_' + now.getHours() + '.' + now.getMinutes();
 
-                saveAs(blob, "animation_project_" + datetime + ".json");   
+                saveAs(blob, "animation_project_" + datetime + ".json");
             }
         });
 
@@ -813,7 +782,6 @@ class ControlPanel {
             $('.expand').hide();
             $('.expand.init-visible').show();
             $('a.expand-link').on('click', function(e: JQueryEventObject) {
-                console.log('expand');
                 if ($(e.target).parents('.control-item').find('.expand').is(':visible')) {
                     $(this).find('i').addClass('fa-caret-right');
                     $(this).find('i').removeClass('fa-caret-down');
@@ -824,7 +792,6 @@ class ControlPanel {
                 $(e.target).parents('.control-item').find('.expand').slideToggle(100);
                 return false;
             });
-            //this.displayMainPanel(true, 'bezier');
             this.ctx = (<HTMLCanvasElement>this.canvas.get(0)).getContext('2d');
             this.renderWrap(this.ctx);
             this.controlPanelEl.perfectScrollbar();
@@ -920,7 +887,7 @@ class ControlPanel {
     }
 
     setHeight() {
-       this.containerEl.css('height', ($(window).height() - this.app.timelineEl.height()) + 'px');
+        this.containerEl.css('height', ($(window).height() - this.app.timelineEl.height()) + 'px');
     }
 
     renderWrap(ctx): Bezier_points {
@@ -930,9 +897,9 @@ class ControlPanel {
             x: p1.left,
             y: p1.top
         }, {
-                x: p2.left,
-                y: p2.top
-            });
+            x: p2.left,
+            y: p2.top
+        });
     }
 
     renderLines(ctx: any, p1, p2): Bezier_points {
@@ -970,7 +937,7 @@ class ControlPanel {
         $('#p1').html(fn.p1.toString());
         $('#p2').html(fn.p2.toString());
         $('#p3').html(fn.p3.toString());
-        
+
         return fn;
 
     }
@@ -1012,11 +979,11 @@ class ControlPanel {
     updateSkew(skew: _2d) {
         if (skew.x != null) {
             this.skewXSliderEl.slider('option', 'value', Number(skew.x));
-            this.skewXEl.val(skew.x.toString());           
+            this.skewXEl.val(skew.x.toString());
         }
         if (skew.y != null) {
             this.skewYSliderEl.slider('option', 'value', Number(skew.y));
-            this.skewYEl.val(skew.y.toString());            
+            this.skewYEl.val(skew.y.toString());
         }
     }
 
@@ -1044,8 +1011,8 @@ class ControlPanel {
 
     displayMainPanel(visible: boolean, type: string) {
         var object: JQuery;
-        
-        
+
+
         if (type === 'bezier' && visible == true) {
             this.curve.show();
             $('.delete-keyframe').removeClass('disabled');
@@ -1053,9 +1020,8 @@ class ControlPanel {
             this.curve.hide();
             $('.delete-keyframe').addClass('disabled');
             $('.timing-function').removeClass('selected');
-            $('.keyframe').removeClass('selected');    
+            $('.keyframe').removeClass('selected');
         }
-            
 
 
         if (type === 'font' && visible == true) {
@@ -1073,34 +1039,8 @@ class ControlPanel {
         } else {
             $('.clearfix').hide();
         }
-
-        if (visible) {
-            //this.mainPanel.show();
-            //$('.clearfix').show();
-            
-            //$('.delete-keyframe').removeClass('disabled');
-        } else {
-            //this.mainPanel.hide();
-            //$('.clearfix').hide();
-            /*$('.delete-keyframe').addClass('disabled');
-            $('.timing-function').removeClass('selected');
-            $('.keyframe').removeClass('selected'); */   
-        }
     }
 
-    /*get Mode (){
-        if (this.selectToolEl.hasClass('active')) {
-            return Mode.SELECT;
-        } else if (this.createDivToolEl.hasClass('active')) {
-            return Mode.CREATE_DIV;
-        } else if (this.insertImageEl.hasClass('active')) {
-            return Mode.IMAGE;
-        } else if (this.insertTextEl.hasClass('active')) {
-            return Mode.TEXT;
-        } else {
-            return null;
-        }
-    }*/
     get Mode() {
         return this._mode;
     }
@@ -1116,4 +1056,4 @@ class ControlPanel {
             return false;
         }
     }
-}  
+}

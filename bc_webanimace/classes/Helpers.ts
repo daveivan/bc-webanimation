@@ -25,7 +25,7 @@ interface _2d {
     y: number;
 }
 
-interface _3d extends _2d{
+interface _3d extends _2d {
     z: number;
 }
 

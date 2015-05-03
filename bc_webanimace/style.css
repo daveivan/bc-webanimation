@@ -1068,11 +1068,18 @@ input#id-el {
     margin-bottom: 15px;
 }
 
-.group.font-family select {
+.group.font-family select, .animation-select {
     width: 65%;
     border: 1px solid #c9cacb;
     background-color: #fdfdfd;
     color: #4e4e4e;
+}
+
+.animation-select {
+    margin-right: 10px;
+    height: 31px;
+    font-size: 14px;
+    width: 150px;
 }
 
 input.origin {

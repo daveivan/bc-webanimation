@@ -168,6 +168,10 @@
             this.setOriginY(val);
         } else if (name == 'perspective') {
             this.setPerspective(val);
+        } else if (name == 'skewx') {
+            this.setSkewX(val);
+        } else if (name == 'skewy') {
+            this.setSkewY(val);
         }
     }
 }  

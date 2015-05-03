@@ -1,7 +1,7 @@
 ﻿class Animations {
     static animations = [
         {
-            name: 'flash',
+            name: 'bliknutí',
             keyframes: [
                 {
                     timestamp: [0, 500, 1000],
@@ -18,7 +18,7 @@
             ],
         },
         {
-            name: 'bounce',
+            name: 'skákání',
             keyframes: [
                 {
                     timestamp: [0, 400, 1060, 1600, 2000],
@@ -58,7 +58,7 @@
             ],
         },
         {
-            name: 'pulse',
+            name: 'puls',
             keyframes: [
                 {
                     timestamp: [0],
@@ -81,7 +81,7 @@
             ],
         },
         {
-            name: 'shake',
+            name: 'chvění',
             keyframes: [
                 {
                     timestamp: [0, 1000],
@@ -104,7 +104,7 @@
             ],
         },
         {
-            name: 'swing',
+            name: 'houpání',
             keyframes: [
                 {
                     timestamp: [200],
@@ -149,7 +149,7 @@
             ],
         },
         {
-            name: 'tada',
+            name: 'tadáá',
             keyframes: [
                 {
                     timestamp: [0],
@@ -187,7 +187,7 @@
             ],
         },
         {
-            name: 'hinge',
+            name: 'spadnutí',
             keyframes: [
                 {
                     timestamp: [0],
@@ -227,7 +227,7 @@
             ],
         },
         {
-            name: 'flipOutY',
+            name: 'otočení a zmizení',
             keyframes: [
                 {
                     timestamp: [0],
@@ -255,7 +255,7 @@
             ],
         },
         {
-            name: 'flipInX',
+            name: 'otočení a zobrazení',
             keyframes: [
                 {
                     timestamp: [0],
@@ -301,7 +301,7 @@
             ],
         },
         {
-            name: 'zoomOutDown',
+            name: 'zoom zmizení',
             keyframes: [
                 {
                     timestamp: [0],
@@ -324,12 +324,469 @@
                     bezier: { p0: 0.175, p1: 0.885, p2: 0.320, p3: 1 },
                     parameters: {
                         scale: 0.1,
-                        translatey: 500,
+                        translatey: 200,
                         originx: 50,
                         originy: 100,
                         opacity: 0,
                     },
                 },
+            ],
+        },
+        {
+            name: 'kolísání',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        translatex: 0,
+                        rotatez: 0,
+                    },
+                }, {
+                    timestamp: [300],
+                    parameters: {
+                        translatex: -50,
+                        rotatez: -5,
+                    },
+                },
+                {
+                    timestamp: [600],
+                    parameters: {
+                        translatex: 40,
+                        rotatez: 3,
+                    },
+                },
+                {
+                    timestamp: [900],
+                    parameters: {
+                        translatex: -30,
+                        rotatez: -3,
+                    },
+                },
+                {
+                    timestamp: [1200],
+                    parameters: {
+                        translatex: 20,
+                        rotatez: 2,
+                    },
+                },
+                {
+                    timestamp: [1500],
+                    parameters: {
+                        translatex: -10,
+                        rotatez: -1,
+                    },
+                },
+                {
+                    timestamp: [2000],
+                    parameters: {
+                        translatex: 0,
+                        rotatez: 0,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'poskočení a zobrazení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 0.3,
+                        opacity: 0,
+                    },
+                }, {
+                    timestamp: [200],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 1.1,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [400],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 0.9,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 1.03,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [800],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 0.97,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 1,
+                        opacity: 1,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'poskočení a zmizení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -3000,
+                        opacity: 0,
+                    },
+                }, {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 25,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [750],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -10,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [900],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -5,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 0,
+                        opacity: 1,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'poskočení a zobrazení zdola',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 1000,
+                        opacity: 0,
+                    },
+                }, {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -20,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [750],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 10,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [900],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -5,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 0,
+                        opacity: 1,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'poskočení a zobrazení zleva',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: -1000,
+                        opacity: 0,
+                    },
+                }, {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 25,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [750],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: -10,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [900],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 5,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 0,
+                        opacity: 1,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'poskočení a zobrazení zprava',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 1000,
+                        opacity: 0,
+                    },
+                }, {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: -25,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [750],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 10,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [900],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: -5,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 0,
+                        opacity: 1,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'poskočení a zmizení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        scale: 1,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [200],
+                    parameters: {
+                        scale: 0.9,
+                        opacity: 1,
+                    },
+                }, {
+                    timestamp: [500, 550],
+                    parameters: {
+                        scale: 1.1,
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        scale: 0.3,
+                        opacity: 0,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'otočka',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0, p1: 0, p2: 0.58, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: -360,
+                        translatez: 0,
+                        scale: 1,
+                    },
+                },
+                {
+                    timestamp: [600],
+                    bezier: { p0: 0, p1: 0, p2: 0.58, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: -190,
+                        translatez: 150,
+                        scale: 1,
+                    },
+                }, {
+                    timestamp: [1000],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: -170,
+                        translatez: 150,
+                        scale: 1,
+                    },
+                },
+                {
+                    timestamp: [1600],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: 0,
+                        translatez: 0,
+                        scale: 0.95,
+                    },
+                },
+                {
+                    timestamp: [2000],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: 0,
+                        translatez: 0,
+                        scale: 1
+                    },
+                },
+            ],
+        },
+        {
+            name: 'rychlost světla zobrazení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 1, p1: 1, p2: 0, p3: 0 },
+                    parameters: {
+                        opacity: 0,
+                        translatex: 1000,
+                        skewx: -30,
+                    },
+                },
+                {
+                    timestamp: [600],
+                    bezier: { p0: 1, p1: 1, p2: 0, p3: 0 },
+                    parameters: {
+                        opacity: 1,
+                        skewx: 20,
+                        translatex: 15,
+                    },
+                }, {
+                    timestamp: [800],
+                    bezier: { p0: 1, p1: 1, p2: 0, p3: 0 },
+                    parameters: {
+                        opacity: 1,
+                        skewx: -10,
+                        translatex: 5,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 1, p1: 1, p2: 0, p3: 0 },
+                    parameters: {
+                        opacity: 1,
+                        skewx: 0,
+                        translatex: 0,
+                    },
+                },
+            ],
+        },
+        {
+            name: 'rychlost světla zmizení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        opacity: 1,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        opacity: 0,
+                        translatex: 500,
+                        skewx: 30,
+                    },
+                }
+            ],
+        },
+        {
+            name: 'zoom zobrazení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.55, p1: 0.055, p2: 0.675, p3: 0.190 },
+                    parameters: {
+                        opacity: 0,
+                        scale: 0.1,
+                        translatey: -1000,
+                    },
+                },
+                {
+                    timestamp: [600],
+                    bezier: { p0: 0.175, p1: 0.885, p2: 0.320, p3: 1 },
+                    parameters: {
+                        opacity: 1,
+                        scale: 0.475,
+                        translatey: 60,
+                    },
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        opacity: 1,
+                        scale: 1,
+                        translatey: 0,
+                    },
+                }
             ],
         },
     ];

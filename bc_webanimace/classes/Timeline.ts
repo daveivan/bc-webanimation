@@ -436,6 +436,14 @@ class Timeline
                     for (var i = keyframes.length-1; i > 0; i--) {
                         layer.deleteKeyframe(i);
                     }
+
+                    var zeroK: Keyframe = layer.getKeyframe(0);
+                    zeroK.shape.setScale(1);
+                    zeroK.shape.setTranslateX(0);
+                    zeroK.shape.setTranslateY(0);
+                    zeroK.shape.setRelativeTranslateX(0);
+                    zeroK.shape.setRelativeTranslateY(0);
+                    zeroK.shape.setOpacity(1);
                 }
             }
 

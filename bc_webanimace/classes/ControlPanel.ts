@@ -59,7 +59,7 @@ class ControlPanel {
     private workspaceWidthEl: JQuery = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
     private workspaceHeightEl: JQuery = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
 
-    private animationSetSelectEl: JQuery = $('<select>').attr('id', 'text-family').addClass('font-attr');
+    private animationSetSelectEl: JQuery = $('<select>').attr('id', 'animation-type').addClass('animation-select');
     private animationSetSubmitEl: JQuery = $('<a>').attr('href', '#').html('Vložit').addClass('btn animationset-btn');
 
     private idEl: JQuery = $('<input type="text"></input>').attr('id', 'id-el');
@@ -153,10 +153,10 @@ class ControlPanel {
 
         var animation: JQuery = this.itemControlEl.clone();
         animation.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Hotové animace k použití</h2></a>');
-        var row: JQuery = $('<div>').addClass('row');
+        var row: JQuery = $('<div>').addClass('row tooltip-delay').attr('title', 'Vloží vybranou animaci, která se skládá ze setu klíčových snímků. Animace se aplikuje na právě vybranou vrstvu a nahradí stávající klíčové snímky.');
         row.append(this.animationSetSelectEl);
         row.append(this.animationSetSubmitEl);
-        var expand: JQuery = $('<div>').addClass('expand');
+        var expand: JQuery = $('<div>').addClass('expand').css({'margin-top': '5px'});
         expand.append(row);
         animation.append(expand);
         this.controlPanelEl.append(animation);

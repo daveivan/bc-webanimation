@@ -3,7 +3,7 @@
     }
     Animations.animations = [
         {
-            name: 'flash',
+            name: 'bliknutí',
             keyframes: [
                 {
                     timestamp: [0, 500, 1000],
@@ -20,7 +20,7 @@
             ]
         },
         {
-            name: 'bounce',
+            name: 'skákání',
             keyframes: [
                 {
                     timestamp: [0, 400, 1060, 1600, 2000],
@@ -60,7 +60,7 @@
             ]
         },
         {
-            name: 'pulse',
+            name: 'puls',
             keyframes: [
                 {
                     timestamp: [0],
@@ -83,7 +83,7 @@
             ]
         },
         {
-            name: 'shake',
+            name: 'chvění',
             keyframes: [
                 {
                     timestamp: [0, 1000],
@@ -106,7 +106,7 @@
             ]
         },
         {
-            name: 'swing',
+            name: 'houpání',
             keyframes: [
                 {
                     timestamp: [200],
@@ -151,7 +151,7 @@
             ]
         },
         {
-            name: 'tada',
+            name: 'tadáá',
             keyframes: [
                 {
                     timestamp: [0],
@@ -189,7 +189,7 @@
             ]
         },
         {
-            name: 'hinge',
+            name: 'spadnutí',
             keyframes: [
                 {
                     timestamp: [0],
@@ -229,7 +229,7 @@
             ]
         },
         {
-            name: 'flipOutY',
+            name: 'otočení a zmizení',
             keyframes: [
                 {
                     timestamp: [0],
@@ -257,7 +257,7 @@
             ]
         },
         {
-            name: 'flipInX',
+            name: 'otočení a zobrazení',
             keyframes: [
                 {
                     timestamp: [0],
@@ -303,7 +303,7 @@
             ]
         },
         {
-            name: 'zoomOutDown',
+            name: 'zoom zmizení',
             keyframes: [
                 {
                     timestamp: [0],
@@ -326,10 +326,467 @@
                     bezier: { p0: 0.175, p1: 0.885, p2: 0.320, p3: 1 },
                     parameters: {
                         scale: 0.1,
-                        translatey: 500,
+                        translatey: 200,
                         originx: 50,
                         originy: 100,
                         opacity: 0
+                    }
+                }
+            ]
+        },
+        {
+            name: 'kolísání',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        translatex: 0,
+                        rotatez: 0
+                    }
+                }, {
+                    timestamp: [300],
+                    parameters: {
+                        translatex: -50,
+                        rotatez: -5
+                    }
+                },
+                {
+                    timestamp: [600],
+                    parameters: {
+                        translatex: 40,
+                        rotatez: 3
+                    }
+                },
+                {
+                    timestamp: [900],
+                    parameters: {
+                        translatex: -30,
+                        rotatez: -3
+                    }
+                },
+                {
+                    timestamp: [1200],
+                    parameters: {
+                        translatex: 20,
+                        rotatez: 2
+                    }
+                },
+                {
+                    timestamp: [1500],
+                    parameters: {
+                        translatex: -10,
+                        rotatez: -1
+                    }
+                },
+                {
+                    timestamp: [2000],
+                    parameters: {
+                        translatex: 0,
+                        rotatez: 0
+                    }
+                }
+            ]
+        },
+        {
+            name: 'poskočení a zobrazení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 0.3,
+                        opacity: 0
+                    }
+                }, {
+                    timestamp: [200],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 1.1,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [400],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 0.9,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 1.03,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [800],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 0.97,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        scale: 1,
+                        opacity: 1
+                    }
+                }
+            ]
+        },
+        {
+            name: 'poskočení a zmizení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -3000,
+                        opacity: 0
+                    }
+                }, {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 25,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [750],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -10,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [900],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -5,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 0,
+                        opacity: 1
+                    }
+                }
+            ]
+        },
+        {
+            name: 'poskočení a zobrazení zdola',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 1000,
+                        opacity: 0
+                    }
+                }, {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -20,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [750],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 10,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [900],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: -5,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatey: 0,
+                        opacity: 1
+                    }
+                }
+            ]
+        },
+        {
+            name: 'poskočení a zobrazení zleva',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: -1000,
+                        opacity: 0
+                    }
+                }, {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 25,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [750],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: -10,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [900],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 5,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 0,
+                        opacity: 1
+                    }
+                }
+            ]
+        },
+        {
+            name: 'poskočení a zobrazení zprava',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 1000,
+                        opacity: 0
+                    }
+                }, {
+                    timestamp: [600],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: -25,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [750],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 10,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [900],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: -5,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 0.215, p1: 0.610, p2: 0.355, p3: 1 },
+                    parameters: {
+                        translatex: 0,
+                        opacity: 1
+                    }
+                }
+            ]
+        },
+        {
+            name: 'poskočení a zmizení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        scale: 1,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [200],
+                    parameters: {
+                        scale: 0.9,
+                        opacity: 1
+                    }
+                }, {
+                    timestamp: [500, 550],
+                    parameters: {
+                        scale: 1.1,
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        scale: 0.3,
+                        opacity: 0
+                    }
+                }
+            ]
+        },
+        {
+            name: 'otočka',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0, p1: 0, p2: 0.58, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: -360,
+                        translatez: 0,
+                        scale: 1
+                    }
+                },
+                {
+                    timestamp: [600],
+                    bezier: { p0: 0, p1: 0, p2: 0.58, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: -190,
+                        translatez: 150,
+                        scale: 1
+                    }
+                }, {
+                    timestamp: [1000],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: -170,
+                        translatez: 150,
+                        scale: 1
+                    }
+                },
+                {
+                    timestamp: [1600],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: 0,
+                        translatez: 0,
+                        scale: 0.95
+                    }
+                },
+                {
+                    timestamp: [2000],
+                    bezier: { p0: 0.42, p1: 0, p2: 1, p3: 1 },
+                    parameters: {
+                        perspective: 400,
+                        rotatey: 0,
+                        translatez: 0,
+                        scale: 1
+                    }
+                }
+            ]
+        },
+        {
+            name: 'rychlost světla zobrazení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 1, p1: 1, p2: 0, p3: 0 },
+                    parameters: {
+                        opacity: 0,
+                        translatex: 1000,
+                        skewx: -30
+                    }
+                },
+                {
+                    timestamp: [600],
+                    bezier: { p0: 1, p1: 1, p2: 0, p3: 0 },
+                    parameters: {
+                        opacity: 1,
+                        skewx: 20,
+                        translatex: 15
+                    }
+                }, {
+                    timestamp: [800],
+                    bezier: { p0: 1, p1: 1, p2: 0, p3: 0 },
+                    parameters: {
+                        opacity: 1,
+                        skewx: -10,
+                        translatex: 5
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    bezier: { p0: 1, p1: 1, p2: 0, p3: 0 },
+                    parameters: {
+                        opacity: 1,
+                        skewx: 0,
+                        translatex: 0
+                    }
+                }
+            ]
+        },
+        {
+            name: 'rychlost světla zmizení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    parameters: {
+                        opacity: 1
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        opacity: 0,
+                        translatex: 500,
+                        skewx: 30
+                    }
+                }
+            ]
+        },
+        {
+            name: 'zoom zobrazení',
+            keyframes: [
+                {
+                    timestamp: [0],
+                    bezier: { p0: 0.55, p1: 0.055, p2: 0.675, p3: 0.190 },
+                    parameters: {
+                        opacity: 0,
+                        scale: 0.1,
+                        translatey: -1000
+                    }
+                },
+                {
+                    timestamp: [600],
+                    bezier: { p0: 0.175, p1: 0.885, p2: 0.320, p3: 1 },
+                    parameters: {
+                        opacity: 1,
+                        scale: 0.475,
+                        translatey: 60
+                    }
+                },
+                {
+                    timestamp: [1000],
+                    parameters: {
+                        opacity: 1,
+                        scale: 1,
+                        translatey: 0
                     }
                 }
             ]
@@ -2348,6 +2805,14 @@ var Timeline = (function () {
                     for (var i = keyframes.length - 1; i > 0; i--) {
                         layer.deleteKeyframe(i);
                     }
+
+                    var zeroK = layer.getKeyframe(0);
+                    zeroK.shape.setScale(1);
+                    zeroK.shape.setTranslateX(0);
+                    zeroK.shape.setTranslateY(0);
+                    zeroK.shape.setRelativeTranslateX(0);
+                    zeroK.shape.setRelativeTranslateY(0);
+                    zeroK.shape.setOpacity(1);
                 }
             }
 
@@ -3611,6 +4076,10 @@ var Shape = (function () {
             this.setOriginY(val);
         } else if (name == 'perspective') {
             this.setPerspective(val);
+        } else if (name == 'skewx') {
+            this.setSkewX(val);
+        } else if (name == 'skewy') {
+            this.setSkewY(val);
         }
     };
     return Shape;
@@ -6498,7 +6967,7 @@ var ControlPanel = (function () {
         this.canvas = $('<canvas id="bezierCurve" width="200" height="200"></canvas>');
         this.workspaceWidthEl = $('<input type="text"></input>').attr('id', 'workspace-y').addClass('number');
         this.workspaceHeightEl = $('<input type="text"></input>').attr('id', 'workspace-x').addClass('number');
-        this.animationSetSelectEl = $('<select>').attr('id', 'text-family').addClass('font-attr');
+        this.animationSetSelectEl = $('<select>').attr('id', 'animation-type').addClass('animation-select');
         this.animationSetSubmitEl = $('<a>').attr('href', '#').html('Vložit').addClass('btn animationset-btn');
         this.idEl = $('<input type="text"></input>').attr('id', 'id-el');
         this.scaleEl = $('<input>').attr('id', 'scale-input');
@@ -6576,10 +7045,10 @@ var ControlPanel = (function () {
 
         var animation = this.itemControlEl.clone();
         animation.html('<a href="#" class="expand-link"><i class="fa fa-caret-right"></i><h2>Hotové animace k použití</h2></a>');
-        var row = $('<div>').addClass('row');
+        var row = $('<div>').addClass('row tooltip-delay').attr('title', 'Vloží vybranou animaci, která se skládá ze setu klíčových snímků. Animace se aplikuje na právě vybranou vrstvu a nahradí stávající klíčové snímky.');
         row.append(this.animationSetSelectEl);
         row.append(this.animationSetSubmitEl);
-        var expand = $('<div>').addClass('expand');
+        var expand = $('<div>').addClass('expand').css({ 'margin-top': '5px' });
         expand.append(row);
         animation.append(expand);
         this.controlPanelEl.append(animation);
@@ -8077,6 +8546,68 @@ var Keyframe = (function () {
 
     return Keyframe;
 })();
+var Background = (function () {
+    function Background() {
+        this.initColor = { r: 44, g: 208, b: 219 };
+        this.bgPickerEl = $('<input type="text" id="picker"></input>');
+        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
+        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
+    }
+    Background.prototype.renderPropery = function (container) {
+        container.html('<h2>Barva pozadí elementu</h2>');
+        var row = $('<div>').addClass('row');
+        var s = $('<div>').html('#').addClass('group quarter');
+        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
+        row.append(s);
+        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
+        this.bgOpacityEl.val('0');
+        a.append(this.bgOpacitySliderEl);
+        a.append(this.bgOpacityEl);
+        row.append(a);
+        container.append(row);
+        this.initColorPicker();
+        this.initSlider();
+        return container;
+    };
+
+    Background.prototype.initSlider = function () {
+        var _this = this;
+        this.bgOpacitySliderEl.slider({
+            min: 0,
+            max: 1,
+            step: 0.05,
+            value: 0,
+            slide: function (event, ui) {
+                _this.bgOpacityEl.val(ui.value).change();
+            }
+        });
+    };
+
+    Background.prototype.initColorPicker = function () {
+        var _this = this;
+        this.colorPicker = this.bgPickerEl.colpick({
+            layout: 'hex',
+            submit: 0,
+            color: this.initColor,
+            onChange: function (hsb, hex, rgb, el, bySetColor) {
+                $(el).css('border-color', '#' + hex);
+                if (!bySetColor)
+                    $(el).val(hex);
+                if (!bySetColor) {
+                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
+                }
+            }
+        }).on('change', function (e) {
+            _this.colorPicker.colpickSetColor($(e.target).val());
+            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
+        });
+    };
+
+    Background.prototype.getInitColor = function () {
+        return this.initColor;
+    };
+    return Background;
+})();
 var BezierCurve = (function () {
     function BezierCurve() {
         var _this = this;
@@ -8260,68 +8791,6 @@ var Font = (function () {
         });
     };
     return Font;
-})();
-var Background = (function () {
-    function Background() {
-        this.initColor = { r: 44, g: 208, b: 219 };
-        this.bgPickerEl = $('<input type="text" id="picker"></input>');
-        this.bgOpacityEl = $('<input>').attr('id', 'bgopacity').addClass('number');
-        this.bgOpacitySliderEl = $('<div>').addClass('bgopacity-slider');
-    }
-    Background.prototype.renderPropery = function (container) {
-        container.html('<h2>Barva pozadí elementu</h2>');
-        var row = $('<div>').addClass('row');
-        var s = $('<div>').html('#').addClass('group quarter');
-        s.append(this.bgPickerEl.val($.colpick.rgbToHex(this.initColor)));
-        row.append(s);
-        var a = $('<div>').html('alpha opacity:<br>').addClass('group quarter-3');
-        this.bgOpacityEl.val('0');
-        a.append(this.bgOpacitySliderEl);
-        a.append(this.bgOpacityEl);
-        row.append(a);
-        container.append(row);
-        this.initColorPicker();
-        this.initSlider();
-        return container;
-    };
-
-    Background.prototype.initSlider = function () {
-        var _this = this;
-        this.bgOpacitySliderEl.slider({
-            min: 0,
-            max: 1,
-            step: 0.05,
-            value: 0,
-            slide: function (event, ui) {
-                _this.bgOpacityEl.val(ui.value).change();
-            }
-        });
-    };
-
-    Background.prototype.initColorPicker = function () {
-        var _this = this;
-        this.colorPicker = this.bgPickerEl.colpick({
-            layout: 'hex',
-            submit: 0,
-            color: this.initColor,
-            onChange: function (hsb, hex, rgb, el, bySetColor) {
-                $(el).css('border-color', '#' + hex);
-                if (!bySetColor)
-                    $(el).val(hex);
-                if (!bySetColor) {
-                    //this.app.workspace.setColor(rgb, parseFloat(this.bgOpacityEl.val()));
-                }
-            }
-        }).on('change', function (e) {
-            _this.colorPicker.colpickSetColor($(e.target).val());
-            //this.app.workspace.setColor($.colpick.hexToRgb($(e.target).val()), parseFloat(this.bgOpacityEl.val()));
-        });
-    };
-
-    Background.prototype.getInitColor = function () {
-        return this.initColor;
-    };
-    return Background;
 })();
 var ObjectDimension = (function () {
     function ObjectDimension() {
@@ -8633,7 +9102,7 @@ var SvgGallery = (function () {
     function SvgGallery(app) {
         var _this = this;
         this.dialogEl = $('<div>').attr('id', 'dialog').attr('title', 'Galerie');
-        this.files = ["vsb.svg", "fei.svg", "add187.svg", "alarm50.svg", "american39.svg", "aromatherapy2.svg", "award27.svg", "award42.svg", "award44.svg", "award46.svg", "award47.svg", "ball26.svg", "ball27.svg", "ball28.svg", "ball29.svg", "banner3.svg", "baseball28.svg", "baseball30.svg", "basketball39.svg", "basketball41.svg", "bowling17.svg", "bowling19.svg", "bowling21.svg", "box79.svg", "boxing6.svg", "boy39.svg", "briefcase51.svg", "bulb12.svg", "casual.svg", "chef25.svg", "chronometer21.svg", "chronometer23.svg", "click1.svg", "closed65.svg", "closed66.svg", "coin16.svg", "coins30.svg", "coins31.svg", "coins32.svg", "commercial16.svg", "concentric3.svg", "credit100.svg", "credit101.svg", "credit102.svg", "delete83.svg", "digital24.svg", "discount3.svg", "dislike10.svg", "diving2.svg", "double100.svg", "double102.svg", "dumbbells4.svg", "engineer1.svg", "farmer2.svg", "female225.svg", "female227.svg", "female228.svg", "female229.svg", "female230.svg", "flag102.svg", "flags14.svg", "forefinger1.svg", "free9.svg", "front19.svg", "full48.svg", "gardener1.svg", "geek.svg", "gentleman.svg", "girl31.svg", "golf25.svg", "graduate26.svg", "graduate33.svg", "hands9.svg", "herbal1.svg", "high18.svg", "hockey4.svg", "hockey5.svg", "ice66.svg", "jcb6.svg", "like52.svg", "logotype68.svg", "logotype77.svg", "logotype82.svg", "logotype84.svg", "logotype99.svg", "male231.svg", "man427.svg", "map47.svg", "mastercard7.svg", "medal55.svg", "medal59.svg", "medical84.svg", "medieval1.svg", "middle1.svg", "money131.svg", "money132.svg", "new105.svg", "number42.svg", "office29.svg", "office30.svg", "one37.svg", "one38.svg", "one39.svg", "one41.svg", "one43.svg", "one44.svg", "one45.svg", "one46.svg", "one49.svg", "one53.svg", "one54.svg", "one57.svg", "one58.svg", "one60.svg", "one63.svg", "open208.svg", "paypal15.svg", "person304.svg", "phone377.svg", "piggy12.svg", "pilot2.svg", "policeman5.svg", "present19.svg", "price10.svg", "price11.svg", "price9.svg", "product3.svg", "professor19.svg", "publicity.svg", "qr7.svg", "relaxing1.svg", "remove21.svg", "resizing2.svg", "ribbon48.svg", "ribbon71.svg", "ribbon77.svg", "rock5.svg", "rolled3.svg", "rotate10.svg", "rubbish1.svg", "sailing10.svg", "sailing9.svg", "sale21.svg", "scream1.svg", "scream2.svg", "shield76.svg", "shoe18.svg", "shopping234.svg", "shopping235.svg", "shopping236.svg", "shopping237.svg", "shuttlecock1.svg", "signing2.svg", "silhouette20.svg", "silhouette21.svg", "silhouette43.svg", "silhouette48.svg", "silhouette53.svg", "silhouette61.svg", "soccer81.svg", "soccer82.svg", "socialnetwork26.svg", "socialnetwork31.svg", "socialnetwork37.svg", "socialnetwork55.svg", "socialnetwork64.svg", "socialnetwork69.svg", "spa21.svg", "speech142.svg", "speech143.svg", "speech144.svg", "speech145.svg", "speech146.svg", "speech147.svg", "speech148.svg", "speech149.svg", "speech150.svg", "sport13.svg", "sport14.svg", "sportive59.svg", "sports37.svg", "sports38.svg", "star159.svg", "stewardess.svg", "swipe10.svg", "swipe15.svg", "swipe16.svg", "swipe20.svg", "swipe21.svg", "swipe22.svg", "swipe3.svg", "swipe4.svg", "swipe6.svg", "swipe8.svg", "swipe9.svg", "table40.svg", "tap4.svg", "target41.svg", "tennis21.svg", "tennis22.svg", "tennis24.svg", "thinking1.svg", "thinking2.svg", "thought7.svg", "thought8.svg", "three144.svg", "three146.svg", "three148.svg", "three151.svg", "thumb43.svg", "thumb47.svg", "toilet9.svg", "touch18.svg", "touching1.svg", "trophy58.svg", "trophy59.svg", "trophy61.svg", "two333.svg", "two335.svg", "two341.svg", "two343.svg", "van18.svg", "visa8.svg", "volleyball6.svg", "waiter1.svg", "waitress.svg", "water54.svg", "whistle14.svg", "woman106.svg", "woman107.svg", "woman108.svg"];
+        this.files = ["cloud1.svg", "cloud2.svg", "cloud3.svg", "cloud4.svg", "cloud5.svg", "cloud6.svg", "vsb.svg", "fei.svg", "add187.svg", "alarm50.svg", "american39.svg", "aromatherapy2.svg", "award27.svg", "award42.svg", "award44.svg", "award46.svg", "award47.svg", "ball26.svg", "ball27.svg", "ball28.svg", "ball29.svg", "banner3.svg", "baseball28.svg", "baseball30.svg", "basketball39.svg", "basketball41.svg", "bowling17.svg", "bowling19.svg", "bowling21.svg", "box79.svg", "boxing6.svg", "boy39.svg", "briefcase51.svg", "bulb12.svg", "casual.svg", "chef25.svg", "chronometer21.svg", "chronometer23.svg", "click1.svg", "closed65.svg", "closed66.svg", "coin16.svg", "coins30.svg", "coins31.svg", "coins32.svg", "commercial16.svg", "concentric3.svg", "credit100.svg", "credit101.svg", "credit102.svg", "delete83.svg", "digital24.svg", "discount3.svg", "dislike10.svg", "diving2.svg", "double100.svg", "double102.svg", "dumbbells4.svg", "engineer1.svg", "farmer2.svg", "female225.svg", "female227.svg", "female228.svg", "female229.svg", "female230.svg", "flag102.svg", "flags14.svg", "forefinger1.svg", "free9.svg", "front19.svg", "full48.svg", "gardener1.svg", "geek.svg", "gentleman.svg", "girl31.svg", "golf25.svg", "graduate26.svg", "graduate33.svg", "hands9.svg", "herbal1.svg", "high18.svg", "hockey4.svg", "hockey5.svg", "ice66.svg", "jcb6.svg", "like52.svg", "logotype68.svg", "logotype77.svg", "logotype82.svg", "logotype84.svg", "logotype99.svg", "male231.svg", "man427.svg", "map47.svg", "mastercard7.svg", "medal55.svg", "medal59.svg", "medical84.svg", "medieval1.svg", "middle1.svg", "money131.svg", "money132.svg", "new105.svg", "number42.svg", "office29.svg", "office30.svg", "one37.svg", "one38.svg", "one39.svg", "one41.svg", "one43.svg", "one44.svg", "one45.svg", "one46.svg", "one49.svg", "one53.svg", "one54.svg", "one57.svg", "one58.svg", "one60.svg", "one63.svg", "open208.svg", "paypal15.svg", "person304.svg", "phone377.svg", "piggy12.svg", "pilot2.svg", "policeman5.svg", "present19.svg", "price10.svg", "price11.svg", "price9.svg", "product3.svg", "professor19.svg", "publicity.svg", "qr7.svg", "relaxing1.svg", "remove21.svg", "resizing2.svg", "ribbon48.svg", "ribbon71.svg", "ribbon77.svg", "rock5.svg", "rolled3.svg", "rotate10.svg", "rubbish1.svg", "sailing10.svg", "sailing9.svg", "sale21.svg", "scream1.svg", "scream2.svg", "shield76.svg", "shoe18.svg", "shopping234.svg", "shopping235.svg", "shopping236.svg", "shopping237.svg", "shuttlecock1.svg", "signing2.svg", "silhouette20.svg", "silhouette21.svg", "silhouette43.svg", "silhouette48.svg", "silhouette53.svg", "silhouette61.svg", "soccer81.svg", "soccer82.svg", "socialnetwork26.svg", "socialnetwork31.svg", "socialnetwork37.svg", "socialnetwork55.svg", "socialnetwork64.svg", "socialnetwork69.svg", "spa21.svg", "speech142.svg", "speech143.svg", "speech144.svg", "speech145.svg", "speech146.svg", "speech147.svg", "speech148.svg", "speech149.svg", "speech150.svg", "sport13.svg", "sport14.svg", "sportive59.svg", "sports37.svg", "sports38.svg", "star159.svg", "stewardess.svg", "swipe10.svg", "swipe15.svg", "swipe16.svg", "swipe20.svg", "swipe21.svg", "swipe22.svg", "swipe3.svg", "swipe4.svg", "swipe6.svg", "swipe8.svg", "swipe9.svg", "table40.svg", "tap4.svg", "target41.svg", "tennis21.svg", "tennis22.svg", "tennis24.svg", "thinking1.svg", "thinking2.svg", "thought7.svg", "thought8.svg", "three144.svg", "three146.svg", "three148.svg", "three151.svg", "thumb43.svg", "thumb47.svg", "toilet9.svg", "touch18.svg", "touching1.svg", "trophy58.svg", "trophy59.svg", "trophy61.svg", "two333.svg", "two335.svg", "two341.svg", "two343.svg", "van18.svg", "visa8.svg", "volleyball6.svg", "waiter1.svg", "waitress.svg", "water54.svg", "whistle14.svg", "woman106.svg", "woman107.svg", "woman108.svg"];
         this.app = app;
 
         $('body').find(this.dialogEl).remove();

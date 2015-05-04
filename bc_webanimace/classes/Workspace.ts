@@ -39,6 +39,9 @@ class Workspace {
     private menuSetScope: JQuery = $('<a>').addClass('menu-item').attr('href', '#').html('<i class="fa fa-level-down"></i> Zanořit');
     private dialogEl: JQuery = $('<div>').attr('id', 'dialog');
     private tooltip: JQuery = $('<span>').addClass('tooltip-text').html('Dvojklikem umístětě textové pole');
+    private loadDemoPanel: JQuery = $('<div>').addClass('demo-panel').html('<span>Přejete si načíst ukázkový projekt?</span>');
+    private loadDemoYes: JQuery = $('<a>').addClass('btn demo-btn yes').attr('href', '#').html('Ano');
+    private loadDemoNo: JQuery = $('<a>').addClass('btn demo-btn no').attr('href', '#').html('Ne, zavřít panel');
 
     constructor(app: Application, workspaceContainer: JQuery, workspaceWrapper: JQuery) {
         this.app = app;
@@ -57,6 +60,27 @@ class Workspace {
         this.svgTextArea.append(this.svgInsertBtn);
 
         this.workspaceContainer.css(this._workspaceSize);
+
+        this.loadDemoPanel.append(this.loadDemoYes);
+        this.loadDemoPanel.append(this.loadDemoNo);
+        $('body').prepend(this.loadDemoPanel);
+
+        this.loadDemoNo.on('click', (e: JQueryEventObject) => {
+            this.loadDemoPanel.slideUp("slow");
+        });
+
+        this.loadDemoYes.on('click', (e: JQueryEventObject) => {
+            this.loadDemoPanel.slideUp("slow");
+
+            //load banner.json
+            $.ajax({
+                url: 'demo.json',
+                dataType: 'text',
+                success: (data) => {
+                    this.parseJson(data);
+                }
+            });
+        });
 
         $(document).on('mousedown', (e: JQueryEventObject) => {
             //hide context menu

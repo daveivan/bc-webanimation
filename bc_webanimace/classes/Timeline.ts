@@ -527,7 +527,7 @@ class Timeline {
                     var shape: IShape = new Img(p, layer.globalShape.getSrc());
                     var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == Type.SVG) {
-                    var shape: IShape = new Svg(p, layer.globalShape.getSrc());
+                    var shape: IShape = new Svg(p, null);
                     var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == Type.TEXT) {
                     var g: any = layer.globalShape;

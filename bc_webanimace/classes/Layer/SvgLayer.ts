@@ -10,8 +10,8 @@
     getShape(position: number): IShape {
         var params: Parameters = super.getParameters(position);
 
-        var shape: IShape = new Svg(params, this.globalShape.getSrc());
-
+        //var shape: IShape = new Svg(params, this.globalShape.getSrc());
+        var shape: IShape = new Svg(params, null);
         return shape;
     }
 

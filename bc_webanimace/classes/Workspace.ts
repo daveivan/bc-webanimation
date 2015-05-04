@@ -63,6 +63,7 @@ class Workspace {
 
         this.loadDemoPanel.append(this.loadDemoYes);
         this.loadDemoPanel.append(this.loadDemoNo);
+        this.loadDemoPanel.append($('<span class="small" > Načtení může chvíli trvat </span>'));
         $('body').prepend(this.loadDemoPanel);
 
         this.loadDemoNo.on('click', (e: JQueryEventObject) => {
@@ -70,14 +71,19 @@ class Workspace {
         });
 
         this.loadDemoYes.on('click', (e: JQueryEventObject) => {
-            this.loadDemoPanel.slideUp("slow");
-
             //load banner.json
             $.ajax({
                 url: 'demo.json',
                 dataType: 'text',
+                beforeSend: () => {
+                    this.loadDemoPanel.find('.small').html('Nahrávám...');
+                },
                 success: (data) => {
                     this.parseJson(data);
+                    this.loadDemoPanel.slideUp("slow");
+                },
+                error: () => {
+                    this.loadDemoPanel.find('.small').html('Chyba. Nelze načíst projekt.');
                 }
             });
         });
@@ -2057,6 +2063,7 @@ class Workspace {
         } else if (shape instanceof TextField) {
             var layer: Layer = new TextLayer(l.name + ' - kopie', this.getBezier(), shape);
         } else if (shape instanceof Svg) {
+            shape.setSrc(l.globalShape.getSrc(), l.globalShape.base64);
             var layer: Layer = new SvgLayer(l.name + ' - kopie', this.getBezier(), shape);
         } else if (shape instanceof Img) {
             var layer: Layer = new ImageLayer(l.name + ' - kopie', this.getBezier(), shape);

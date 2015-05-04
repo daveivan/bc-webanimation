@@ -1344,6 +1344,11 @@ a.menu-item.disabled:hover { color: #6c6c6c; }
     font-size: 14px;
 }
 
+.demo-panel .small {
+    font-size: 10px;
+    margin-left: 10px;
+}
+
 .demo-btn {
     padding: 5px 10px !important;
     margin-top: 0;

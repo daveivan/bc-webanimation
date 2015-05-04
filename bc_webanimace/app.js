@@ -2264,7 +2264,7 @@ var Timeline = (function () {
                     var shape = new Img(p, layer.globalShape.getSrc());
                     var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == 2 /* SVG */) {
-                    var shape = new Svg(p, layer.globalShape.getSrc());
+                    var shape = new Svg(p, null);
                     var newKeyframe = this.app.workspace.addKeyframe(layer, shape, position, tf);
                 } else if (layer.type == 1 /* TEXT */) {
                     var g = layer.globalShape;
@@ -3439,6 +3439,7 @@ var Workspace = (function () {
 
         this.loadDemoPanel.append(this.loadDemoYes);
         this.loadDemoPanel.append(this.loadDemoNo);
+        this.loadDemoPanel.append($('<span class="small" > Načtení může chvíli trvat </span>'));
         $('body').prepend(this.loadDemoPanel);
 
         this.loadDemoNo.on('click', function (e) {
@@ -3446,14 +3447,19 @@ var Workspace = (function () {
         });
 
         this.loadDemoYes.on('click', function (e) {
-            _this.loadDemoPanel.slideUp("slow");
-
             //load banner.json
             $.ajax({
                 url: 'demo.json',
                 dataType: 'text',
+                beforeSend: function () {
+                    _this.loadDemoPanel.find('.small').html('Nahrávám...');
+                },
                 success: function (data) {
                     _this.parseJson(data);
+                    _this.loadDemoPanel.slideUp("slow");
+                },
+                error: function () {
+                    _this.loadDemoPanel.find('.small').html('Chyba. Nelze načíst projekt.');
                 }
             });
         });
@@ -5461,6 +5467,7 @@ var Workspace = (function () {
         } else if (shape instanceof TextField) {
             var layer = new TextLayer(l.name + ' - kopie', this.getBezier(), shape);
         } else if (shape instanceof Svg) {
+            shape.setSrc(l.globalShape.getSrc(), l.globalShape.base64);
             var layer = new SvgLayer(l.name + ' - kopie', this.getBezier(), shape);
         } else if (shape instanceof Img) {
             var layer = new ImageLayer(l.name + ' - kopie', this.getBezier(), shape);
@@ -7216,16 +7223,26 @@ var RectangleLayer = (function (_super) {
 var Svg = (function (_super) {
     __extends(Svg, _super);
     function Svg(params, src) {
+        if (typeof src === "undefined") { src = null; }
         var _this = this;
         _super.call(this, params);
+        this._src = null;
+        this.base64 = null;
         this._src = src;
-        var blob = new Blob([this.getSrc()], { type: 'image/svg+xml' });
-        this.readFile(blob, function (e) {
-            _this.base64 = e.target.result;
-        });
+        if (src != null) {
+            var blob = new Blob([this.getSrc()], { type: 'image/svg+xml' });
+            this.readFile(blob, function (e) {
+                _this.base64 = e.target.result;
+            });
+        }
     }
     Svg.prototype.getSrc = function () {
         return this._src;
+    };
+
+    Svg.prototype.setSrc = function (src, base64) {
+        this._src = src;
+        this.base64 = base64;
     };
 
     Svg.prototype.readFile = function (file, onLoadCallback) {
@@ -7358,8 +7375,8 @@ var SvgLayer = (function (_super) {
     SvgLayer.prototype.getShape = function (position) {
         var params = _super.prototype.getParameters.call(this, position);
 
-        var shape = new Svg(params, this.globalShape.getSrc());
-
+        //var shape: IShape = new Svg(params, this.globalShape.getSrc());
+        var shape = new Svg(params, null);
         return shape;
     };
 
